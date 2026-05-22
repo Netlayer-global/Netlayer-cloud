@@ -1,0 +1,5 @@
+auth:    npm run svc:auth
+billing: npm run svc:billing
+compute: npm run svc:compute
+admin:   npm run svc:admin
+worker:  npm run svc:worker

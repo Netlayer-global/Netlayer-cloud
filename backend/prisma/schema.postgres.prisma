@@ -1,0 +1,552 @@
+// Postgres schema variant. Identical model surface to schema.prisma but uses
+// native Postgres types (Json, String[], enums) instead of stringified fallbacks.
+//
+// Switch to Postgres:
+//   1. Stand up Postgres (Docker, native install, or RDS-style cloud DB)
+//   2. Set DATABASE_URL="postgresql://..."
+//   3. Copy this file over schema.prisma:
+//        cp prisma/schema.postgres.prisma prisma/schema.prisma
+//   4. Run migration:
+//        npx prisma migrate dev --name init_postgres
+//   5. Migrate data from existing SQLite:
+//        npx ts-node prisma/migrate-sqlite-to-postgres.ts
+//
+// During the dual-mode period the app code uses the JSON serialization helpers
+// (utils/serialize.ts), which work the same against both backends.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+  SUPPORT
+  BILLING
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum ServerStatus {
+  PENDING
+  BUILDING
+  RUNNING
+  STOPPED
+  REBOOTING
+  ERROR
+  DELETING
+  DELETED
+}
+
+enum NodeStatus {
+  ONLINE
+  DEGRADED
+  MAINTENANCE
+  OFFLINE
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum OsFamily {
+  LINUX
+  WINDOWS
+  BSD
+}
+
+model User {
+  id                 String       @id @default(cuid())
+  email              String       @unique
+  passwordHash       String
+  firstName          String
+  lastName           String
+  role               Role         @default(USER)
+  status             UserStatus   @default(ACTIVE)
+  balance            Float        @default(0)
+  emailVerified      Boolean      @default(false)
+  emailVerifyToken   String?
+  resetToken         String?
+  resetTokenExpiry   DateTime?
+  stripeCustomerId   String?
+  twoFactorEnabled   Boolean      @default(false)
+  twoFactorSecret    String?
+  phone              String?
+  phoneVerified      Boolean      @default(false)
+  country            String       @default("IN")
+  timezone           String       @default("Asia/Kolkata")
+  currency           String       @default("INR")
+  language           String       @default("en")
+  creditLimit        Float        @default(0)
+  loginAttempts      Int          @default(0)
+  lockedUntil        DateTime?
+  notes              String?
+  metadata           Json?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  lastLoginAt        DateTime?
+
+  servers            Server[]
+  invoices           Invoice[]
+  paymentMethods     PaymentMethod[]
+  sshKeys            SshKey[]
+  supportTickets     SupportTicket[]
+  auditLogs          AuditLog[]
+  sessions           UserSession[]
+  apiKeys            ApiKey[]
+  notifications      Notification[]
+  roleAssignments    UserRoleAssignment[]
+  transactions       Transaction[]
+
+  @@index([country])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model UserSession {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String   @unique
+  ipAddress  String?
+  userAgent  String?
+  country    String?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  keyHash     String    @unique
+  keyPrefix   String
+  permissions String[]  @default([])
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Role_ {
+  // Custom roles (alongside the system enum).
+  // Uses underscore to avoid conflict with the Role enum.
+  id          String               @id @default(cuid())
+  name        String               @unique
+  displayName String
+  description String?
+  permissions String[]             @default([])
+  isSystem    Boolean              @default(false)
+  createdAt   DateTime             @default(now())
+  assignments UserRoleAssignment[]
+
+  @@map("role")
+}
+
+model UserRoleAssignment {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId    String
+  role      Role_     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  grantedBy String?
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, roleId])
+  @@index([userId])
+}
+
+model Node {
+  id                 String     @id @default(cuid())
+  name               String
+  slug               String     @unique
+  regionId           String
+  region             Region     @relation(fields: [regionId], references: [id])
+  proxmoxHost        String
+  proxmoxNode        String
+  proxmoxTokenId     String
+  proxmoxTokenSecret String
+  totalCpu           Int
+  totalRamGB         Int
+  totalDiskGB        Int
+  usedCpu            Int        @default(0)
+  usedRamGB          Int        @default(0)
+  usedDiskGB         Int        @default(0)
+  maxVMs             Int        @default(100)
+  currentVMs         Int        @default(0)
+  status             NodeStatus @default(ONLINE)
+  isActive           Boolean    @default(true)
+  maintenanceNote    String?
+  networkGbps        Int        @default(1)
+  ipRanges           String[]   @default([])
+  lastSyncAt         DateTime?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  servers            Server[]
+
+  @@index([regionId, status])
+}
+
+model Region {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  country     String
+  countryCode String
+  city        String
+  flag        String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  servers     Server[]
+  nodes       Node[]
+}
+
+model OsTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  version   String
+  family    OsFamily
+  logo      String
+  proxmoxId String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  servers   Server[]
+}
+
+model Plan {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  cpu           Int
+  ramGB         Int
+  diskGB        Int
+  bandwidthTB   Float
+  priceMonthly  Float
+  priceHourly   Float
+  priceInr      Float
+  isActive      Boolean  @default(true)
+  isPopular     Boolean  @default(false)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  servers       Server[]
+}
+
+model Server {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  nodeId         String?
+  node           Node?        @relation(fields: [nodeId], references: [id])
+  name           String
+  hostname       String       @unique
+  planId         String
+  plan           Plan         @relation(fields: [planId], references: [id])
+  regionId       String
+  region         Region       @relation(fields: [regionId], references: [id])
+  osTemplateId   String
+  osTemplate     OsTemplate   @relation(fields: [osTemplateId], references: [id])
+  status         ServerStatus @default(PENDING)
+  ipv4           String?
+  ipv6           String?
+  proxmoxVmId    Int?
+  proxmoxNode    String?
+  rootPassword   String?
+  specs          Json
+  bandwidth      Json         @default("{\"used\":0,\"limit\":1000}")
+  backupEnabled  Boolean      @default(false)
+  tags           String[]     @default([])
+  notes          String?
+  dnsRecordId    String?
+  zabbixHostId   String?
+  nextBillDate   DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+
+  metrics        ServerMetric[]
+  snapshots      ServerSnapshot[]
+  firewallRules  FirewallRule[]
+
+  @@index([userId, status])
+  @@index([nodeId])
+  @@index([regionId])
+  @@index([deletedAt])
+}
+
+model ServerMetric {
+  id         String   @id @default(cuid())
+  serverId   String
+  server     Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  cpu        Float
+  ram        Float
+  disk       Float
+  networkIn  Float
+  networkOut Float
+  timestamp  DateTime @default(now())
+
+  @@index([serverId, timestamp])
+}
+
+model ServerSnapshot {
+  id        String   @id @default(cuid())
+  serverId  String
+  server    Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  name      String
+  size      Float    @default(0)
+  proxmoxId String?
+  status    String   @default("creating")
+  createdAt DateTime @default(now())
+
+  @@index([serverId])
+}
+
+model FirewallRule {
+  id        String   @id @default(cuid())
+  serverId  String
+  server    Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  direction String
+  protocol  String
+  portFrom  Int?
+  portTo    Int?
+  sourceIp  String?
+  action    String   @default("ACCEPT")
+  priority  Int      @default(100)
+  createdAt DateTime @default(now())
+
+  @@index([serverId, priority])
+}
+
+model SshKey {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  publicKey   String
+  fingerprint String
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Invoice {
+  id                String        @id @default(cuid())
+  invoiceNumber     String        @unique @default(cuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id])
+  amount            Float
+  tax               Float         @default(0)
+  total             Float         @default(0)
+  currency          String        @default("INR")
+  status            InvoiceStatus @default(PENDING)
+  items             Json
+  dueDate           DateTime
+  paidAt            DateTime?
+  stripePaymentId   String?
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  paymentMethod     String?
+  notes             String?
+  createdAt         DateTime      @default(now())
+
+  @@index([userId, status])
+  @@index([status, dueDate])
+}
+
+model PaymentMethod {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type                  String
+  last4                 String?
+  brand                 String?
+  expiryMonth           Int?
+  expiryYear            Int?
+  stripePaymentMethodId String?
+  isDefault             Boolean  @default(false)
+  createdAt             DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Transaction {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  type          String
+  amount        Float
+  currency      String   @default("INR")
+  description   String
+  reference     String?
+  invoiceId     String?
+  balanceBefore Float
+  balanceAfter  Float
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([invoiceId])
+}
+
+model SupportTicket {
+  id           String          @id @default(cuid())
+  ticketNumber String          @unique @default(cuid())
+  userId       String
+  user         User            @relation(fields: [userId], references: [id])
+  subject      String
+  status       String          @default("OPEN")
+  priority     String          @default("MEDIUM")
+  category     String          @default("general")
+  department   String          @default("support")
+  assignedTo   String?
+  rating       Int?
+  ratedAt      DateTime?
+  firstReplyAt DateTime?
+  resolvedAt   DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  closedAt     DateTime?
+
+  messages     TicketMessage[]
+
+  @@index([userId])
+  @@index([status, priority])
+}
+
+model TicketMessage {
+  id         String        @id @default(cuid())
+  ticketId   String
+  ticket     SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId   String
+  authorRole String
+  content    String
+  isInternal Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+
+  @@index([ticketId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, isRead])
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  message     String
+  type        String    @default("info")
+  isActive    Boolean   @default(true)
+  targetAll   Boolean   @default(true)
+  targetRoles String[]  @default([])
+  expiresAt   DateTime?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+
+  @@index([isActive, expiresAt])
+}
+
+model IntegrationConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  isActive  Boolean  @default(true)
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  subject   String
+  htmlBody  String
+  variables String[] @default([])
+  isActive  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model SmsTemplate {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  body      String
+  variables String[] @default([])
+  isActive  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  resource   String
+  resourceId String?
+  oldValue   Json?
+  newValue   Json?
+  ipAddress  String?
+  userAgent  String?
+  country    String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@index([resource, createdAt])
+}
+
+model WorkflowRun {
+  id           String    @id
+  type         String
+  resourceId   String
+  status       String
+  currentStep  String?
+  context      Json
+  steps        Json
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  error        String?
+
+  @@index([type, status])
+  @@index([resourceId])
+  @@index([status, startedAt])
+}

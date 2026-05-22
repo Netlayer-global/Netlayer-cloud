@@ -1,0 +1,713 @@
+// NetLayer Cloud — local-dev SQLite schema.
+// String[] and Json fields are stored as JSON strings; serialized at the API boundary.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── USERS ─────────────────────────────────────────────────
+model User {
+  id                 String     @id @default(cuid())
+  email              String     @unique
+  passwordHash       String
+  firstName          String
+  lastName           String
+  role               String     @default("USER")
+  status             String     @default("ACTIVE")
+  balance            Float      @default(0)
+  emailVerified      Boolean    @default(false)
+  emailVerifyToken   String?
+  resetToken         String?
+  resetTokenExpiry   DateTime?
+  stripeCustomerId   String?
+  twoFactorEnabled   Boolean    @default(false)
+  twoFactorSecret    String?
+  phone              String?
+  phoneVerified      Boolean    @default(false)
+  country            String     @default("IN")
+  timezone           String     @default("Asia/Kolkata")
+  currency           String     @default("INR")
+  language           String     @default("en")
+  creditLimit        Float      @default(0)
+  loginAttempts      Int        @default(0)
+  lockedUntil        DateTime?
+  notes              String?
+  metadata           String?    // JSON string
+  // ── billing/profile additions ──
+  company            String?
+  website            String?
+  addressLine1       String?
+  addressLine2       String?
+  city               String?
+  state              String?
+  postalCode         String?
+  gstNumber          String?    // Indian GSTIN
+  vatNumber          String?    // EU VAT
+  notifEmail         Boolean    @default(true)
+  notifSms           Boolean    @default(false)
+  notifSlackUrl      String?
+  notifPrefs         String?    // JSON: per-event toggles
+  referralCode       String?    @unique
+  referredById       String?
+  // ──────────────────────────────
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  lastLoginAt        DateTime?
+
+  servers            Server[]
+  invoices           Invoice[]
+  paymentMethods     PaymentMethod[]
+  sshKeys            SshKey[]
+  supportTickets     SupportTicket[]
+  auditLogs          AuditLog[]
+  sessions           UserSession[]
+  apiKeys            ApiKey[]
+  notifications      Notification[]
+  roleAssignments    UserRoleAssignment[]
+  transactions       Transaction[]
+  buckets            StorageBucket[]
+  volumes            BlockVolume[]
+  loadBalancers      LoadBalancer[]
+  managedDbs         ManagedDatabase[]
+  vpcs               VPC[]
+  dnsZones           DnsZone[]
+  referralsAsReferrer Referral[] @relation("Referrer")
+  referralAsReferee  Referral?  @relation("Referee")
+}
+
+model UserSession {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  token      String   @unique
+  ipAddress  String?
+  userAgent  String?
+  country    String?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  name        String
+  keyHash     String    @unique
+  keyPrefix   String
+  permissions String    @default("[]")
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+}
+
+// ─── ROLES & PERMISSIONS ────────────────────────────────────
+model Role {
+  id          String               @id @default(cuid())
+  name        String               @unique
+  displayName String
+  description String?
+  permissions String               @default("[]")
+  isSystem    Boolean              @default(false)
+  createdAt   DateTime             @default(now())
+  assignments UserRoleAssignment[]
+}
+
+model UserRoleAssignment {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  roleId    String
+  role      Role      @relation(fields: [roleId], references: [id])
+  grantedBy String?
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, roleId])
+}
+
+// ─── INFRASTRUCTURE ─────────────────────────────────────────
+model Node {
+  id                 String     @id @default(cuid())
+  name               String
+  slug               String     @unique
+  regionId           String
+  region             Region     @relation(fields: [regionId], references: [id])
+  proxmoxHost        String
+  proxmoxNode        String
+  proxmoxTokenId     String
+  proxmoxTokenSecret String
+  totalCpu           Int
+  totalRamGB         Int
+  totalDiskGB        Int
+  usedCpu            Int        @default(0)
+  usedRamGB          Int        @default(0)
+  usedDiskGB         Int        @default(0)
+  maxVMs             Int        @default(100)
+  currentVMs         Int        @default(0)
+  status             String     @default("ONLINE")
+  isActive           Boolean    @default(true)
+  maintenanceNote    String?
+  networkGbps        Int        @default(1)
+  ipRanges           String     @default("[]")
+  lastSyncAt         DateTime?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  servers            Server[]
+}
+
+model Region {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  country     String
+  countryCode String
+  city        String
+  flag        String
+  latencyMs   Int      @default(20)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  servers     Server[]
+  nodes       Node[]
+}
+
+model OsTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  version   String
+  family    String
+  logo      String
+  proxmoxId String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  servers   Server[]
+}
+
+model Plan {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  category      String   @default("compute")  // compute | bare-metal | storage
+  cpu           Int
+  ramGB         Int
+  diskGB        Int
+  bandwidthTB   Float
+  priceMonthly  Float
+  priceHourly   Float
+  priceInr      Float
+  isActive      Boolean  @default(true)
+  isPopular     Boolean  @default(false)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  servers       Server[]
+}
+
+// ─── SERVERS ────────────────────────────────────────────────
+model Server {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  nodeId         String?
+  node           Node?        @relation(fields: [nodeId], references: [id])
+  name           String
+  hostname       String       @unique
+  planId         String
+  plan           Plan         @relation(fields: [planId], references: [id])
+  regionId       String
+  region         Region       @relation(fields: [regionId], references: [id])
+  osTemplateId   String
+  osTemplate     OsTemplate   @relation(fields: [osTemplateId], references: [id])
+  appTemplateId  String?
+  appTemplate    AppTemplate? @relation(fields: [appTemplateId], references: [id])
+  status         String       @default("PENDING")
+  ipv4           String?
+  ipv6           String?
+  proxmoxVmId    Int?
+  proxmoxNode    String?
+  rootPassword   String?
+  specs          String
+  bandwidth      String       @default("{\"used\":0,\"limit\":1000}")
+  backupEnabled  Boolean      @default(false)
+  tags           String       @default("[]")
+  notes          String?
+  dnsRecordId    String?
+  zabbixHostId   String?
+  nextBillDate   DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+
+  metrics        ServerMetric[]
+  snapshots      ServerSnapshot[]
+  firewallRules  FirewallRule[]
+  volumes        BlockVolume[]
+  lbTargets      LoadBalancerTarget[]
+  vpcMembers     VPCMember[]
+}
+
+model ServerMetric {
+  id         String   @id @default(cuid())
+  serverId   String
+  server     Server   @relation(fields: [serverId], references: [id])
+  cpu        Float
+  ram        Float
+  disk       Float
+  networkIn  Float
+  networkOut Float
+  timestamp  DateTime @default(now())
+
+  @@index([serverId, timestamp])
+}
+
+model ServerSnapshot {
+  id        String   @id @default(cuid())
+  serverId  String
+  server    Server   @relation(fields: [serverId], references: [id])
+  name      String
+  size      Float    @default(0)
+  proxmoxId String?
+  status    String   @default("creating")
+  createdAt DateTime @default(now())
+}
+
+model FirewallRule {
+  id        String   @id @default(cuid())
+  serverId  String
+  server    Server   @relation(fields: [serverId], references: [id])
+  direction String
+  protocol  String
+  portFrom  Int?
+  portTo    Int?
+  sourceIp  String?
+  action    String   @default("ACCEPT")
+  priority  Int      @default(100)
+  createdAt DateTime @default(now())
+}
+
+// ─── SSH KEYS ───────────────────────────────────────────────
+model SshKey {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  name        String
+  publicKey   String
+  fingerprint String
+  source      String   @default("manual")  // manual | github
+  createdAt   DateTime @default(now())
+}
+
+// ─── BILLING ────────────────────────────────────────────────
+model Invoice {
+  id                String    @id @default(cuid())
+  invoiceNumber     String    @unique @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  amount            Float
+  tax               Float     @default(0)
+  taxBreakdown      String?   // JSON: { cgst, sgst, igst, vat } per rule
+  total             Float     @default(0)
+  currency          String    @default("INR")
+  status            String    @default("PENDING")
+  items             String
+  dueDate           DateTime
+  paidAt            DateTime?
+  stripePaymentId   String?
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  paymentMethod     String?
+  notes             String?
+  pdfUrl            String?   // populated after first download
+  createdAt         DateTime  @default(now())
+}
+
+model PaymentMethod {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id])
+  type                  String
+  last4                 String?
+  brand                 String?
+  expiryMonth           Int?
+  expiryYear            Int?
+  stripePaymentMethodId String?
+  isDefault             Boolean  @default(false)
+  createdAt             DateTime @default(now())
+}
+
+model Transaction {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  type          String
+  amount        Float
+  currency      String   @default("INR")
+  description   String
+  reference     String?
+  invoiceId     String?
+  balanceBefore Float
+  balanceAfter  Float
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// ─── SUPPORT ────────────────────────────────────────────────
+model SupportTicket {
+  id           String          @id @default(cuid())
+  ticketNumber String          @unique @default(cuid())
+  userId       String
+  user         User            @relation(fields: [userId], references: [id])
+  subject      String
+  status       String          @default("OPEN")
+  priority     String          @default("MEDIUM")
+  category     String          @default("general")
+  department   String          @default("support")
+  assignedTo   String?
+  rating       Int?
+  ratedAt      DateTime?
+  firstReplyAt DateTime?
+  resolvedAt   DateTime?
+  slaTargetAt  DateTime?
+  slaBreached  Boolean         @default(false)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  closedAt     DateTime?
+
+  messages     TicketMessage[]
+}
+
+model TicketMessage {
+  id         String        @id @default(cuid())
+  ticketId   String
+  ticket     SupportTicket @relation(fields: [ticketId], references: [id])
+  authorId   String
+  authorRole String
+  content    String
+  isInternal Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+}
+
+model CannedResponse {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  category  String   @default("general")
+  createdBy String
+  createdAt DateTime @default(now())
+}
+
+// ─── NOTIFICATIONS & ANNOUNCEMENTS ──────────────────────────
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  type      String
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, isRead])
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  message     String
+  type        String    @default("info")
+  isActive    Boolean   @default(true)
+  targetAll   Boolean   @default(true)
+  targetRoles String    @default("[]")
+  expiresAt   DateTime?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+}
+
+// ─── INTEGRATIONS & TEMPLATES ───────────────────────────────
+model IntegrationConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  isActive  Boolean  @default(true)
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  subject   String
+  htmlBody  String
+  variables String   @default("[]")
+  isActive  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model SmsTemplate {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  body      String
+  variables String   @default("[]")
+  isActive  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+// ─── AUDIT ──────────────────────────────────────────────────
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  resource   String
+  resourceId String?
+  oldValue   String?
+  newValue   String?
+  ipAddress  String?
+  userAgent  String?
+  country    String?
+  metadata   String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@index([resource, createdAt])
+}
+
+// ─── WORKFLOWS ──────────────────────────────────────────────
+model WorkflowRun {
+  id           String    @id
+  type         String
+  resourceId   String
+  status       String
+  currentStep  String?
+  context      String
+  steps        String
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  error        String?
+
+  @@index([type, status])
+  @@index([resourceId])
+  @@index([status, startedAt])
+}
+
+// ─── OBJECT STORAGE ─────────────────────────────────────────
+model StorageBucket {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String   @unique
+  region    String
+  sizeBytes BigInt   @default(0)
+  objects   Int      @default(0)
+  isPublic  Boolean  @default(false)
+  endpoint  String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ─── BLOCK STORAGE ──────────────────────────────────────────
+model BlockVolume {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  serverId    String?
+  server      Server?  @relation(fields: [serverId], references: [id])
+  name        String
+  sizeGB      Int
+  region      String
+  status      String   @default("available")  // available | attached | detaching | deleting
+  proxmoxDisk String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ─── LOAD BALANCERS ─────────────────────────────────────────
+model LoadBalancer {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  name        String
+  region      String
+  algorithm   String   @default("round_robin")
+  ipv4        String?
+  protocol    String   @default("HTTP")
+  port        Int      @default(80)
+  healthCheck String   @default("{}")
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+
+  targets     LoadBalancerTarget[]
+}
+
+model LoadBalancerTarget {
+  id             String       @id @default(cuid())
+  loadBalancerId String
+  loadBalancer   LoadBalancer @relation(fields: [loadBalancerId], references: [id])
+  serverId       String
+  server         Server       @relation(fields: [serverId], references: [id])
+  port           Int          @default(80)
+  weight         Int          @default(1)
+  isHealthy      Boolean      @default(true)
+}
+
+// ─── MANAGED DATABASES ──────────────────────────────────────
+model ManagedDatabase {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  name          String
+  engine        String   @default("postgresql")
+  version       String   @default("15")
+  planId        String
+  region        String
+  status        String   @default("creating")
+  host          String?
+  port          Int?
+  database      String?
+  username      String?
+  password      String?
+  backupEnabled Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ─── VPC ────────────────────────────────────────────────────
+model VPC {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  name      String
+  region    String
+  cidr      String      @default("10.0.0.0/16")
+  isDefault Boolean     @default(false)
+  createdAt DateTime    @default(now())
+
+  members   VPCMember[]
+
+  @@index([userId])
+}
+
+model VPCMember {
+  id        String @id @default(cuid())
+  vpcId     String
+  vpc       VPC    @relation(fields: [vpcId], references: [id])
+  serverId  String
+  server    Server @relation(fields: [serverId], references: [id])
+  privateIp String
+
+  @@unique([vpcId, serverId])
+}
+
+// ─── DNS ────────────────────────────────────────────────────
+model DnsZone {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  domain    String      @unique
+  status    String      @default("active")
+  createdAt DateTime    @default(now())
+
+  records   DnsRecord[]
+}
+
+model DnsRecord {
+  id        String   @id @default(cuid())
+  zoneId    String
+  zone      DnsZone  @relation(fields: [zoneId], references: [id])
+  type      String
+  name      String
+  content   String
+  ttl       Int      @default(300)
+  priority  Int?
+  createdAt DateTime @default(now())
+}
+
+// ─── REFERRALS ──────────────────────────────────────────────
+model Referral {
+  id         String    @id @default(cuid())
+  referrerId String
+  referrer   User      @relation("Referrer", fields: [referrerId], references: [id])
+  refereeId  String    @unique
+  referee    User      @relation("Referee", fields: [refereeId], references: [id])
+  code       String
+  status     String    @default("pending")  // pending | rewarded | expired
+  reward     Float     @default(0)
+  paidAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([referrerId, status])
+}
+
+// ─── ABUSE ──────────────────────────────────────────────────
+model AbuseReport {
+  id          String    @id @default(cuid())
+  serverId    String?
+  userId      String?
+  reporterIp  String
+  reporterEmail String?
+  type        String    // spam | ddos | phishing | bruteforce | ratelimit | other
+  description String
+  status      String    @default("open")  // open | investigating | resolved | dismissed
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([status, createdAt])
+}
+
+// ─── MARKETPLACE ────────────────────────────────────────────
+model AppTemplate {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  description    String
+  logo           String
+  category       String
+  minPlanSlug    String   @default("c2-medium")
+  userDataScript String
+  envVars        String   @default("[]")
+  ports          String   @default("[]")
+  isActive       Boolean  @default(true)
+  installs       Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  servers        Server[]
+}
+
+// ─── STATUS PAGE ────────────────────────────────────────────
+model StatusIncident {
+  id               String    @id @default(cuid())
+  title            String
+  status           String    @default("investigating")  // investigating | identified | monitoring | resolved
+  impact           String    @default("minor")          // minor | major | critical | maintenance
+  affectedServices String    @default("[]")
+  affectedRegions  String    @default("[]")
+  updates          String    @default("[]")             // JSON: [{ message, status, ts }]
+  resolvedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([status, createdAt])
+}

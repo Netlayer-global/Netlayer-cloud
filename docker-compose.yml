@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: netlayer-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: netlayer
+      POSTGRES_USER: netlayer
+      POSTGRES_PASSWORD: netlayer_secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U netlayer"]
+      interval: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: netlayer-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass redis_secret
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: netlayer-pgadmin
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@netlayer.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:

@@ -1,0 +1,116 @@
+import express from 'express'
+import helmet from 'helmet'
+import cors from 'cors'
+import cookieParser from 'cookie-parser'
+import { Server as IOServer } from 'socket.io'
+import { createAdapter } from '@socket.io/redis-adapter'
+import { createServer } from 'http'
+import swaggerUi from 'swagger-ui-express'
+
+import { config } from './config/env'
+import errorHandler from './middleware/errorHandler'
+import { authMiddleware } from './middleware/auth'
+import { requestContext } from './middleware/requestContext'
+import { idempotency } from './middleware/idempotency'
+import { httpMetricsMiddleware, metricsHandler } from './observability/metrics'
+import logger from './utils/logger'
+import { getPubSubClients } from './utils/redis'
+import { setIo } from './services/socket.service'
+import { openapiSpec } from './openapi'
+
+import authRoutes from './routes/auth.routes'
+import serverRoutes from './routes/servers.routes'
+import billingRoutes from './routes/billing.routes'
+import adminRoutes from './routes/admin.routes'
+import planRoutes from './routes/plans.routes'
+import sshRoutes from './routes/ssh.routes'
+import notificationRoutes from './routes/notification.routes'
+import apiKeyRoutes from './routes/apikey.routes'
+import announcementRoutes from './routes/announcement.routes'
+import webhookRoutes from './routes/webhook.routes'
+import healthRoutes from './routes/health.routes'
+import statusRoutes from './routes/status.routes'
+import adminStatusRoutes from './routes/admin-status.routes'
+import abuseRoutes from './routes/abuse.routes'
+
+const app = express()
+const httpServer = createServer(app)
+
+// ─── CORS (dev: any localhost; prod: strict allowlist) ──────────────
+const corsOrigin = (
+  origin: string | undefined,
+  cb: (err: Error | null, allow?: boolean) => void
+) => {
+  if (!origin) return cb(null, true)
+  if (origin === config.FRONTEND_URL) return cb(null, true)
+  if (!config.isProd && /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
+    return cb(null, true)
+  }
+  return cb(null, false)
+}
+
+// ─── Socket.io with optional Redis adapter for horizontal scale ─────
+export const io = new IOServer(httpServer, {
+  cors: { origin: corsOrigin as any, credentials: true },
+})
+
+const pubsub = getPubSubClients()
+if (pubsub) {
+  io.adapter(createAdapter(pubsub.pub, pubsub.sub))
+  logger.info('Socket.io Redis adapter enabled (multi-instance ready)')
+} else {
+  logger.warn('Socket.io running without Redis adapter (single-instance only)')
+}
+setIo(io)
+
+// ─── Core middleware ────────────────────────────────────────────────
+app.set('trust proxy', 1)
+app.use(requestContext)
+app.use(httpMetricsMiddleware)
+app.use(helmet({ crossOriginResourcePolicy: false }))
+app.use(cors({ origin: corsOrigin, credentials: true }))
+
+// Webhooks need raw body — mount BEFORE express.json()
+app.use('/api/webhooks', webhookRoutes)
+
+app.use(express.json({ limit: '1mb' }))
+app.use(cookieParser())
+
+// ─── Health, metrics, docs ──────────────────────────────────────────
+app.use('/', healthRoutes)
+if (config.metricsEnabled) {
+  app.get('/metrics', metricsHandler)
+}
+app.get('/api/openapi.json', (_req, res) => res.json(openapiSpec))
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec, { customSiteTitle: 'NetLayer API' }))
+
+// ─── Public catalog ─────────────────────────────────────────────────
+app.use('/api', planRoutes)
+app.use('/api/status', statusRoutes)
+app.use('/api/abuse', abuseRoutes)
+
+// ─── Auth ───────────────────────────────────────────────────────────
+app.use('/api/auth', idempotency(), authRoutes)
+
+// ─── User-protected ─────────────────────────────────────────────────
+app.use('/api/servers',       authMiddleware, idempotency(), serverRoutes)
+app.use('/api/billing',       authMiddleware, idempotency(), billingRoutes)
+app.use('/api/ssh-keys',      authMiddleware, idempotency(), sshRoutes)
+app.use('/api/notifications', authMiddleware, notificationRoutes)
+app.use('/api/api-keys',      authMiddleware, idempotency(), apiKeyRoutes)
+app.use('/api/announcements', authMiddleware, announcementRoutes)
+
+// ─── Admin ──────────────────────────────────────────────────────────
+app.use('/api/admin', authMiddleware, idempotency(), adminRoutes)
+
+// ─── 404 + error handler ────────────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not found', code: 'NOT_FOUND', path: req.path })
+})
+
+app.use(errorHandler)
+
+logger.info(`Express initialized in ${config.NODE_ENV} mode`)
+
+export { httpServer }
+export default app

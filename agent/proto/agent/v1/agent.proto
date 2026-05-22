@@ -1,0 +1,172 @@
+syntax = "proto3";
+
+package netlayer.agent.v1;
+
+option go_package = "github.com/netlayer/agent/proto/agent/v1;agentv1";
+
+// AgentBus is the single bidirectional stream between control plane and agent.
+// The control plane sends Command messages; the agent replies with Event and
+// Telemetry messages and acks each command.
+service AgentBus {
+  // Bidirectional stream. The agent opens it on startup and keeps it alive
+  // (reconnect with backoff on disconnect).
+  rpc Connect(stream AgentMessage) returns (stream ControlMessage);
+}
+
+// ─── messages from agent → control plane ────────────────────────────
+message AgentMessage {
+  oneof payload {
+    Hello       hello       = 1;
+    Heartbeat   heartbeat   = 2;
+    Telemetry   telemetry   = 3;
+    CommandAck  ack         = 4;
+    VmEvent     vm_event    = 5;
+  }
+}
+
+message Hello {
+  string agent_id      = 1;
+  string version       = 2;
+  string hostname      = 3;
+  HostInfo host_info   = 4;
+}
+
+message HostInfo {
+  string  os                  = 1;   // e.g. "Talos 1.7"
+  string  kernel              = 2;
+  string  arch                = 3;
+  uint32  total_cpu           = 4;
+  uint64  total_ram_bytes     = 5;
+  uint64  total_disk_bytes    = 6;
+  string  ip_primary          = 7;
+}
+
+message Heartbeat {
+  int64 ts_ms     = 1;
+  uint32 vm_count = 2;
+  double load1   = 3;
+}
+
+message Telemetry {
+  int64 ts_ms                          = 1;
+  HostStats host                       = 2;
+  repeated VmStats vms                 = 3;
+}
+
+message HostStats {
+  double cpu_used_ratio       = 1;
+  uint64 ram_used_bytes       = 2;
+  uint64 disk_used_bytes      = 3;
+  uint64 net_in_bps           = 4;
+  uint64 net_out_bps          = 5;
+}
+
+message VmStats {
+  string vm_id          = 1;
+  uint32 proxmox_vmid   = 2;
+  string status         = 3;   // running | stopped | paused | error
+  double cpu_used_ratio = 4;
+  uint64 ram_used_bytes = 5;
+  uint64 net_in_bps     = 6;
+  uint64 net_out_bps    = 7;
+  uint64 disk_read_iops = 8;
+  uint64 disk_write_iops = 9;
+}
+
+message CommandAck {
+  string command_id = 1;
+  bool   success    = 2;
+  string error      = 3;
+  google_protobuf_Any result = 4;   // optional command-specific result
+}
+
+message VmEvent {
+  string vm_id      = 1;
+  string event_type = 2;   // created | started | stopped | deleted | crashed | migrated
+  string detail     = 3;
+  int64  ts_ms      = 4;
+}
+
+// ─── messages from control plane → agent ────────────────────────────
+message ControlMessage {
+  oneof payload {
+    Command command   = 1;
+    Welcome welcome   = 2;
+  }
+}
+
+message Welcome {
+  string agent_id = 1;
+  uint32 heartbeat_interval_seconds = 2;
+  uint32 telemetry_interval_seconds = 3;
+}
+
+message Command {
+  string command_id  = 1;             // UUID, idempotent
+  oneof body {
+    CreateVm    create_vm    = 10;
+    DeleteVm    delete_vm    = 11;
+    PowerVm     power_vm     = 12;
+    SnapshotVm  snapshot_vm  = 13;
+    SyncFirewall sync_fw     = 14;
+    UpdateAgent update_agent = 15;
+  }
+}
+
+message CreateVm {
+  string vm_id         = 1;
+  uint32 cpu           = 2;
+  uint32 ram_mb        = 3;
+  uint32 disk_gb       = 4;
+  string image_id      = 5;
+  string root_password = 6;
+  string ssh_key       = 7;
+  string hostname      = 8;
+  string vpc_vni       = 9;
+  string mac           = 10;
+  string ipv4          = 11;
+  string ipv6          = 12;
+}
+
+message DeleteVm {
+  string vm_id = 1;
+  bool   purge = 2;
+}
+
+message PowerVm {
+  string vm_id = 1;
+  string action = 2;     // start | stop | reset | shutdown
+}
+
+message SnapshotVm {
+  string vm_id = 1;
+  string name  = 2;
+  bool   create = 3;     // true=create, false=delete
+}
+
+message SyncFirewall {
+  string vm_id = 1;
+  repeated FirewallRule rules = 2;
+}
+
+message FirewallRule {
+  string direction = 1;   // INBOUND | OUTBOUND
+  string protocol  = 2;   // TCP | UDP | ICMP | ALL
+  uint32 port_from = 3;
+  uint32 port_to   = 4;
+  string source    = 5;
+  string action    = 6;   // ACCEPT | DROP | REJECT
+  uint32 priority  = 7;
+}
+
+message UpdateAgent {
+  string version = 1;
+  string url     = 2;
+  string sha256  = 3;
+}
+
+// Placeholder reference until we wire google/protobuf/any.proto in via buf
+message google_protobuf_Any {
+  string type_url = 1;
+  bytes  value    = 2;
+}
