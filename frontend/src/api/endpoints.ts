@@ -71,6 +71,48 @@ export const catalogAPI = {
   getOS: () => api.get<{ data: OsTemplate[] }>('/os'),
 }
 
+// ─── BLOG (public) ───────────────────────────────────────────
+export interface BlogPostSummary {
+  id: string
+  slug: string
+  title: string
+  excerpt: string
+  cover: string | null
+  category: string
+  authorName: string
+  authorRole: string
+  readMinutes: number
+  tags: string[]
+  publishedAt: string
+}
+export interface BlogPostDetail extends BlogPostSummary {
+  content: string
+}
+
+export const blogAPI = {
+  list: (opts: { category?: string; tag?: string; limit?: number } = {}) => {
+    const q = new URLSearchParams()
+    if (opts.category) q.append('category', opts.category)
+    if (opts.tag) q.append('tag', opts.tag)
+    if (opts.limit) q.append('limit', String(opts.limit))
+    return api.get<{ data: BlogPostSummary[] }>(`/blog${q.toString() ? `?${q}` : ''}`)
+  },
+  get: (slug: string) => api.get<{ data: BlogPostDetail }>(`/blog/${slug}`),
+}
+
+// ─── PLATFORM (public stats / modules) ───────────────────────
+export interface PlatformStats {
+  serversDeployedToday: number
+  activeServers: number
+  regionsOnline: number
+  lastDeploySeconds: number | null
+  totalUsers: number
+  uptimePercent: number
+}
+export const platformAPI = {
+  getStats: () => api.get<{ data: PlatformStats }>('/platform/stats'),
+}
+
 // ─── BILLING ─────────────────────────────────────────────────
 export const billingAPI = {
   getInvoices: () => api.get<{ data: Invoice[] }>('/billing/invoices'),

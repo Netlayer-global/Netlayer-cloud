@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { Check, Eye, EyeOff, RefreshCw, Server as ServerIcon } from 'lucide-react'
+import { Check, Eye, EyeOff, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { catalogAPI, serverAPI, sshAPI } from '../api/endpoints'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
-import { Spinner } from '../components/ui/Spinner'
 import { cn, formatCurrency } from '../lib/utils'
-import { getSocket } from '../lib/socket'
 import { AddCreditModal } from '../components/billing/AddCreditModal'
+import { DeployProgress } from '../components/DeployProgress'
 import { useAuthStore } from '../store/authStore'
 import type { Plan, Region, OsTemplate } from '../types'
 
@@ -39,7 +38,6 @@ export default function DeployServer() {
   const [rootPassword, setRootPassword] = useState(generatePassword())
   const [showPassword, setShowPassword] = useState(false)
   const [provisioning, setProvisioning] = useState(false)
-  const [provisionStatus, setProvisionStatus] = useState<string>('PENDING')
   const [provisionedId, setProvisionedId] = useState<string | null>(null)
   const [topUpOpen, setTopUpOpen] = useState(false)
   const [topUpShortfall, setTopUpShortfall] = useState<number | undefined>()
@@ -78,25 +76,7 @@ export default function DeployServer() {
     onSuccess: (res) => {
       const serverId = res.data.data.id
       setProvisionedId(serverId)
-
-      const socket = getSocket()
-      socket.emit('subscribe:server', serverId)
-      socket.on('server:status', (payload: any) => {
-        if (payload.serverId === serverId) {
-          setProvisionStatus(payload.status)
-          if (payload.status === 'RUNNING') {
-            setTimeout(() => {
-              socket.emit('unsubscribe:server', serverId)
-              socket.off('server:status')
-              navigate(`/dashboard/servers/${serverId}`)
-            }, 1500)
-          }
-          if (payload.status === 'ERROR') {
-            toast.error('Provisioning failed')
-            setProvisioning(false)
-          }
-        }
-      })
+      // DeployProgress overlay handles socket subscription, progress UI, and redirect.
     },
     onError: (e: any) => {
       const code = e.response?.data?.code
@@ -129,7 +109,6 @@ export default function DeployServer() {
   const handleDeploy = () => {
     if (!stepValid.Configure || !plan || !region || !os) return
     setProvisioning(true)
-    setProvisionStatus('PENDING')
     create.mutate()
   }
 
@@ -140,12 +119,18 @@ export default function DeployServer() {
     }
   }, [regions, region])
 
-  if (provisioning) {
-    return <ProvisioningOverlay status={provisionStatus} />
-  }
-
   return (
     <div className="max-w-7xl mx-auto">
+      <DeployProgress
+        open={provisioning}
+        serverId={provisionedId}
+        onSuccess={(serverId) => navigate(`/dashboard/servers/${serverId}`)}
+        onCancel={() => {
+          setProvisioning(false)
+          setProvisionedId(null)
+        }}
+      />
+
       <div className="mb-6">
         <h1 className="text-2xl font-medium text-[#e8e8e6]">Deploy server</h1>
         <p className="text-sm text-[#a0a09e] mt-1">Configure and provision a new server.</p>
@@ -181,7 +166,7 @@ export default function DeployServer() {
             </span>
             {s}
             {i < STEPS.length - 1 && (
-              <span className="text-[#333433] mx-1">→</span>
+              <span className="text-[#333433] mx-1">â†’</span>
             )}
           </button>
         ))}
@@ -225,7 +210,7 @@ export default function DeployServer() {
             </Button>
             {stepIdx < STEPS.length - 1 && (
               <Button onClick={handleNext} disabled={!stepValid[STEPS[stepIdx]]}>
-                Continue →
+                Continue â†’
               </Button>
             )}
           </div>
@@ -235,7 +220,7 @@ export default function DeployServer() {
         <div className="bg-[#1e1f1e] border border-[#2a2b2a] rounded-lg p-5 lg:sticky lg:top-20">
           <h3 className="font-medium text-[#e8e8e6] mb-4">Order summary</h3>
           <div className="space-y-3 text-sm">
-            <SummaryRow label="Region" value={region ? `${region.flag} ${region.city}` : '—'} />
+            <SummaryRow label="Region" value={region ? `${region.flag} ${region.city}` : 'â€”'} />
             <SummaryRow
               label="Plan"
               value={
@@ -243,28 +228,28 @@ export default function DeployServer() {
                   <span>
                     {plan.name}
                     <div className="text-[11px] text-[#6a6a68]">
-                      {plan.cpu} CPU · {plan.ramGB}GB · {plan.diskGB}GB
+                      {plan.cpu} CPU Â· {plan.ramGB}GB Â· {plan.diskGB}GB
                     </div>
                   </span>
                 ) : (
-                  '—'
+                  'â€”'
                 )
               }
             />
-            <SummaryRow label="OS" value={os ? os.name : '—'} />
-            <SummaryRow label="Hostname" value={<span className="font-mono text-xs">{hostname || '—'}</span>} />
+            <SummaryRow label="OS" value={os ? os.name : 'â€”'} />
+            <SummaryRow label="Hostname" value={<span className="font-mono text-xs">{hostname || 'â€”'}</span>} />
           </div>
           <div className="border-t border-[#2a2b2a] my-4 pt-4 space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-[#a0a09e]">Monthly</span>
               <span className="text-[#e8e8e6] font-medium">
-                {plan ? `${formatCurrency(plan.priceInr)}/mo` : '—'}
+                {plan ? `${formatCurrency(plan.priceInr)}/mo` : 'â€”'}
               </span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-[#6a6a68]">Hourly</span>
               <span className="text-[#a0a09e]">
-                {plan ? `${formatCurrency(plan.priceHourly)}/hr` : '—'}
+                {plan ? `${formatCurrency(plan.priceHourly)}/hr` : 'â€”'}
               </span>
             </div>
           </div>
@@ -304,7 +289,7 @@ function SummaryRow({ label, value }: { label: string; value: React.ReactNode })
   )
 }
 
-// ─── Step 1: Location ────────────────────────────────────────
+// â”€â”€â”€ Step 1: Location â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Step1Location({
   regions,
   selected,
@@ -361,7 +346,7 @@ function Step1Location({
   )
 }
 
-// ─── Step 2: Plan ────────────────────────────────────────────
+// â”€â”€â”€ Step 2: Plan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Step2Plan({
   plans,
   selected,
@@ -420,7 +405,7 @@ function Step2Plan({
   )
 }
 
-// ─── Step 3: OS ──────────────────────────────────────────────
+// â”€â”€â”€ Step 3: OS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Step3OS({
   linux,
   windows,
@@ -476,7 +461,7 @@ function Step3OS({
   )
 }
 
-// ─── Step 4: Configure ───────────────────────────────────────
+// â”€â”€â”€ Step 4: Configure â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Step4Configure({
   hostname,
   setHostname,
@@ -566,54 +551,6 @@ function Step4Configure({
           {rootPassword.length < 8 && (
             <p className="text-xs text-red-400 mt-1">Password must be at least 8 characters.</p>
           )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Provisioning overlay ─────────────────────────────────────
-function ProvisioningOverlay({ status }: { status: string }) {
-  const steps = ['PENDING', 'BUILDING', 'RUNNING']
-  const currentIdx = steps.indexOf(status)
-
-  return (
-    <div className="fixed inset-0 bg-[#0d0e0d]/95 backdrop-blur z-50 flex items-center justify-center p-4">
-      <div className="text-center max-w-sm">
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-[#e0fe56] rounded-md flex items-center justify-center text-[#0d0e0d] font-bold">
-            <ServerIcon size={20} />
-          </div>
-          <span className="text-lg font-medium">NetLayer</span>
-        </div>
-        <Spinner size={32} color="lime" className="mb-6" />
-        <h2 className="text-xl font-medium text-[#e8e8e6] mb-2">Deploying your server…</h2>
-        <p className="text-sm text-[#a0a09e] mb-8">
-          {status === 'RUNNING' ? 'All set! Redirecting…' : 'This usually takes under a minute.'}
-        </p>
-        <div className="space-y-2 text-left">
-          {steps.map((s, i) => (
-            <div
-              key={s}
-              className={cn(
-                'flex items-center gap-3 p-2.5 rounded border',
-                i < currentIdx
-                  ? 'border-green-900/60 bg-green-950/20 text-green-400'
-                  : i === currentIdx
-                  ? 'border-[#e0fe56]/40 bg-[#e0fe56]/5 text-[#e0fe56]'
-                  : 'border-[#2a2b2a] text-[#6a6a68]'
-              )}
-            >
-              {i < currentIdx ? (
-                <Check size={14} />
-              ) : i === currentIdx ? (
-                <Spinner size={12} color="lime" />
-              ) : (
-                <span className="w-3 h-3 rounded-full border border-current" />
-              )}
-              <span className="capitalize text-sm">{s.toLowerCase()}</span>
-            </div>
-          ))}
         </div>
       </div>
     </div>

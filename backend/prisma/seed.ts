@@ -445,6 +445,191 @@ echo "Mastodon needs further interactive setup as the mastodon user. See: https:
   // No active incidents at seed time — status page derives "all operational"
   // from the absence of unresolved StatusIncident rows.
 
+  // ─── BLOG POSTS ─────────────────────────────────────
+  const posts = [
+    {
+      slug: 'introducing-netlayer-gpu-cloud',
+      title: 'Introducing NetLayer GPU Cloud',
+      excerpt:
+        'On-demand A100 and H100 instances, billed by the second. Built for ML workloads that need to spin up fast and pay only for what they use.',
+      cover: null,
+      category: 'product',
+      authorName: 'Aman Singh',
+      authorRole: 'Product Lead',
+      readMinutes: 4,
+      tags: ['gpu', 'launch', 'ai-ml'],
+      publishedAt: new Date('2026-05-20T09:00:00Z'),
+      content: `## What we're shipping
+
+Today we're rolling out **NetLayer GPU Cloud** — A100 and H100 instances available on-demand, billed by the second, in five regions to start (Mumbai, Singapore, Frankfurt, NYC, and São Paulo).
+
+If you've ever waited 20 minutes for a hyperscaler to allocate a single A100, you'll appreciate this part: our average GPU provisioning time on launch day is **38 seconds**. We get there with pre-warmed pools, linked clones, and a scheduler that's aware of NVLink topology.
+
+## Per-second billing, no commitments
+
+A 5-minute fine-tune costs you about $0.30 on a single A100 — not the $30 you'd pay for an hour minimum elsewhere. We round up only when you cross a second boundary, and you can pause an instance to stop billing without losing the snapshot.
+
+## How it's built
+
+Each GPU host runs PCIe passthrough on top of our standard QEMU/KVM stack. NVIDIA drivers, CUDA 12.4, cuDNN, and NCCL are baked into the golden image — your VM boots into a working ML environment with **PyTorch, TensorFlow, and JAX preinstalled**.
+
+For multi-GPU workloads you can ask the scheduler for "8x H100 with NVLink", and we'll co-locate the VM on a host where the topology actually exists. No more debugging \`p2p_bandwidth_test\` results that looked too good to be true.
+
+## What's next
+
+- 4-GPU and 8-GPU "DGX-style" SKUs (June)
+- Spot pricing with a 70% discount and 30s preemption notice (July)
+- Reserved instances with committed-use discounts (August)
+
+[Try it now → /pricing#gpu](/pricing)`,
+    },
+    {
+      slug: 'bare-metal-vs-vps-for-databases',
+      title: 'Bare metal vs VPS: when each one wins for databases',
+      excerpt:
+        'Virtualisation overhead is small for most workloads, but for databases that saturate the NVMe bus, dedicated hardware wins by a measurable margin. Here\'s the actual benchmark.',
+      cover: null,
+      category: 'engineering',
+      authorName: 'Riya Patel',
+      authorRole: 'Senior Infrastructure Engineer',
+      readMinutes: 7,
+      tags: ['benchmark', 'storage', 'database'],
+      publishedAt: new Date('2026-05-12T08:00:00Z'),
+      content: `## The myth and the reality
+
+Conventional wisdom says VPSes are "fine for everything that isn't a database". That's not quite true. We benchmarked Postgres 16 on identical hardware — once virtualised, once bare-metal — to see exactly when virtualisation actually costs you.
+
+## Setup
+
+- **Hardware:** AMD EPYC 9354P (32 cores), 256 GB RAM, 4× 3.84 TB NVMe (RAID-10)
+- **VPS:** 16 vCPU / 64 GB RAM allocation, NVMe disks passed through with virtio-scsi
+- **Workload:** pgbench, scale 1000 (~15 GB), 64 clients, 10 minutes
+
+| Metric                         | Bare metal | VPS (virtio-scsi) | Delta  |
+|--------------------------------|-----------:|------------------:|-------:|
+| TPS (read-write)               |   42,310   |          37,820   | -10.6% |
+| TPS (read-only)                |  118,400   |         115,900   |  -2.1% |
+| p99 latency (rw, ms)           |     4.2    |             5.6   | +33%   |
+| Crash recovery (1 GB WAL)      |     1.8s   |             2.4s  | +33%   |
+
+## What actually matters
+
+For **read-heavy workloads** the gap is barely noticeable — 2% throughput, no real difference in tail latency. The hypervisor's I/O scheduling rarely matters when the working set fits in cache.
+
+For **write-heavy workloads** the picture flips. Sustained \`fsync\`-heavy traffic exposes the cost of virtio's interrupt mediation, and tail latency suffers more than mean throughput. If your replication lag SLO is under 50 ms or you run a financial ledger, you'll feel this.
+
+## Recommendation
+
+Use VPS for application servers, caches, queues, dev databases, and most analytical workloads. Reach for bare metal when:
+
+1. You're running a **primary OLTP database** with strict tail-latency SLOs.
+2. Your WAL throughput exceeds **500 MB/s sustained**.
+3. You have **hard compliance requirements** that forbid shared tenancy.
+
+We support both side-by-side, so you can mix freely — put your Postgres primary on bare metal, replicate to two VPS replicas, and run the app tier next to them.`,
+    },
+    {
+      slug: 'how-we-hit-thirty-second-deploys',
+      title: 'How we cut VPS deploy time from 90s to 30s',
+      excerpt:
+        'Linked clones, per-node image caches, cloud-init seed injection, and a smart scheduler. The full story of how we redesigned our control plane.',
+      cover: null,
+      category: 'engineering',
+      authorName: 'Vikram Iyer',
+      authorRole: 'Staff Engineer',
+      readMinutes: 9,
+      tags: ['proxmox', 'performance', 'control-plane'],
+      publishedAt: new Date('2026-04-28T11:00:00Z'),
+      content: `## The starting point
+
+Six months ago a typical VPS deploy on NetLayer took **88 seconds** end-to-end. That number broke down roughly like this:
+
+- ISO download: 24 s
+- VM create + first boot: 38 s
+- cloud-init (post-boot): 18 s
+- IP allocation + DNS: 8 s
+
+It was fine. It wasn't *good*. Latitude.sh was hitting 30s. Vultr was around 60. We wanted to be the fast option, not the average option.
+
+## What changed
+
+### 1. Golden images via Packer
+
+We replaced ISO installs with **Packer-built qcow2 templates**. Every Friday a CI job rebuilds Ubuntu 22.04, Debian 12, AlmaLinux 9, and Windows Server 2022 against the latest security advisories, then pushes the artifacts to every node's local store.
+
+Result: **24 s saved**, every deploy.
+
+### 2. Linked clones
+
+Instead of full disk copies, we use \`qm clone --full 0\`. The new VM shares the backing disk with the template via copy-on-write. The clone operation itself takes about a second.
+
+Result: **20 s saved** vs the old full-clone path.
+
+### 3. cloud-init seed via SMBIOS
+
+Cloud-init traditionally writes user-data to a NoCloud datasource on a virtual ISO that the VM mounts at boot. Mounting that ISO adds a couple of seconds. We switched to **SMBIOS string injection** — the seed lives in firmware metadata that's already in memory by the time systemd starts.
+
+Result: **3 s saved**, cleaner first boot.
+
+### 4. Async DNS publication
+
+We were waiting for the Cloudflare A-record to propagate before marking the VM \`RUNNING\`. That's not actually required for the deploy to succeed — the VM is reachable by IP immediately. We moved DNS publication to a background reconciler that runs out-of-band.
+
+Result: **6 s saved** from user-perceived deploy time.
+
+### 5. Capacity-aware scheduler
+
+Rather than picking the first node with capacity, the scheduler now ranks candidates by **(free CPU, free RAM, NVMe utilisation, recent deploy queue depth)** and picks the best. That avoids stampedes onto warm nodes during a flash-sale.
+
+Result: **5–10 s avoided** on the long tail.
+
+## The new numbers
+
+P50: **31 s**. P95: **44 s**. P99: **58 s**, mostly because of corner cases where guest-agent reporting is slow. We're still working on the long tail.
+
+## What's next
+
+- Single-digit-second deploys for "cold" customers using **memory-snapshot restore**.
+- Pre-allocated **warm pools** for the most common (region, plan) combinations.
+- A public **deploy benchmark suite** that anyone can run and contribute results to.
+
+Try it yourself — sign up, hit "Deploy", and watch the timer.`,
+    },
+  ]
+  for (const p of posts) {
+    await prisma.blogPost.upsert({
+      where: { slug: p.slug },
+      update: {
+        title: p.title,
+        excerpt: p.excerpt,
+        cover: p.cover,
+        category: p.category,
+        authorName: p.authorName,
+        authorRole: p.authorRole,
+        readMinutes: p.readMinutes,
+        tags: j(p.tags),
+        publishedAt: p.publishedAt,
+        content: p.content,
+        published: true,
+      },
+      create: {
+        slug: p.slug,
+        title: p.title,
+        excerpt: p.excerpt,
+        cover: p.cover,
+        category: p.category,
+        authorName: p.authorName,
+        authorRole: p.authorRole,
+        readMinutes: p.readMinutes,
+        tags: j(p.tags),
+        publishedAt: p.publishedAt,
+        content: p.content,
+        published: true,
+      },
+    })
+  }
+  console.log(`✓ ${posts.length} blog posts`)
+
   console.log('✅ Seed complete!')
   console.log('')
   console.log('  super@netlayer.com   / Super@123456   (SUPER_ADMIN)')

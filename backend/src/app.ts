@@ -35,6 +35,8 @@ import adminStatusRoutes from './routes/admin-status.routes'
 import abuseRoutes from './routes/abuse.routes'
 import storageRoutes, { storagePublicRouter } from './routes/storage.routes'
 import platformRoutes from './routes/platform.routes'
+import platformStatsRoutes from './routes/platformStats.routes'
+import blogRoutes from './routes/blog.routes'
 import volumesRoutes from './routes/volumes.routes'
 import loadBalancersRoutes from './routes/loadBalancers.routes'
 import databasesRoutes from './routes/databases.routes'
@@ -107,6 +109,8 @@ app.use('/api', planRoutes)
 app.use('/api/status', statusRoutes)
 app.use('/api/abuse', abuseRoutes)
 app.use('/api/platform', platformRoutes)
+app.use('/api/platform', platformStatsRoutes)
+app.use('/api/blog', blogRoutes)
 app.use('/api/marketplace', marketplaceRoutes)
 
 // ─── Auth ───────────────────────────────────────────────────────────

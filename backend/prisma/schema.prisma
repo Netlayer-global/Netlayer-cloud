@@ -243,6 +243,7 @@ model Server {
   backupEnabled  Boolean      @default(false)
   tags           String       @default("[]")
   notes          String?
+  metadata       String?      // JSON: { deployTimeSeconds, fastDeploy, baseTemplateVmid, ... }
   dnsRecordId    String?
   zabbixHostId   String?
   nextBillDate   DateTime?
@@ -749,4 +750,26 @@ model WebhookDelivery {
 
   @@index([status, createdAt])
   @@index([subscriptionId])
+}
+
+
+// ─── BLOG ───────────────────────────────────────────────────
+model BlogPost {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  excerpt     String
+  content     String                              // Markdown
+  cover       String?                             // optional hero image URL
+  category    String    @default("engineering")   // engineering | product | guides | announcements
+  authorName  String    @default("NetLayer Team")
+  authorRole  String    @default("Engineering")
+  readMinutes Int       @default(4)
+  tags        String    @default("[]")            // JSON
+  published   Boolean   @default(true)
+  publishedAt DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([published, publishedAt])
 }

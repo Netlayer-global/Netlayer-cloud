@@ -7,6 +7,7 @@ import smsService from './sms.service'
 import grafanaService from './grafana.service'
 import zabbixService from './zabbix.service'
 import nodeSelector from './nodeSelector.service'
+import fastDeployService from './fastDeploy.service'
 import { emitServerStatus, emitToAdmin } from './socket.service'
 import { AppError } from '../utils/errors'
 import logger from '../utils/logger'
@@ -181,22 +182,44 @@ export class ServerService {
     emitServerStatus(server.id, { status: 'PENDING' })
     emitToAdmin('admin:server_deployed', { serverId: server.id, userId })
 
-    // 7. Hand off to the workflow engine.
-    // The deploy_server workflow is idempotent, persistently checkpointed,
-    // and self-compensating on failure. Mid-deploy crashes get resumed by
-    // the reconciler (see jobs/handlers/reconciler.handler.ts).
-    void startWorkflow(DeployServerWorkflow, {
-      id: `deploy-${server.id}`,
-      resourceId: server.id,
-      context: {
-        serverId: server.id,
-        userId,
-        hostname,
-        rootPassword,
-        sshPublicKey,
-      },
-    }).catch((err) => {
-      logger.error({ err, serverId: server.id }, 'failed to start deploy workflow')
+    // 7. Hand off to the fast-deploy pipeline. Targets ~30s in production
+    // and a realistic ~10s in mock mode. The pipeline emits granular
+    // Socket.io events at every step which the DeployProgress overlay
+    // listens to. On hard failure we fall back to the durable workflow
+    // engine so the request still eventually succeeds.
+    setImmediate(() => {
+      fastDeployService
+        .deploy({
+          serverId: server.id,
+          userId,
+          hostname,
+          rootPassword,
+          sshPublicKey,
+        })
+        .catch((err) => {
+          logger.warn(
+            { err: err.message, serverId: server.id },
+            'fast deploy failed — handing off to durable workflow'
+          )
+          // Reset to PENDING so the workflow can take over without surfacing
+          // the transient error to the user.
+          prisma.server
+            .update({ where: { id: server.id }, data: { status: 'PENDING' } })
+            .catch(() => {})
+          startWorkflow(DeployServerWorkflow, {
+            id: `deploy-${server.id}`,
+            resourceId: server.id,
+            context: {
+              serverId: server.id,
+              userId,
+              hostname,
+              rootPassword,
+              sshPublicKey,
+            },
+          }).catch((err2) => {
+            logger.error({ err: err2, serverId: server.id }, 'fallback workflow also failed')
+          })
+        })
     })
 
     return server
