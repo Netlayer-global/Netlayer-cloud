@@ -36,6 +36,9 @@ import storageRoutes, { storagePublicRouter } from './routes/storage.routes'
 import platformRoutes from './routes/platform.routes'
 import volumesRoutes from './routes/volumes.routes'
 import loadBalancersRoutes from './routes/loadBalancers.routes'
+import databasesRoutes from './routes/databases.routes'
+import vpcRoutes from './routes/vpc.routes'
+import dnsRoutes from './routes/dns.routes'
 
 const app = express()
 const httpServer = createServer(app)
@@ -110,6 +113,9 @@ app.use('/api/announcements', authMiddleware, announcementRoutes)
 app.use('/api/storage',       authMiddleware, idempotency(), storageRoutes)
 app.use('/api/volumes',       authMiddleware, idempotency(), volumesRoutes)
 app.use('/api/load-balancers', authMiddleware, idempotency(), loadBalancersRoutes)
+app.use('/api/databases',     authMiddleware, idempotency(), databasesRoutes)
+app.use('/api/vpc',           authMiddleware, idempotency(), vpcRoutes)
+app.use('/api/dns',           authMiddleware, idempotency(), dnsRoutes)
 
 // ─── Admin ──────────────────────────────────────────────────────────
 app.use('/api/admin', authMiddleware, idempotency(), adminRoutes)

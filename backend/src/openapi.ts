@@ -153,6 +153,9 @@ export const openapiSpec = {
     { name: 'Storage' },
     { name: 'Block Volumes' },
     { name: 'Load Balancers' },
+    { name: 'Managed Databases' },
+    { name: 'VPC' },
+    { name: 'DNS' },
   ],
   paths: {
     '/healthz': {
@@ -635,6 +638,50 @@ export const openapiSpec = {
     },
     '/api/load-balancers/{id}/targets/{targetId}': {
       delete: { tags: ['Load Balancers'], summary: 'Remove target', responses: { '200': { description: 'Removed' } } },
+    },
+    '/api/databases': {
+      get: { tags: ['Managed Databases'], summary: 'List databases', responses: { '200': { description: 'OK' } } },
+      post: { tags: ['Managed Databases'], summary: 'Create database', responses: { '201': { description: 'Created' } } },
+    },
+    '/api/databases/{id}': {
+      get: { tags: ['Managed Databases'], summary: 'Get database', responses: { '200': { description: 'OK' } } },
+      patch: { tags: ['Managed Databases'], summary: 'Update', responses: { '200': { description: 'OK' } } },
+      delete: { tags: ['Managed Databases'], summary: 'Delete', responses: { '200': { description: 'Deleted' } } },
+    },
+    '/api/databases/{id}/rotate-password': {
+      post: { tags: ['Managed Databases'], summary: 'Rotate password', responses: { '200': { description: 'OK' } } },
+    },
+    '/api/databases/engines': {
+      get: { tags: ['Managed Databases'], summary: 'List supported engines + versions', responses: { '200': { description: 'OK' } } },
+    },
+    '/api/vpc': {
+      get: { tags: ['VPC'], summary: 'List VPCs', responses: { '200': { description: 'OK' } } },
+      post: { tags: ['VPC'], summary: 'Create VPC', responses: { '201': { description: 'Created' } } },
+    },
+    '/api/vpc/{id}': {
+      get: { tags: ['VPC'], summary: 'Get VPC', responses: { '200': { description: 'OK' } } },
+      delete: { tags: ['VPC'], summary: 'Delete VPC', responses: { '200': { description: 'Deleted' } } },
+    },
+    '/api/vpc/{id}/members': {
+      post: { tags: ['VPC'], summary: 'Attach server', responses: { '201': { description: 'Attached' } } },
+    },
+    '/api/vpc/{id}/members/{memberId}': {
+      delete: { tags: ['VPC'], summary: 'Detach server', responses: { '200': { description: 'Detached' } } },
+    },
+    '/api/dns/zones': {
+      get: { tags: ['DNS'], summary: 'List zones', responses: { '200': { description: 'OK' } } },
+      post: { tags: ['DNS'], summary: 'Add zone', responses: { '201': { description: 'Created' } } },
+    },
+    '/api/dns/zones/{id}': {
+      get: { tags: ['DNS'], summary: 'Get zone with records', responses: { '200': { description: 'OK' } } },
+      delete: { tags: ['DNS'], summary: 'Delete zone', responses: { '200': { description: 'Deleted' } } },
+    },
+    '/api/dns/zones/{id}/records': {
+      post: { tags: ['DNS'], summary: 'Add DNS record', responses: { '201': { description: 'Created' } } },
+    },
+    '/api/dns/zones/{id}/records/{recordId}': {
+      patch: { tags: ['DNS'], summary: 'Update record', responses: { '200': { description: 'OK' } } },
+      delete: { tags: ['DNS'], summary: 'Delete record', responses: { '200': { description: 'Deleted' } } },
     },
   },
 } as const

@@ -30,6 +30,9 @@ import Settings from './pages/Settings'
 import ObjectStorage from './pages/ObjectStorage'
 import BlockVolumes from './pages/BlockVolumes'
 import LoadBalancers from './pages/LoadBalancers'
+import ManagedDatabases from './pages/ManagedDatabases'
+import VPCPage from './pages/VPC'
+import DnsZones from './pages/DnsZones'
 import Placeholder from './pages/Placeholder'
 
 import AdminLayout from './pages/Admin/Layout'
@@ -105,6 +108,9 @@ export default function App() {
             <Route path="storage/object" element={<ModuleGuard module="objectStorage"><ObjectStorage /></ModuleGuard>} />
             <Route path="storage/block"  element={<ModuleGuard module="blockStorage"><BlockVolumes /></ModuleGuard>} />
             <Route path="load-balancers" element={<ModuleGuard module="loadBalancers"><LoadBalancers /></ModuleGuard>} />
+            <Route path="databases"      element={<ModuleGuard module="managedDb"><ManagedDatabases /></ModuleGuard>} />
+            <Route path="vpc"            element={<ModuleGuard module="vpc"><VPCPage /></ModuleGuard>} />
+            <Route path="dns"            element={<ModuleGuard module="dns"><DnsZones /></ModuleGuard>} />
             <Route path="network"   element={<Placeholder title="Network"         description="Private networks, floating IPs, firewalls." icon={<Network size={28} />} />} />
             <Route path="gpu"       element={<ModuleGuard module="gpu"><Placeholder title="GPU instances"   description="On-demand GPUs for AI / ML workloads."     icon={<Monitor size={28} />} /></ModuleGuard>} />
             <Route path="team"      element={<ModuleGuard module="team"><Placeholder title="Team settings"   description="Invite teammates and manage roles."        icon={<Users size={28} />} /></ModuleGuard>} />
