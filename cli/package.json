@@ -25,6 +25,6 @@
     "@types/inquirer": "8.2.10",
     "@types/node": "22.10.5",
     "ts-node": "10.9.2",
-    "typescript": "5.7.2"
+    "typescript": "6.0.3"
   }
 }
