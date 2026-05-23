@@ -10,6 +10,7 @@ import swaggerUi from 'swagger-ui-express'
 import { config } from './config/env'
 import errorHandler from './middleware/errorHandler'
 import { authMiddleware } from './middleware/auth'
+import { adminOnly } from './middleware/auth'
 import { requestContext } from './middleware/requestContext'
 import { idempotency } from './middleware/idempotency'
 import { httpMetricsMiddleware, metricsHandler } from './observability/metrics'
@@ -37,6 +38,18 @@ import storageRoutes, { storagePublicRouter } from './routes/storage.routes'
 import platformRoutes from './routes/platform.routes'
 import platformStatsRoutes from './routes/platformStats.routes'
 import blogRoutes from './routes/blog.routes'
+// Round 18 routes
+import floatingIpRoutes from './routes/floatingIp.routes'
+import alertRulesRoutes from './routes/alertRules.routes'
+import snapshotsAggregateRoutes from './routes/snapshots.routes'
+import promoRoutes from './routes/promo.routes'
+import promoAdminRoutes from './routes/promoAdmin.routes'
+import ipPoolRoutes from './routes/ipPool.routes'
+import isoRoutes from './routes/iso.routes'
+import capacityRoutes from './routes/capacity.routes'
+import healthAdminRoutes from './routes/adminHealth.routes'
+import communicationsRoutes from './routes/communications.routes'
+import waitlistRoutes from './routes/waitlist.routes'
 import volumesRoutes from './routes/volumes.routes'
 import loadBalancersRoutes from './routes/loadBalancers.routes'
 import databasesRoutes from './routes/databases.routes'
@@ -112,6 +125,7 @@ app.use('/api/platform', platformRoutes)
 app.use('/api/platform', platformStatsRoutes)
 app.use('/api/blog', blogRoutes)
 app.use('/api/marketplace', marketplaceRoutes)
+app.use('/api/waitlist', waitlistRoutes)
 
 // ─── Auth ───────────────────────────────────────────────────────────
 app.use('/api/auth', idempotency(), authRoutes)
@@ -135,8 +149,22 @@ app.use('/api/support',       authMiddleware, idempotency(), ticketsRoutes)
 app.use('/api/referrals',     authMiddleware, referralRoutes)
 app.use('/api/webhooks-subs', authMiddleware, idempotency(), webhookSubsRoutes)
 
+// Round 18 user-protected routes
+app.use('/api/floating-ips',  authMiddleware, idempotency(), floatingIpRoutes)
+app.use('/api/alert-rules',   authMiddleware, idempotency(), alertRulesRoutes)
+app.use('/api/snapshots',     authMiddleware, snapshotsAggregateRoutes)
+app.use('/api/billing/promo', authMiddleware, idempotency(), promoRoutes)
+
 // ─── Admin ──────────────────────────────────────────────────────────
 app.use('/api/admin', authMiddleware, idempotency(), adminRoutes)
+
+// Round 18 admin-only sub-routers (rely on adminOnly mw inside each router)
+app.use('/api/admin/ip-pools',       authMiddleware, adminOnly, ipPoolRoutes)
+app.use('/api/admin/iso',            authMiddleware, adminOnly, isoRoutes)
+app.use('/api/admin/promos',         authMiddleware, adminOnly, promoAdminRoutes)
+app.use('/api/admin/capacity',       authMiddleware, adminOnly, capacityRoutes)
+app.use('/api/admin/health',         authMiddleware, adminOnly, healthAdminRoutes)
+app.use('/api/admin/communications', authMiddleware, adminOnly, communicationsRoutes)
 
 // ─── 404 + error handler ────────────────────────────────────────────
 app.use((req, res) => {

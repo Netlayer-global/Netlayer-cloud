@@ -15,6 +15,7 @@ export interface User {
   language?: string
   creditLimit?: number
   twoFactorEnabled?: boolean
+  onboardingDone?: boolean
   createdAt: string
   lastLoginAt?: string | null
 }

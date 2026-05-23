@@ -43,6 +43,12 @@ import Marketplace from './pages/Marketplace'
 import Monitoring from './pages/Monitoring'
 import Activity from './pages/Activity'
 import Placeholder from './pages/Placeholder'
+// Round 18 dashboard pages
+import FloatingIPs from './pages/FloatingIPs'
+import Alerts from './pages/Alerts'
+import Snapshots from './pages/Snapshots'
+import Onboarding from './pages/Onboarding'
+import Console from './pages/Console'
 
 import AdminLayout from './pages/Admin/Layout'
 import AdminLogin from './pages/Admin/Login'
@@ -60,6 +66,13 @@ import AdminSettings from './pages/Admin/Settings'
 import AdminWorkflows from './pages/Admin/Workflows'
 import AdminStatusPage from './pages/Admin/StatusManagement'
 import AdminAbuse from './pages/Admin/Abuse'
+// Round 18 admin pages
+import IpPoolsAdmin from './pages/Admin/IpPools'
+import PromoAdmin from './pages/Admin/PromoAdmin'
+import CapacityPlanning from './pages/Admin/CapacityPlanning'
+import GlobalHealth from './pages/Admin/GlobalHealth'
+import Communications from './pages/Admin/Communications'
+import IsoLibrary from './pages/Admin/IsoLibrary'
 
 import Referrals from './pages/Referrals'
 import Support from './pages/Support'
@@ -105,6 +118,26 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
+          {/* Console — full-screen, no layout, but auth required */}
+          <Route
+            path="/console"
+            element={
+              <ProtectedRoute>
+                <Console />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Onboarding — auth required, full-screen */}
+          <Route
+            path="/dashboard/onboarding"
+            element={
+              <ProtectedRoute>
+                <Onboarding />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Dashboard */}
           <Route
             path="/dashboard"
@@ -139,6 +172,10 @@ export default function App() {
             <Route path="referrals"      element={<ModuleGuard module="referrals"><Referrals /></ModuleGuard>} />
             <Route path="support"        element={<ModuleGuard module="support"><Support /></ModuleGuard>} />
             <Route path="support/:id"    element={<ModuleGuard module="support"><Support /></ModuleGuard>} />
+            {/* Round 18 dashboard routes */}
+            <Route path="floating-ips"   element={<ModuleGuard module="floatingIps"><FloatingIPs /></ModuleGuard>} />
+            <Route path="alerts"         element={<ModuleGuard module="alerts"><Alerts /></ModuleGuard>} />
+            <Route path="snapshots"      element={<ModuleGuard module="snapshots"><Snapshots /></ModuleGuard>} />
             <Route path="network"   element={<Placeholder title="Network"         description="Private networks, floating IPs, firewalls." icon={<Network size={28} />} />} />
             <Route path="gpu"       element={<ModuleGuard module="gpu"><Placeholder title="GPU instances"   description="On-demand GPUs for AI / ML workloads."     icon={<Monitor size={28} />} /></ModuleGuard>} />
             <Route path="team"      element={<ModuleGuard module="team"><Placeholder title="Team settings"   description="Invite teammates and manage roles."        icon={<Users size={28} />} /></ModuleGuard>} />
@@ -170,6 +207,13 @@ export default function App() {
             <Route path="status"        element={<AdminStatusPage />} />
             <Route path="abuse"         element={<AdminAbuse />} />
             <Route path="settings"      element={<AdminSettings />} />
+            {/* Round 18 admin pages */}
+            <Route path="ip-pools"       element={<IpPoolsAdmin />} />
+            <Route path="iso"            element={<IsoLibrary />} />
+            <Route path="promos"         element={<PromoAdmin />} />
+            <Route path="capacity"       element={<CapacityPlanning />} />
+            <Route path="health"         element={<GlobalHealth />} />
+            <Route path="communications" element={<Communications />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

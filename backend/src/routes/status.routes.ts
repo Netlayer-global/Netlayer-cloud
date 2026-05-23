@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { z } from 'zod'
 import prisma from '../utils/prisma'
 import { AppError } from '../utils/errors'
 
@@ -101,6 +102,23 @@ router.get('/incidents/:id', async (req, res, next) => {
     const inc = await prisma.statusIncident.findUnique({ where: { id: req.params.id } })
     if (!inc) throw new AppError('Incident not found', 404, 'NOT_FOUND')
     res.json({ data: serializeIncident(inc) })
+  } catch (e) { next(e) }
+})
+
+/**
+ * Public status subscription. Idempotent on email — re-submitting just no-ops.
+ * Subscribers get notified when admins create/update/resolve incidents
+ * (see routes/statusAdmin.routes.ts).
+ */
+router.post('/subscribe', async (req, res, next) => {
+  try {
+    const { email } = z.object({ email: z.string().email() }).parse(req.body)
+    await prisma.statusSubscriber.upsert({
+      where: { email },
+      create: { email },
+      update: {},
+    })
+    res.json({ data: { message: 'Subscribed!' } })
   } catch (e) { next(e) }
 })
 

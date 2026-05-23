@@ -16,6 +16,11 @@ import {
   LogOut,
   GitBranch,
   Activity,
+  Globe,
+  BarChart,
+  Mail,
+  Tag,
+  Disc3,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '../../store/authStore'
@@ -35,7 +40,13 @@ const NAV: NavItem[] = [
   { to: '/admin/users',         icon: Users,           label: 'Users',         roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT', 'BILLING'] },
   { to: '/admin/servers',       icon: ServerIcon,      label: 'Servers',       roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
   { to: '/admin/nodes',         icon: HardDrive,       label: 'Nodes',         roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/admin/ip-pools',      icon: Globe,           label: 'IP pools',      roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/admin/iso',           icon: Disc3,           label: 'ISO library',   roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/admin/capacity',      icon: BarChart,        label: 'Capacity',      roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/admin/health',        icon: Activity,        label: 'Global health', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/admin/billing',       icon: CreditCard,      label: 'Billing',       roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
+  { to: '/admin/promos',        icon: Tag,             label: 'Promo codes',   roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
+  { to: '/admin/communications', icon: Mail,           label: 'Communications', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/admin/tickets',       icon: MessageSquare,   label: 'Tickets',       roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
   { to: '/admin/abuse',         icon: ShieldAlert,     label: 'Abuse',         roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
   { to: '/admin/workflows',     icon: GitBranch,       label: 'Workflows',     roles: ['SUPER_ADMIN', 'ADMIN'] },

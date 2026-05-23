@@ -29,6 +29,8 @@ import {
   FileText,
   LifeBuoy as TicketIcon,
   Gift,
+  Camera,
+  Radio,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../store/authStore'
@@ -107,9 +109,9 @@ export function Sidebar() {
     isEnabled('servers') || isEnabled('vms') || isEnabled('gpu') ||
     isEnabled('kubernetes') || isEnabled('marketplace')
   const storageShown =
-    isEnabled('objectStorage') || isEnabled('blockStorage') || isEnabled('managedDb')
+    isEnabled('objectStorage') || isEnabled('blockStorage') || isEnabled('managedDb') || isEnabled('snapshots')
   const networkShown =
-    isEnabled('loadBalancers') || isEnabled('dns') || isEnabled('vpc')
+    isEnabled('loadBalancers') || isEnabled('dns') || isEnabled('vpc') || isEnabled('floatingIps')
   const monitoringShown =
     isEnabled('monitoring') || isEnabled('alerts') || isEnabled('logs')
   const accountShown =
@@ -193,6 +195,9 @@ export function Sidebar() {
             {isEnabled('managedDb') && (
               <NavItem to="/dashboard/databases" icon={Database} label="Managed databases" />
             )}
+            {isEnabled('snapshots') && (
+              <NavItem to="/dashboard/snapshots" icon={Camera} label="Snapshots" />
+            )}
           </>
         )}
 
@@ -207,6 +212,9 @@ export function Sidebar() {
             )}
             {isEnabled('vpc') && (
               <NavItem to="/dashboard/vpc" icon={Network} label="VPC & private network" />
+            )}
+            {isEnabled('floatingIps') && (
+              <NavItem to="/dashboard/floating-ips" icon={Radio} label="Floating IPs" />
             )}
           </>
         )}

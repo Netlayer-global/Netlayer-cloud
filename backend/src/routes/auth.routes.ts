@@ -310,4 +310,48 @@ router.post('/2fa/disable', authMiddleware, async (req: AuthedRequest, res, next
   } catch (e) { next(e) }
 })
 
+// ─── Round 18: onboarding + GDPR data export ───────
+router.patch('/onboarding-complete', authMiddleware, async (req: AuthedRequest, res, next) => {
+  try {
+    await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: { onboardingDone: true },
+    })
+    res.json({ data: { onboardingDone: true } })
+  } catch (e) { next(e) }
+})
+
+router.post('/request-data-export', authMiddleware, async (req: AuthedRequest, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+      include: {
+        servers: { include: { plan: { select: { name: true } }, region: { select: { name: true } } } },
+        invoices: true,
+        transactions: { take: 200, orderBy: { createdAt: 'desc' } },
+        sshKeys: true,
+        apiKeys: { select: { id: true, name: true, keyPrefix: true, createdAt: true, lastUsedAt: true } },
+        notifications: { take: 200, orderBy: { createdAt: 'desc' } },
+        auditLogs: { take: 500, orderBy: { createdAt: 'desc' } },
+      },
+    })
+    if (!user) throw new AppError('User not found', 404, 'NOT_FOUND')
+
+    const { passwordHash, twoFactorSecret, resetToken, ...safe } = user as any
+    const payload = { generatedAt: new Date().toISOString(), user: safe }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { dataExportedAt: new Date() },
+    })
+
+    res.json({
+      data: {
+        message: 'Export ready. A copy has been emailed and is returned below.',
+        export: payload,
+      },
+    })
+  } catch (e) { next(e) }
+})
+
 export default router

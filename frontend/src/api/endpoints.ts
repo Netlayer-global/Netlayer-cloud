@@ -113,6 +113,153 @@ export const platformAPI = {
   getStats: () => api.get<{ data: PlatformStats }>('/platform/stats'),
 }
 
+// ─── ROUND 18: FLOATING IPS, ALERTS, SNAPSHOTS, PROMO ──────
+export interface FloatingIp {
+  id: string
+  ip: string
+  rdns: string | null
+  status: 'unassigned' | 'assigned' | 'releasing'
+  region: { id: string; name: string; flag: string; slug: string; countryCode: string }
+  server: { id: string; name: string; hostname: string; ipv4: string | null } | null
+  createdAt: string
+  updatedAt: string
+}
+export interface AlertRule {
+  id: string
+  name: string
+  metric: string
+  condition: 'gt' | 'lt' | 'eq'
+  threshold: number
+  duration: number
+  channels: string[]
+  webhookUrl: string | null
+  isActive: boolean
+  lastFiredAt: string | null
+  server: { id: string; name: string; hostname: string; status: string } | null
+  createdAt: string
+}
+export interface SnapshotSummary {
+  id: string
+  serverId: string
+  name: string
+  size: number
+  status: string
+  createdAt: string
+  server: {
+    id: string
+    name: string
+    hostname: string
+    ipv4: string | null
+    status: string
+    region: { name: string; flag: string; slug: string }
+  }
+}
+export interface PromoSummary {
+  creditAdded: number
+  newBalance: number
+  message: string
+}
+
+export const floatingIpAPI = {
+  list: () => api.get<{ data: FloatingIp[] }>('/floating-ips'),
+  create: (regionId: string) => api.post<{ data: FloatingIp }>('/floating-ips', { regionId }),
+  assign: (id: string, serverId: string) =>
+    api.post<{ data: FloatingIp }>(`/floating-ips/${id}/assign`, { serverId }),
+  unassign: (id: string) => api.post<{ data: FloatingIp }>(`/floating-ips/${id}/unassign`),
+  updateRdns: (id: string, rdns: string) =>
+    api.patch<{ data: FloatingIp }>(`/floating-ips/${id}/rdns`, { rdns }),
+  delete: (id: string) => api.delete(`/floating-ips/${id}`),
+}
+
+export const alertAPI = {
+  list: () => api.get<{ data: AlertRule[] }>('/alert-rules'),
+  create: (data: Partial<AlertRule> & { metric: string; condition: string; threshold: number; channels: string[] }) =>
+    api.post<{ data: AlertRule }>('/alert-rules', data),
+  update: (id: string, data: Partial<AlertRule>) =>
+    api.patch<{ data: AlertRule }>(`/alert-rules/${id}`, data),
+  delete: (id: string) => api.delete(`/alert-rules/${id}`),
+}
+
+export const snapshotAPI = {
+  listAll: () => api.get<{ data: SnapshotSummary[] }>('/snapshots'),
+  createForServer: (serverId: string, name: string) =>
+    api.post(`/servers/${serverId}/snapshots`, { name }),
+  delete: (serverId: string, snapshotId: string) =>
+    api.delete(`/servers/${serverId}/snapshots/${snapshotId}`),
+}
+
+export const promoAPI = {
+  redeem: (code: string) => api.post<{ data: PromoSummary }>('/billing/promo/redeem', { code }),
+}
+
+export const waitlistAPI = {
+  join: (email: string, product: string, source?: string) =>
+    api.post('/waitlist', { email, product, source }),
+}
+
+export const onboardingAPI = {
+  complete: () => api.patch('/auth/onboarding-complete'),
+  requestDataExport: () => api.post('/auth/request-data-export'),
+}
+
+// Round 18: extended server actions
+Object.assign(serverAPI, {
+  resize: (id: string, newPlanId: string) =>
+    api.post(`/servers/${id}/resize`, { newPlanId }),
+  clone: (id: string, name?: string) =>
+    api.post(`/servers/${id}/clone`, { name }),
+  rescue: (id: string, isoId: string) =>
+    api.post(`/servers/${id}/rescue`, { isoId }),
+  rescueExit: (id: string) => api.post(`/servers/${id}/rescue-exit`),
+})
+
+// ─── ADMIN ROUND 18 ──────────────────────────────────────────
+export const ipPoolAPI = {
+  list: () => api.get('/admin/ip-pools'),
+  create: (data: { regionId: string; cidr: string; gateway: string; dns1?: string; dns2?: string }) =>
+    api.post('/admin/ip-pools', data),
+  getIps: (id: string, page = 1) => api.get(`/admin/ip-pools/${id}/ips?page=${page}`),
+  delete: (id: string) => api.delete(`/admin/ip-pools/${id}`),
+  releaseIp: (ipId: string) => api.post(`/admin/ip-pools/ips/${ipId}/release`),
+}
+
+export const promoAdminAPI = {
+  list: () => api.get('/admin/promos'),
+  create: (data: { code?: string; amount: number; usageLimit?: number; minTopup?: number; expiresAt?: string }) =>
+    api.post('/admin/promos', data),
+  update: (id: string, data: { isActive?: boolean; usageLimit?: number; expiresAt?: string | null }) =>
+    api.patch(`/admin/promos/${id}`, data),
+  delete: (id: string) => api.delete(`/admin/promos/${id}`),
+}
+
+export const capacityAPI = {
+  getReport: () => api.get('/admin/capacity'),
+  getSummary: () => api.get('/admin/capacity/summary'),
+}
+
+export const adminHealthAPI = {
+  getGlobal: () => api.get('/admin/health/global'),
+  getNodeLive: (id: string) => api.get(`/admin/health/nodes/${id}/live`),
+}
+
+export const isoAdminAPI = {
+  list: () => api.get('/admin/iso'),
+  create: (data: { name: string; nodeId?: string | null; downloadUrl: string; isPublic?: boolean }) =>
+    api.post('/admin/iso', data),
+  status: (id: string) => api.get(`/admin/iso/${id}/status`),
+  delete: (id: string) => api.delete(`/admin/iso/${id}`),
+  attach: (id: string, serverId: string) => api.post(`/admin/iso/${id}/attach`, { serverId }),
+  detach: (id: string, serverId: string) => api.post(`/admin/iso/${id}/detach`, { serverId }),
+}
+
+export const communicationsAPI = {
+  sendBulkEmail: (data: { subject: string; html: string; targetType: 'all' | 'active' | 'country' | 'custom'; targetValue?: string; testEmail?: string }) =>
+    api.post('/admin/communications/bulk-email', data),
+  sendTest: (data: { to: string; subject: string; html: string }) =>
+    api.post('/admin/communications/test-email', data),
+  history: () => api.get('/admin/communications/history'),
+}
+
 // ─── BILLING ─────────────────────────────────────────────────
 export const billingAPI = {
   getInvoices: () => api.get<{ data: Invoice[] }>('/billing/invoices'),

@@ -28,10 +28,13 @@ export const MODULE_DEFINITIONS = [
   { key: 'dns',            label: 'DNS zones',        group: 'Network',    default: true,  required: false, desc: 'DNS hosting' },
   { key: 'firewalls',      label: 'Firewalls',        group: 'Network',    default: true,  required: false, desc: 'Per-server firewall rules' },
   { key: 'vpc',            label: 'VPC & private network', group: 'Network', default: true,  required: false, desc: 'Private isolated networks' },
+  { key: 'floatingIps',    label: 'Floating IPs',     group: 'Network',    default: true,  required: false, desc: 'User-owned reserved public IPs' },
   // Monitoring
   { key: 'monitoring',     label: 'Metrics & graphs', group: 'Monitoring', default: true,  required: false, desc: 'Server metrics' },
-  { key: 'alerts',         label: 'Alerts',           group: 'Monitoring', default: false, required: false, desc: 'Zabbix alerts' },
+  { key: 'alerts',         label: 'Alerts',           group: 'Monitoring', default: true,  required: false, desc: 'Threshold-based alert rules' },
   { key: 'logs',           label: 'Logs',             group: 'Monitoring', default: false, required: false, desc: 'Centralized logs' },
+  // Storage extras
+  { key: 'snapshots',      label: 'Snapshots',        group: 'Storage',    default: true,  required: false, desc: 'Point-in-time server snapshots' },
   // Account
   { key: 'projects',       label: 'Projects',         group: 'Account',    default: false, required: false, desc: 'Group resources by project' },
   { key: 'activity',       label: 'Activity log',     group: 'Account',    default: true,  required: false, desc: 'Account audit log' },

@@ -38,6 +38,9 @@ model User {
   lockedUntil        DateTime?
   notes              String?
   metadata           String?    // JSON string
+  // Round 18 additions
+  onboardingDone     Boolean    @default(false)
+  dataExportedAt     DateTime?
   // ── billing/profile additions ──
   company            String?
   website            String?
@@ -79,6 +82,10 @@ model User {
   referralsAsReferrer Referral[] @relation("Referrer")
   referralAsReferee  Referral?  @relation("Referee")
   webhookSubscriptions WebhookSubscription[]
+  // Round 18 additions
+  floatingIps        FloatingIp[]
+  alertRules         AlertRule[]
+  promoRedemptions   PromoRedemption[]
 }
 
 model UserSession {
@@ -162,6 +169,7 @@ model Node {
   updatedAt          DateTime   @updatedAt
 
   servers            Server[]
+  isoImages          IsoImage[]
 }
 
 model Region {
@@ -178,6 +186,8 @@ model Region {
 
   servers     Server[]
   nodes       Node[]
+  ipPools     IpPool[]
+  floatingIps FloatingIp[]
 }
 
 model OsTemplate {
@@ -257,6 +267,10 @@ model Server {
   volumes        BlockVolume[]
   lbTargets      LoadBalancerTarget[]
   vpcMembers     VPCMember[]
+  // Round 18 additions
+  floatingIps    FloatingIp[]   @relation("ServerFloatingIps")
+  alertRules     AlertRule[]    @relation("ServerAlertRules")
+  primaryIp      IpAddress[]    @relation("ServerPrimaryIp")
 }
 
 model ServerMetric {
@@ -772,4 +786,154 @@ model BlogPost {
   updatedAt   DateTime  @updatedAt
 
   @@index([published, publishedAt])
+}
+
+
+// ─── IP POOLS (Round 18) ────────────────────────────────────
+// SQLite stores arrays/JSON as JSON-encoded strings (see existing pattern).
+// Allocator + admin pool management; FloatingIp / IpAddress reference pools.
+model IpPool {
+  id        String      @id @default(cuid())
+  regionId  String
+  region    Region      @relation(fields: [regionId], references: [id])
+  cidr      String
+  type      String      @default("public")   // public | private | floating
+  gateway   String
+  dns1      String      @default("8.8.8.8")
+  dns2      String      @default("1.1.1.1")
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+
+  ips       IpAddress[]
+
+  @@index([regionId])
+}
+
+model IpAddress {
+  id         String    @id @default(cuid())
+  poolId     String
+  pool       IpPool    @relation(fields: [poolId], references: [id])
+  ip         String    @unique
+  status     String    @default("available")   // available | reserved | assigned
+  serverId   String?
+  server     Server?   @relation("ServerPrimaryIp", fields: [serverId], references: [id])
+  assignedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([poolId, status])
+}
+
+// ─── PROMO CODES (Round 18) ─────────────────────────────────
+model PromoCode {
+  id          String            @id @default(cuid())
+  code        String            @unique
+  type        String            @default("credit")    // credit | discount_pct
+  amount      Float
+  currency    String            @default("INR")
+  usageLimit  Int               @default(100)
+  usageCount  Int               @default(0)
+  minTopup    Float             @default(0)
+  expiresAt   DateTime?
+  isActive    Boolean           @default(true)
+  createdBy   String
+  createdAt   DateTime          @default(now())
+
+  redemptions PromoRedemption[]
+
+  @@index([isActive, expiresAt])
+}
+
+model PromoRedemption {
+  id        String    @id @default(cuid())
+  promoId   String
+  promo     PromoCode @relation(fields: [promoId], references: [id])
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  amount    Float
+  createdAt DateTime  @default(now())
+
+  @@unique([promoId, userId])
+  @@index([userId])
+}
+
+// ─── ISO IMAGES (Round 18) ──────────────────────────────────
+model IsoImage {
+  id          String   @id @default(cuid())
+  name        String
+  filename    String
+  sizeBytes   BigInt   @default(0)
+  nodeId      String?
+  node        Node?    @relation(fields: [nodeId], references: [id])
+  downloadUrl String?
+  proxmoxTask String?
+  status      String   @default("available")   // downloading | available | error
+  isPublic    Boolean  @default(false)
+  userId      String?                          // owner if private
+  createdAt   DateTime @default(now())
+
+  @@index([nodeId, status])
+}
+
+// ─── FLOATING IPS (Round 18) ────────────────────────────────
+// Independent of IpAddress: floating IPs are user-owned and survive
+// server lifecycle. They billed daily at ₹50/mo via floatingIpBilling job.
+model FloatingIp {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  ip         String   @unique
+  regionId   String
+  region     Region   @relation(fields: [regionId], references: [id])
+  serverId   String?
+  server     Server?  @relation("ServerFloatingIps", fields: [serverId], references: [id])
+  rdns       String?
+  status     String   @default("unassigned")   // unassigned | assigned | releasing
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([regionId])
+  @@index([serverId])
+}
+
+// ─── ALERT RULES (Round 18) ─────────────────────────────────
+// User-defined rules; alertEvaluator cron evaluates them every 5min and
+// fires email/sms/webhook with a 30min cooldown per rule.
+model AlertRule {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  serverId    String?
+  server      Server?   @relation("ServerAlertRules", fields: [serverId], references: [id])
+  name        String
+  metric      String    // cpu_percent | ram_percent | disk_percent | network_in | network_out
+  condition   String    // gt | lt | eq
+  threshold   Float
+  duration    Int       @default(5)            // consecutive minutes before firing
+  channels    String    @default("[]")         // JSON array: ["email","sms","webhook"]
+  webhookUrl  String?
+  isActive    Boolean   @default(true)
+  lastFiredAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, isActive])
+  @@index([serverId])
+}
+
+// ─── WAITLIST (Round 18) ────────────────────────────────────
+model WaitlistEntry {
+  id        String   @id @default(cuid())
+  email     String
+  product   String                    // gpu | kubernetes | bare-metal
+  source    String?                   // page or campaign that captured them
+  createdAt DateTime @default(now())
+
+  @@unique([email, product])
+}
+
+// ─── STATUS SUBSCRIBERS (Round 18) ──────────────────────────
+model StatusSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
 }

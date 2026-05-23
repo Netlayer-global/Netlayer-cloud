@@ -691,6 +691,18 @@ router.post('/invoices/:id/refund', async (req: AuthedRequest, res, next) => {
   } catch (e) { next(e) }
 })
 
+router.get('/invoices/:id/pdf', async (req, res, next) => {
+  try {
+    const invoice = await prisma.invoice.findUnique({ where: { id: req.params.id } })
+    if (!invoice) throw new AppError('Invoice not found', 404, 'NOT_FOUND')
+    const { generateInvoicePDF } = await import('../services/invoice.service')
+    const pdf = await generateInvoicePDF({ invoiceId: invoice.id })
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('Content-Disposition', `attachment; filename="${invoice.invoiceNumber}.pdf"`)
+    res.send(pdf)
+  } catch (e) { next(e) }
+})
+
 // ─── SUPPORT TICKETS ─────────────────────────────────────
 router.get('/tickets', async (req, res, next) => {
   try {

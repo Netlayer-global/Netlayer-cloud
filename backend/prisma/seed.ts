@@ -630,6 +630,88 @@ Try it yourself — sign up, hit "Deploy", and watch the timer.`,
   }
   console.log(`✓ ${posts.length} blog posts`)
 
+  // ─── ROUND 18: IP POOLS ───────────────────────────
+  const expandCidr = (cidr: string): string[] => {
+    const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d{1,2})$/.exec(cidr)
+    if (!m) return []
+    const a = parseInt(m[1], 10), b = parseInt(m[2], 10), c = parseInt(m[3], 10), d = parseInt(m[4], 10)
+    const pfx = parseInt(m[5], 10)
+    if (pfx < 16 || pfx > 30) return []
+    const base = ((a << 24) | (b << 16) | (c << 8) | d) >>> 0
+    const total = Math.pow(2, 32 - pfx)
+    const out: string[] = []
+    for (let i = 1; i < total - 1; i++) {
+      const ip = (base + i) >>> 0
+      out.push(`${(ip >>> 24) & 255}.${(ip >>> 16) & 255}.${(ip >>> 8) & 255}.${ip & 255}`)
+    }
+    return out
+  }
+
+  const seedPools = [
+    { regionSlug: 'mumbai',    cidr: '103.21.200.0/27', gateway: '103.21.200.1' },
+    { regionSlug: 'frankfurt', cidr: '65.20.100.0/27',  gateway: '65.20.100.1'  },
+    { regionSlug: 'singapore', cidr: '103.22.50.0/27',  gateway: '103.22.50.1'  },
+    { regionSlug: 'new-york',  cidr: '45.77.100.0/27',  gateway: '45.77.100.1'  },
+  ]
+  let poolsCreated = 0
+  for (const p of seedPools) {
+    const region = await prisma.region.findUnique({ where: { slug: p.regionSlug } })
+    if (!region) continue
+    const exists = await prisma.ipPool.findFirst({ where: { cidr: p.cidr } })
+    if (exists) continue
+    const pool = await prisma.ipPool.create({
+      data: { regionId: region.id, cidr: p.cidr, gateway: p.gateway },
+    })
+    const ips = expandCidr(p.cidr)
+    if (ips.length > 0) {
+      await prisma.ipAddress.createMany({
+        data: ips.map((ip) => ({ ip, poolId: pool.id })),
+      }).catch(() => {})
+    }
+    poolsCreated += 1
+  }
+  console.log(`✓ ${poolsCreated} IP pool(s) seeded`)
+
+  // ─── ROUND 18: PROMO CODES ────────────────────────
+  const promos = [
+    { code: 'WELCOME500',   amount: 500,  usageLimit: 1000, expiresAt: new Date('2026-12-31') },
+    { code: 'NETLAYER1000', amount: 1000, usageLimit: 100,  expiresAt: new Date('2026-08-31') },
+    { code: 'DEVFEST750',   amount: 750,  usageLimit: 500,  expiresAt: new Date('2026-09-30') },
+  ]
+  for (const p of promos) {
+    await prisma.promoCode.upsert({
+      where: { code: p.code },
+      update: { amount: p.amount, usageLimit: p.usageLimit, expiresAt: p.expiresAt, isActive: true },
+      create: { ...p, type: 'credit', currency: 'INR', createdBy: 'seed' },
+    })
+  }
+  console.log(`✓ ${promos.length} promo codes`)
+
+  // ─── ROUND 18: STATUS SERVICE DEFINITIONS ────────
+  await prisma.integrationConfig.upsert({
+    where: { key: 'status.services' },
+    update: {},
+    create: {
+      key: 'status.services',
+      value: JSON.stringify([
+        { id: 'api',          name: 'API',            description: 'REST API endpoints' },
+        { id: 'dashboard',    name: 'Dashboard',      description: 'Web control panel' },
+        { id: 'dns',          name: 'DNS',            description: 'Domain name resolution' },
+        { id: 'provisioning', name: 'Provisioning',   description: 'VM deployment pipeline' },
+        { id: 'storage',      name: 'Object Storage', description: 'S3-compatible storage' },
+        { id: 'billing',      name: 'Billing',        description: 'Payment processing' },
+      ]),
+    },
+  })
+
+  await prisma.integrationConfig.upsert({
+    where: { key: 'network.floating_ip_pool' },
+    update: {},
+    create: { key: 'network.floating_ip_pool', value: JSON.stringify({ pricePerMonth: 50 }) },
+  })
+
+  console.log('✓ Round 18 configs')
+
   console.log('✅ Seed complete!')
   console.log('')
   console.log('  super@netlayer.com   / Super@123456   (SUPER_ADMIN)')

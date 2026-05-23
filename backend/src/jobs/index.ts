@@ -8,6 +8,8 @@ import { runCleanup } from './handlers/cleanup.handler'
 import { runReconciler } from './handlers/reconciler.handler'
 import { runSlaBreach } from './handlers/slaBreach.handler'
 import { runWebhookDelivery } from './handlers/webhookDelivery.handler'
+import { runAlertEvaluator } from './handlers/alertEvaluator.handler'
+import { runFloatingIpBilling } from './handlers/floatingIpBilling.handler'
 
 /**
  * Job system architecture:
@@ -28,6 +30,8 @@ const SCHEDULES = {
   reconciler:     { queue: 'reconciler',       cron: '*/5 * * * *', handler: runReconciler,      description: 'every 5 min — resume stuck workflows' },
   slaBreach:      { queue: 'sla-breach',       cron: '*/5 * * * *', handler: runSlaBreach,       description: 'every 5 min — mark breached tickets' },
   webhookDelivery:{ queue: 'webhook-delivery', cron: '*/30 * * * * *', handler: runWebhookDelivery, description: 'every 30s — drain pending webhook deliveries' },
+  alertEvaluator: { queue: 'alert-evaluator',  cron: '*/5 * * * *',     handler: runAlertEvaluator,  description: 'every 5 min — evaluate user alert rules' },
+  floatingIpBill: { queue: 'floating-ip-bill', cron: '5 0 * * *',       handler: runFloatingIpBilling, description: '00:05 daily — bill floating IPs' },
   cleanup:        { queue: 'cleanup',          cron: '0 */6 * * *', handler: runCleanup,         description: 'every 6 hours' },
 }
 
