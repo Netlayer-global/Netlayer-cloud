@@ -96,6 +96,10 @@ export const DeployServerWorkflow: WorkflowDef<DeployCtx> = {
           osTemplateId: server.osTemplate.proxmoxId,
           password: ctx.rootPassword,
           sshKey: ctx.sshPublicKey,
+          // Use Packer-built golden image when configured for this OS, falling
+          // back to ISO install only when no template is set. Linked-clone path
+          // brings deploy time down from ~90s to ~30s.
+          templateVmId: server.osTemplate.templateVmId ?? undefined,
         })
       },
       compensate: async (ctx) => {

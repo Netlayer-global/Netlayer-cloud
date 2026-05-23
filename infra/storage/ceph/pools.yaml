@@ -1,0 +1,36 @@
+---
+# vms — RBD pool for VM root disks. 3-way replication, fast SSD class.
+pool_name: vms
+type: replicated
+size: 3
+min_size: 2
+pg_num: 128
+pg_autoscale_mode: 'on'
+crush_rule: 'replicated_rule'
+application: 'rbd'
+
+---
+# backups — erasure-coded for cost. 4+2 means 4 data + 2 parity = ~50% overhead.
+pool_name: backups
+type: erasure
+ec_profile: 'k=4,m=2,crush-failure-domain=host'
+pg_num: 64
+pg_autoscale_mode: 'on'
+application: 'rgw'
+
+---
+# images — CephFS for the marketplace image cache. Read-mostly, host-shared.
+pool_name: images_data
+type: replicated
+size: 2
+min_size: 1
+pg_num: 32
+application: 'cephfs'
+
+---
+pool_name: images_meta
+type: replicated
+size: 3
+min_size: 2
+pg_num: 16
+application: 'cephfs'

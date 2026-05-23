@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: netlayer-api-staging
+  namespace: argocd
+  finalizers: ['resources-finalizer.argocd.argoproj.io']
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Netlayer-global/Netlayer-cloud.git
+    targetRevision: main
+    path: deploy/k8s/overlays/staging
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: netlayer-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions: ['CreateNamespace=true']

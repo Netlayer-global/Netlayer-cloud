@@ -4,6 +4,8 @@ import prisma from './utils/prisma'
 import logger from './utils/logger'
 import { registerAllJobs, shutdownQueues } from './jobs'
 import { disconnectRedis } from './utils/redis'
+import { startGrpcServer } from './agent/grpcServer'
+import { attachEventListeners } from './services/webhook.service'
 
 async function main() {
   await prisma.$connect()
@@ -23,6 +25,16 @@ async function main() {
     logger.info(`   metrics: http://localhost:${config.PORT}/metrics`)
     logger.info(`   readyz:  http://localhost:${config.PORT}/readyz`)
   })
+
+  // Optional Agent gRPC server. No-op when AGENT_GRPC_PORT is unset.
+  await startGrpcServer().catch((err) =>
+    logger.error({ err: err.message }, 'agent gRPC server failed to start')
+  )
+
+  // Subscribe to domain events and enqueue webhook deliveries
+  await attachEventListeners().catch((err) =>
+    logger.error({ err: err.message }, 'attachEventListeners failed')
+  )
 }
 
 main().catch((e) => {

@@ -1,0 +1,29 @@
+# Single ArgoCD Application that owns every other Application — the
+# "app-of-apps" pattern. Apply once with:
+#
+#   kubectl apply -f deploy/argocd/app-of-apps.yaml
+#
+# After this, every namespace under deploy/argocd/apps/ becomes a managed
+# Application that ArgoCD reconciles continuously from this Git repo.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: netlayer-bootstrap
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Netlayer-global/Netlayer-cloud.git
+    targetRevision: main
+    path: deploy/argocd/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

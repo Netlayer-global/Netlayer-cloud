@@ -7,6 +7,7 @@ import { runZabbixSync } from './handlers/zabbix.handler'
 import { runCleanup } from './handlers/cleanup.handler'
 import { runReconciler } from './handlers/reconciler.handler'
 import { runSlaBreach } from './handlers/slaBreach.handler'
+import { runWebhookDelivery } from './handlers/webhookDelivery.handler'
 
 /**
  * Job system architecture:
@@ -26,6 +27,7 @@ const SCHEDULES = {
   zabbixSync:    { queue: 'zabbix-sync',     cron: '*/5 * * * *', handler: runZabbixSync,      description: 'every 5 min' },
   reconciler:     { queue: 'reconciler',       cron: '*/5 * * * *', handler: runReconciler,      description: 'every 5 min — resume stuck workflows' },
   slaBreach:      { queue: 'sla-breach',       cron: '*/5 * * * *', handler: runSlaBreach,       description: 'every 5 min — mark breached tickets' },
+  webhookDelivery:{ queue: 'webhook-delivery', cron: '*/30 * * * * *', handler: runWebhookDelivery, description: 'every 30s — drain pending webhook deliveries' },
   cleanup:        { queue: 'cleanup',          cron: '0 */6 * * *', handler: runCleanup,         description: 'every 6 hours' },
 }
 

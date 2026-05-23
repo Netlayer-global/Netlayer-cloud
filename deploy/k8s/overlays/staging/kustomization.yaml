@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: netlayer-staging
+
+resources:
+  - ../../base
+
+# Staging gets latest-of-main on every CI build
+images:
+  - name: ghcr.io/netlayer-global/netlayer-cloud/api
+    newTag: latest
+
+# Smaller pool for staging
+patches:
+  - target: { kind: Deployment, name: netlayer-api }
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1

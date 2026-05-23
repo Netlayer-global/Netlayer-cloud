@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: netlayer-production
+
+resources:
+  - ../../base
+  # Production uses the Argo Rollout (canary) rather than the plain Deployment
+  - ../../base/api-rollout-canary.yaml
+
+# Override base Deployment with empty patch so kustomize keeps the Rollout instead
+patches:
+  - patch: |-
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: netlayer-api
+    target:
+      kind: Deployment
+      name: netlayer-api
+
+images:
+  - name: ghcr.io/netlayer-global/netlayer-cloud/api
+    newTag: stable

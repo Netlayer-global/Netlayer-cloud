@@ -1,0 +1,69 @@
+# Argo Rollouts canary deployment.
+# Pre-req: the Argo Rollouts controller must be installed in the cluster
+# (kubectl apply -k https://github.com/argoproj/argo-rollouts/manifests/install).
+# Use this Rollout INSTEAD of the plain Deployment in api-deployment.yaml in
+# environments where you want progressive traffic shifting.
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: netlayer-api
+spec:
+  replicas: 6
+  strategy:
+    canary:
+      canaryService: netlayer-api-canary
+      stableService: netlayer-api
+      trafficRouting:
+        nginx:
+          stableIngress: netlayer-api-ingress
+      steps:
+        - setWeight: 5      # 5% of traffic to canary
+        - pause: { duration: 5m }
+        - setWeight: 25
+        - pause: { duration: 10m }
+        - setWeight: 50
+        - pause: { duration: 10m }
+        - setWeight: 100
+        - pause: { duration: 5m }
+      analysis:
+        templates:
+          - templateName: success-rate
+        startingStep: 1
+        args:
+          - name: service-name
+            value: netlayer-api-canary
+  selector:
+    matchLabels: { app: netlayer-api }
+  template:
+    metadata:
+      labels: { app: netlayer-api }
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/netlayer-global/netlayer-cloud/api:latest
+          ports: [{ containerPort: 5000 }]
+          readinessProbe: { httpGet: { path: /readyz, port: 5000 } }
+          livenessProbe: { httpGet: { path: /healthz, port: 5000 } }
+          envFrom:
+            - secretRef:    { name: netlayer-api-secrets }
+            - configMapRef: { name: netlayer-api-config }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: success-rate
+spec:
+  args:
+    - name: service-name
+  metrics:
+    - name: success-rate
+      interval: 30s
+      successCondition: result[0] >= 0.99
+      failureLimit: 3
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring:9090
+          query: |
+            sum(rate(http_requests_total{service="{{args.service-name}}",status!~"5.."}[2m]))
+            /
+            sum(rate(http_requests_total{service="{{args.service-name}}"}[2m]))

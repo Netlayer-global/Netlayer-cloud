@@ -1,0 +1,37 @@
+---
+# NetLayer Ceph cluster bootstrap spec.
+# Apply with: ceph orch apply -i cluster.yaml
+service_type: mon
+service_id: mon
+placement:
+  count: 3
+  label: mon
+---
+service_type: mgr
+service_id: mgr
+placement:
+  count: 3
+  label: mon
+---
+service_type: osd
+service_id: all-available
+placement:
+  host_pattern: 'ceph-*'
+data_devices:
+  all: true
+---
+service_type: mds
+service_id: cephfs
+placement:
+  count: 2
+  label: mon
+---
+service_type: rgw
+service_id: nl-s3
+placement:
+  count: 2
+  label: rgw
+spec:
+  rgw_realm: netlayer
+  rgw_zone: default
+  rgw_frontend_port: 7480

@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: netlayer-api-production
+  namespace: argocd
+  finalizers: ['resources-finalizer.argocd.argoproj.io']
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Netlayer-global/Netlayer-cloud.git
+    targetRevision: main
+    path: deploy/k8s/overlays/production
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: netlayer-production
+  # Production sync is manual — engineers approve every promote
+  syncPolicy:
+    automated: null
+    syncOptions: ['CreateNamespace=true']

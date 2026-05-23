@@ -45,6 +45,7 @@ import activityRoutes from './routes/activity.routes'
 import monitoringRoutes from './routes/monitoring.routes'
 import ticketsRoutes from './routes/tickets.routes'
 import referralRoutes from './routes/referral.routes'
+import webhookSubsRoutes from './routes/webhookSubscriptions.routes'
 
 const app = express()
 const httpServer = createServer(app)
@@ -128,6 +129,7 @@ app.use('/api/activity',      authMiddleware, activityRoutes)
 app.use('/api/monitoring',    authMiddleware, monitoringRoutes)
 app.use('/api/support',       authMiddleware, idempotency(), ticketsRoutes)
 app.use('/api/referrals',     authMiddleware, referralRoutes)
+app.use('/api/webhooks-subs', authMiddleware, idempotency(), webhookSubsRoutes)
 
 // ─── Admin ──────────────────────────────────────────────────────────
 app.use('/api/admin', authMiddleware, idempotency(), adminRoutes)

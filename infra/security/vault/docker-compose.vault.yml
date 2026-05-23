@@ -1,0 +1,22 @@
+services:
+  vault:
+    image: hashicorp/vault:1.18
+    container_name: nl-vault
+    ports: ['8200:8200']
+    cap_add: [IPC_LOCK]
+    environment:
+      VAULT_ADDR: 'http://0.0.0.0:8200'
+      VAULT_API_ADDR: 'http://0.0.0.0:8200'
+    volumes:
+      - vaultdata:/vault/file
+      - ./config.hcl:/vault/config/config.hcl:ro
+      - ./init.sh:/init.sh:ro
+    command: ['vault', 'server', '-config=/vault/config/config.hcl']
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'vault', 'status']
+      interval: 30s
+      retries: 3
+
+volumes:
+  vaultdata:

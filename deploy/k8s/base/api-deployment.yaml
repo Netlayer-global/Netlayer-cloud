@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netlayer-api
+  labels:
+    app: netlayer-api
+    component: backend
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0   # never drop below replicas-current
+  selector:
+    matchLabels: { app: netlayer-api }
+  template:
+    metadata:
+      labels: { app: netlayer-api }
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: /metrics
+        prometheus.io/port: '5000'
+    spec:
+      serviceAccountName: netlayer-api
+      containers:
+        - name: api
+          image: ghcr.io/netlayer-global/netlayer-cloud/api:latest
+          ports:
+            - containerPort: 5000
+              name: http
+          envFrom:
+            - secretRef:  { name: netlayer-api-secrets }
+            - configMapRef: { name: netlayer-api-config }
+          readinessProbe:
+            httpGet: { path: /readyz, port: 5000 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 5000 }
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 200m, memory: 256Mi }
+            limits:   { cpu: 1000m, memory: 512Mi }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ['ALL'] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: netlayer-api
+spec:
+  selector: { app: netlayer-api }
+  ports:
+    - port: 80
+      targetPort: 5000
+      name: http
+  type: ClusterIP

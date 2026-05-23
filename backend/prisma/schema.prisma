@@ -78,6 +78,7 @@ model User {
   dnsZones           DnsZone[]
   referralsAsReferrer Referral[] @relation("Referrer")
   referralAsReferee  Referral?  @relation("Referee")
+  webhookSubscriptions WebhookSubscription[]
 }
 
 model UserSession {
@@ -187,6 +188,7 @@ model OsTemplate {
   family    String
   logo      String
   proxmoxId String
+  templateVmId Int?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 
@@ -710,4 +712,41 @@ model StatusIncident {
   updatedAt        DateTime  @updatedAt
 
   @@index([status, createdAt])
+}
+
+
+// --- WEBHOOK SUBSCRIPTIONS ----------------------------------
+model WebhookSubscription {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  url         String
+  events      String   @default("[]")  // JSON: ["server.created", "server.deleted", ...] or ["*"]
+  secret      String                   // hex secret for HMAC-SHA256 signing
+  isActive    Boolean  @default(true)
+  lastDeliveredAt DateTime?
+  lastFailedAt    DateTime?
+  failureCount    Int       @default(0)
+  createdAt   DateTime @default(now())
+
+  deliveries  WebhookDelivery[]
+
+  @@index([userId])
+}
+
+model WebhookDelivery {
+  id              String   @id @default(cuid())
+  subscriptionId  String
+  subscription    WebhookSubscription @relation(fields: [subscriptionId], references: [id])
+  event           String
+  payload         String   // JSON string
+  status          String   @default("pending")  // pending | delivered | failed
+  responseStatus  Int?
+  responseBody    String?
+  attempts        Int      @default(0)
+  lastAttemptAt   DateTime?
+  createdAt       DateTime @default(now())
+
+  @@index([status, createdAt])
+  @@index([subscriptionId])
 }
