@@ -285,6 +285,49 @@ export class ProxmoxService {
     })
   }
 
+  /**
+   * Attach a freshly-created Ceph/RBD disk to an existing VM. Returns the
+   * Proxmox config key (e.g. "scsi5") so subsequent detaches can reference
+   * the exact slot we used. In mock mode we just allocate the next available
+   * slot virtually.
+   */
+  async attachDisk(vmId: number, sizeGB: number, _name: string): Promise<string> {
+    if (this.mockMode) {
+      const slot = `scsi${Math.floor(Math.random() * 10) + 1}`
+      logger.info(`[Proxmox MOCK] attachDisk ${vmId} ${slot} ${sizeGB}G`)
+      await sleep(1000)
+      return slot
+    }
+    // Find next free scsi slot.
+    let slot = 'scsi1'
+    try {
+      const { data } = await this.client!.get(`/nodes/${this.nodeName}/qemu/${vmId}/config`)
+      const cfg: Record<string, string> = data.data || {}
+      for (let i = 1; i <= 30; i++) {
+        if (!cfg[`scsi${i}`]) { slot = `scsi${i}`; break }
+      }
+    } catch (e: any) {
+      logger.warn(`Could not read VM config for slot lookup: ${e.message}`)
+    }
+    const params = new URLSearchParams({ [slot]: `local-lvm:${sizeGB}` })
+    await this.client!.put(`/nodes/${this.nodeName}/qemu/${vmId}/config`, params.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    })
+    return slot
+  }
+
+  async detachDisk(vmId: number, diskKey: string): Promise<void> {
+    if (this.mockMode) {
+      logger.info(`[Proxmox MOCK] detachDisk ${vmId} ${diskKey}`)
+      await sleep(800)
+      return
+    }
+    const params = new URLSearchParams({ delete: diskKey })
+    await this.client!.put(`/nodes/${this.nodeName}/qemu/${vmId}/config`, params.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    })
+  }
+
   static async testCredentials(
     host: string,
     nodeId: string,

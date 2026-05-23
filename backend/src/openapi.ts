@@ -151,6 +151,8 @@ export const openapiSpec = {
     { name: 'Notifications' },
     { name: 'Health' },
     { name: 'Storage' },
+    { name: 'Block Volumes' },
+    { name: 'Load Balancers' },
   ],
   paths: {
     '/healthz': {
@@ -530,6 +532,109 @@ export const openapiSpec = {
     },
     '/api/storage/access-keys/{keyId}': {
       delete: { tags: ['Storage'], summary: 'Revoke access key', responses: { '200': { description: 'Revoked' } } },
+    },
+    '/api/volumes': {
+      get: { tags: ['Block Volumes'], summary: 'List my volumes', responses: { '200': { description: 'OK' } } },
+      post: {
+        tags: ['Block Volumes'],
+        summary: 'Create block volume',
+        parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object', required: ['name', 'sizeGB', 'region'],
+                properties: {
+                  name: { type: 'string' },
+                  sizeGB: { type: 'integer', minimum: 10, maximum: 16384 },
+                  region: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        responses: { '201': { description: 'Created' } },
+      },
+    },
+    '/api/volumes/{id}': {
+      get: { tags: ['Block Volumes'], summary: 'Get volume', responses: { '200': { description: 'OK' } } },
+      patch: { tags: ['Block Volumes'], summary: 'Rename or resize', responses: { '200': { description: 'OK' } } },
+      delete: { tags: ['Block Volumes'], summary: 'Delete volume', responses: { '200': { description: 'Deleted' } } },
+    },
+    '/api/volumes/{id}/attach': {
+      post: {
+        tags: ['Block Volumes'],
+        summary: 'Attach to a server',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { type: 'object', required: ['serverId'], properties: { serverId: { type: 'string' } } },
+            },
+          },
+        },
+        responses: { '200': { description: 'Attached' } },
+      },
+    },
+    '/api/volumes/{id}/detach': {
+      post: { tags: ['Block Volumes'], summary: 'Detach', responses: { '200': { description: 'Detached' } } },
+    },
+    '/api/load-balancers': {
+      get: { tags: ['Load Balancers'], summary: 'List load balancers', responses: { '200': { description: 'OK' } } },
+      post: {
+        tags: ['Load Balancers'],
+        summary: 'Create load balancer',
+        parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object', required: ['name', 'region'],
+                properties: {
+                  name: { type: 'string' },
+                  region: { type: 'string' },
+                  algorithm: { type: 'string', enum: ['round_robin', 'least_connections', 'ip_hash'] },
+                  protocol: { type: 'string', enum: ['HTTP', 'HTTPS', 'TCP'] },
+                  port: { type: 'integer' },
+                },
+              },
+            },
+          },
+        },
+        responses: { '201': { description: 'Created' } },
+      },
+    },
+    '/api/load-balancers/{id}': {
+      get: { tags: ['Load Balancers'], summary: 'Get load balancer', responses: { '200': { description: 'OK' } } },
+      patch: { tags: ['Load Balancers'], summary: 'Update', responses: { '200': { description: 'OK' } } },
+      delete: { tags: ['Load Balancers'], summary: 'Delete', responses: { '200': { description: 'Deleted' } } },
+    },
+    '/api/load-balancers/{id}/targets': {
+      post: {
+        tags: ['Load Balancers'],
+        summary: 'Add target server',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object', required: ['serverId'],
+                properties: {
+                  serverId: { type: 'string' },
+                  port: { type: 'integer' },
+                  weight: { type: 'integer' },
+                },
+              },
+            },
+          },
+        },
+        responses: { '201': { description: 'Created' } },
+      },
+    },
+    '/api/load-balancers/{id}/targets/{targetId}': {
+      delete: { tags: ['Load Balancers'], summary: 'Remove target', responses: { '200': { description: 'Removed' } } },
     },
   },
 } as const

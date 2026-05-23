@@ -34,6 +34,8 @@ import adminStatusRoutes from './routes/admin-status.routes'
 import abuseRoutes from './routes/abuse.routes'
 import storageRoutes, { storagePublicRouter } from './routes/storage.routes'
 import platformRoutes from './routes/platform.routes'
+import volumesRoutes from './routes/volumes.routes'
+import loadBalancersRoutes from './routes/loadBalancers.routes'
 
 const app = express()
 const httpServer = createServer(app)
@@ -106,6 +108,8 @@ app.use('/api/notifications', authMiddleware, notificationRoutes)
 app.use('/api/api-keys',      authMiddleware, idempotency(), apiKeyRoutes)
 app.use('/api/announcements', authMiddleware, announcementRoutes)
 app.use('/api/storage',       authMiddleware, idempotency(), storageRoutes)
+app.use('/api/volumes',       authMiddleware, idempotency(), volumesRoutes)
+app.use('/api/load-balancers', authMiddleware, idempotency(), loadBalancersRoutes)
 
 // ─── Admin ──────────────────────────────────────────────────────────
 app.use('/api/admin', authMiddleware, idempotency(), adminRoutes)

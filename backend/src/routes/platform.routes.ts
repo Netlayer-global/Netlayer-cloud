@@ -21,10 +21,10 @@ export const MODULE_DEFINITIONS = [
   { key: 'marketplace',    label: 'Marketplace',      group: 'Compute',    default: false, required: false, desc: 'One-click apps' },
   // Storage
   { key: 'objectStorage',  label: 'Object storage',   group: 'Storage',    default: true,  required: false, desc: 'S3-compatible buckets' },
-  { key: 'blockStorage',   label: 'Block volumes',    group: 'Storage',    default: false, required: false, desc: 'NVMe persistent volumes' },
+  { key: 'blockStorage',   label: 'Block volumes',    group: 'Storage',    default: true,  required: false, desc: 'NVMe persistent volumes' },
   { key: 'managedDb',      label: 'Managed databases', group: 'Storage',   default: false, required: false, desc: 'PostgreSQL / MySQL / Redis' },
   // Network
-  { key: 'loadBalancers',  label: 'Load balancers',   group: 'Network',    default: false, required: false, desc: 'HTTP/TCP load balancers' },
+  { key: 'loadBalancers',  label: 'Load balancers',   group: 'Network',    default: true,  required: false, desc: 'HTTP/TCP load balancers' },
   { key: 'dns',            label: 'DNS zones',        group: 'Network',    default: false, required: false, desc: 'DNS hosting' },
   { key: 'firewalls',      label: 'Firewalls',        group: 'Network',    default: true,  required: false, desc: 'Per-server firewall rules' },
   { key: 'vpc',            label: 'VPC & private network', group: 'Network', default: false, required: false, desc: 'Private isolated networks' },
