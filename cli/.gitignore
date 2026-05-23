@@ -1,5 +1,9 @@
 node_modules/
 bin/*.js
+bin/**/*.js
 bin/*.js.map
+bin/**/*.js.map
 bin/*.d.ts
+bin/**/*.d.ts
+package-lock.json
 *.log
