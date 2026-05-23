@@ -6,6 +6,7 @@ import { runDailyBilling, runMonthlyInvoices } from './handlers/billing.handler'
 import { runZabbixSync } from './handlers/zabbix.handler'
 import { runCleanup } from './handlers/cleanup.handler'
 import { runReconciler } from './handlers/reconciler.handler'
+import { runSlaBreach } from './handlers/slaBreach.handler'
 
 /**
  * Job system architecture:
@@ -24,6 +25,7 @@ const SCHEDULES = {
   billingMonthly: { queue: 'billing-monthly', cron: '0 0 1 * *',   handler: runMonthlyInvoices, description: '1st of month' },
   zabbixSync:    { queue: 'zabbix-sync',     cron: '*/5 * * * *', handler: runZabbixSync,      description: 'every 5 min' },
   reconciler:     { queue: 'reconciler',       cron: '*/5 * * * *', handler: runReconciler,      description: 'every 5 min — resume stuck workflows' },
+  slaBreach:      { queue: 'sla-breach',       cron: '*/5 * * * *', handler: runSlaBreach,       description: 'every 5 min — mark breached tickets' },
   cleanup:        { queue: 'cleanup',          cron: '0 */6 * * *', handler: runCleanup,         description: 'every 6 hours' },
 }
 

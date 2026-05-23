@@ -10,6 +10,8 @@ import { AppError } from '../utils/errors'
 import { authMiddleware, AuthedRequest } from '../middleware/auth'
 import { registerLimiter, loginLimiter, forgotPasswordLimiter } from '../middleware/rateLimit'
 import emailService from '../services/email.service'
+import referralService from '../services/referral.service'
+import logger from '../utils/logger'
 
 const router = Router()
 
@@ -36,6 +38,7 @@ router.post('/register', registerLimiter, async (req, res, next) => {
         password: z.string().min(8).regex(/[A-Z]/, 'Need uppercase').regex(/\d/, 'Need digit'),
         firstName: z.string().min(1).max(50),
         lastName: z.string().min(1).max(50),
+        referralCode: z.string().min(1).max(32).optional(),
       })
       .parse(req.body)
     const existing = await prisma.user.findUnique({ where: { email: body.email } })
@@ -59,6 +62,16 @@ router.post('/register', registerLimiter, async (req, res, next) => {
       await prisma.userRoleAssignment.create({
         data: { userId: user.id, roleId: clientRole.id },
       })
+    }
+
+    // Wire up referral if a code was provided. Failures here must never
+    // block signup, so we swallow and log.
+    if (body.referralCode) {
+      try {
+        await referralService.recordReferral(body.referralCode, user.id)
+      } catch (err: any) {
+        logger.warn({ err: err.message, userId: user.id }, 'recordReferral failed')
+      }
     }
 
     const accessToken = generateAccessToken(user.id, user.role)

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -31,9 +31,21 @@ type FormData = z.infer<typeof schema>
 
 export default function Register() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const referralCode = searchParams.get('ref')?.toUpperCase() || ''
   const login = useAuthStore((s) => s.login)
   const [show, setShow] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [referralAcknowledged, setReferralAcknowledged] = useState(false)
+
+  useEffect(() => {
+    if (referralCode && !referralAcknowledged) {
+      setReferralAcknowledged(true)
+      toast.success(`Referral code applied: ${referralCode}`, {
+        description: 'You and your referrer will both earn ₹250 once you spend ₹100.',
+      })
+    }
+  }, [referralCode, referralAcknowledged])
 
   const {
     register,
@@ -49,7 +61,8 @@ export default function Register() {
         password: data.password,
         firstName: data.firstName,
         lastName: data.lastName,
-      })
+        ...(referralCode ? { referralCode } : {}),
+      } as any)
       login(res.data.data.user, res.data.data.accessToken)
       toast.success('Account created. Welcome to NetLayer!')
       navigate('/dashboard/home')
@@ -73,6 +86,12 @@ export default function Register() {
         <div className="bg-[#161716] border border-[#2a2b2a] rounded-xl p-8">
           <h1 className="text-xl font-medium text-[#e8e8e6] mb-1">Create your account</h1>
           <p className="text-sm text-[#a0a09e] mb-6">Start deploying in under a minute</p>
+
+          {referralCode && (
+            <div className="mb-5 px-3 py-2 rounded-md bg-[#e0fe56]/5 border border-[#e0fe56]/30 text-xs text-[#e0fe56]">
+              🎁 Joining with code <span className="font-mono font-semibold">{referralCode}</span> — both of you earn ₹250 once you spend ₹100.
+            </div>
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">

@@ -1,0 +1,7 @@
+terraform-provider-netlayer
+terraform-provider-netlayer.exe
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+crash.log

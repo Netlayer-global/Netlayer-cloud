@@ -6,6 +6,7 @@ import logger from '../utils/logger'
 import { AppError } from '../utils/errors'
 import emailService from './email.service'
 import smsService from './sms.service'
+import referralService from './referral.service'
 import { serializeInvoice } from '../utils/serialize'
 
 const COUNTRY_CURRENCY: Record<string, string> = {
@@ -243,6 +244,13 @@ export class PaymentService {
       await emailService.sendPaymentSuccess(user, { id: invoice.invoiceNumber, amount })
     } catch (e: any) {
       logger.warn('payment success email failed', { error: e.message })
+    }
+
+    // Settle any pending referral once the referee crosses the spend threshold.
+    try {
+      await referralService.settlePending(user.id)
+    } catch (e: any) {
+      logger.warn('referral settle failed', { error: e.message })
     }
     if (user.phone) {
       try {
