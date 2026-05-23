@@ -28,6 +28,7 @@ import notificationRoutes from './routes/notification.routes'
 import apiKeyRoutes from './routes/apikey.routes'
 import announcementRoutes from './routes/announcement.routes'
 import webhookRoutes from './routes/webhook.routes'
+import { alertmanagerRouter } from './routes/webhook.routes'
 import healthRoutes from './routes/health.routes'
 import statusRoutes from './routes/status.routes'
 import adminStatusRoutes from './routes/admin-status.routes'
@@ -84,6 +85,7 @@ app.use(cors({ origin: corsOrigin, credentials: true }))
 
 // Webhooks need raw body — mount BEFORE express.json()
 app.use('/api/webhooks', webhookRoutes)
+app.use('/api/webhooks', alertmanagerRouter)
 
 // Storage mock-upload/mock-download also use raw bodies — mount BEFORE express.json()
 app.use('/api/storage', storagePublicRouter)

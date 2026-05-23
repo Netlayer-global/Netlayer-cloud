@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: 'NetLayer'
+    orgId: 1
+    folder: 'NetLayer'
+    type: file
+    disableDeletion: true
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: true

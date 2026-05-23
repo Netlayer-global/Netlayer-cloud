@@ -1,0 +1,28 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: 'default'
+  group_by: ['alertname', 'service']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - match: { severity: critical }
+      receiver: 'pager'
+      continue: true
+
+receivers:
+  - name: 'default'
+    # Operator wires their preferred channel: Slack / Discord / email / PagerDuty.
+    # The webhook below points at the NetLayer API where it can be turned into a
+    # Notification + Socket.io broadcast for the admin panel.
+    webhook_configs:
+      - url: 'http://host.docker.internal:5000/api/webhooks/alertmanager'
+        send_resolved: true
+
+  - name: 'pager'
+    # Replace with your real PagerDuty / OpsGenie integration URL
+    webhook_configs:
+      - url: 'http://host.docker.internal:5000/api/webhooks/alertmanager'
+        send_resolved: true

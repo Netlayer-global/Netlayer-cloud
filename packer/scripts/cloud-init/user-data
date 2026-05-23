@@ -1,0 +1,25 @@
+#cloud-config
+autoinstall:
+  version: 1
+  identity:
+    hostname: netlayer-build
+    username: netlayer
+    # NB: only used during the Packer build — never reaches a customer VM.
+    # SHA-512 hash of "build-only-do-not-use"
+    password: "$6$rounds=4096$abcd$LYf9sZ8Px4fG.YOpLiXc8tn6.HlQzM4wRPTZzdNJpZh3hWqI0xmA1.8CEbZx7lLk6mNl2PhKpNlVH5yYXY7Lx0"
+  ssh:
+    install-server: true
+    allow-pw: true
+  apt:
+    geoip: false
+    preserve_sources_list: false
+  packages:
+    - qemu-guest-agent
+    - cloud-init
+    - openssh-server
+    - sudo
+  user-data:
+    disable_root: false
+  late-commands:
+    - echo 'netlayer ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/90-netlayer
+    - chmod 440 /target/etc/sudoers.d/90-netlayer

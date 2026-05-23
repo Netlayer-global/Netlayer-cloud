@@ -1,0 +1,34 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: netlayer-dev
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  # The NetLayer API exposes /metrics in prom-client format already (round 0–3).
+  # On Linux we'd target host.docker.internal; on Linux/Docker-host networking,
+  # the operator can swap this to host network mode or set `extra_hosts`.
+  - job_name: 'netlayer-api'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:5000']
+        labels:
+          service: api
+          env: dev
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Future: node_exporter on each hypervisor host
+  # - job_name: 'nodes'
+  #   static_configs:
+  #     - targets: ['10.0.0.10:9100', '10.0.0.11:9100']

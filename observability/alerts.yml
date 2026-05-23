@@ -1,0 +1,46 @@
+groups:
+  - name: api
+    rules:
+      - alert: ApiDown
+        expr: up{job="netlayer-api"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: 'NetLayer API is down'
+          description: 'No /metrics scrape success for >1m'
+
+      - alert: ApiHighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="netlayer-api",status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="netlayer-api"}[5m]))
+          ) > 0.05
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: 'API 5xx rate above 5%'
+          description: '{{ $value | humanizePercentage }} of requests returning 5xx'
+
+      - alert: ApiHighLatency
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job="netlayer-api"}[5m])) by (le)) > 1.5
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: 'API p99 latency above 1.5s'
+          description: 'p99 = {{ $value | humanizeDuration }}'
+
+  - name: workflow
+    rules:
+      - alert: WorkflowFailureRate
+        expr: |
+          (
+            sum(increase(netlayer_workflow_finished_total{status="failed"}[15m]))
+            /
+            sum(increase(netlayer_workflow_finished_total[15m]))
+          ) > 0.10
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: 'Workflow failure rate above 10%'
+          description: '{{ $value | humanizePercentage }} of workflows failed in last 15m'

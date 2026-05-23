@@ -7,6 +7,8 @@ import { AppError } from '../utils/errors'
 import emailService from './email.service'
 import smsService from './sms.service'
 import referralService from './referral.service'
+import * as eventBus from '../events/bus'
+import { EVENTS } from '../events/bus'
 import { serializeInvoice } from '../utils/serialize'
 
 const COUNTRY_CURRENCY: Record<string, string> = {
@@ -252,6 +254,11 @@ export class PaymentService {
     } catch (e: any) {
       logger.warn('referral settle failed', { error: e.message })
     }
+
+    // Domain event (NATS in real mode, in-process otherwise)
+    void eventBus.publish(EVENTS.PAYMENT_COMPLETED, {
+      invoiceId: invoice.id, userId: user.id, amount, currency: invoice.currency,
+    })
     if (user.phone) {
       try {
         await smsService.sendPaymentSuccess(user.phone, `₹${amount.toFixed(2)}`)

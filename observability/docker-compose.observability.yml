@@ -1,0 +1,79 @@
+services:
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: nl-prometheus
+    ports: ['9090:9090']
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - promdata:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.2.0
+    container_name: nl-loki
+    ports: ['3100:3100']
+    volumes:
+      - ./loki.yml:/etc/loki/loki.yml:ro
+      - lokidata:/loki
+    command: -config.file=/etc/loki/loki.yml
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.2.0
+    container_name: nl-promtail
+    volumes:
+      - ./promtail.yml:/etc/promtail/promtail.yml:ro
+      - /var/log:/var/log:ro
+    command: -config.file=/etc/promtail/promtail.yml
+    depends_on: [loki]
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62
+    container_name: nl-jaeger
+    ports:
+      - '16686:16686'  # web UI
+      - '4317:4317'    # OTLP gRPC ingest
+      - '4318:4318'    # OTLP HTTP ingest
+    environment:
+      COLLECTOR_OTLP_ENABLED: 'true'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: nl-grafana
+    ports: ['3000:3000']
+    volumes:
+      - grafanadata:/var/lib/grafana
+      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    depends_on: [prometheus, loki, jaeger]
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: nl-alertmanager
+    ports: ['9093:9093']
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    restart: unless-stopped
+
+volumes:
+  promdata:
+  lokidata:
+  grafanadata:

@@ -2,6 +2,8 @@ import prisma from '../../utils/prisma'
 import logger from '../../utils/logger'
 import { emitToAdmin } from '../../services/socket.service'
 import { slaTargetFor } from '../../services/sla.service'
+import * as eventBus from '../../events/bus'
+import { EVENTS } from '../../events/bus'
 
 /**
  * SLA breach handler — runs every 5 minutes.
@@ -60,6 +62,10 @@ export async function runSlaBreach(_data: { ts: number }): Promise<void> {
         subject: t.subject,
         priority: t.priority,
         targetAt: target.toISOString(),
+      })
+
+      void eventBus.publish(EVENTS.TICKET_SLA_BREACH, {
+        ticketId: t.id, priority: t.priority, targetAt: target.toISOString(),
       })
 
       breached++

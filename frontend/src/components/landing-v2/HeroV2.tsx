@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowUpRight, Sparkles, ChevronRight } from 'lucide-react'
 import { useTypewriter } from '../../hooks/useTypewriter'
+import { Globe } from './Globe'
 
 const TERMINAL_LINES = [
   { text: '$ netlayer server create \\',                              speed: 14 },
@@ -46,6 +47,11 @@ export function HeroV2() {
     <section className="relative pt-36 pb-24 overflow-hidden">
       {/* Backdrop layers */}
       <div className="absolute inset-0 nl-bg-gradient nl-grid-overlay -z-10" />
+
+      {/* 3D globe — positioned behind the right column on lg+, hidden on mobile to keep TTI fast */}
+      <div className="absolute right-0 top-0 bottom-0 w-1/2 hidden lg:block opacity-50 pointer-events-none -z-[5]">
+        <Globe />
+      </div>
 
       {/* Floating glow orbs (parallax-ready) */}
       <motion.div
