@@ -134,6 +134,9 @@ export function Sidebar() {
           badge={<Badge variant="preview">Preview</Badge>}
         />
         <NavItem to="/dashboard/storage" icon={Database} label="Storage" />
+        <div className="ml-6 space-y-0.5">
+          <NavItem to="/dashboard/storage/object" icon={Database} label="Object Storage" />
+        </div>
         <NavItem to="/dashboard/network" icon={Network} label="Network" />
         <NavItem to="/dashboard/gpu" icon={Monitor} label="GPU instances" />
 

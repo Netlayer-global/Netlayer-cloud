@@ -32,6 +32,7 @@ import healthRoutes from './routes/health.routes'
 import statusRoutes from './routes/status.routes'
 import adminStatusRoutes from './routes/admin-status.routes'
 import abuseRoutes from './routes/abuse.routes'
+import storageRoutes, { storagePublicRouter } from './routes/storage.routes'
 
 const app = express()
 const httpServer = createServer(app)
@@ -73,6 +74,9 @@ app.use(cors({ origin: corsOrigin, credentials: true }))
 // Webhooks need raw body — mount BEFORE express.json()
 app.use('/api/webhooks', webhookRoutes)
 
+// Storage mock-upload/mock-download also use raw bodies — mount BEFORE express.json()
+app.use('/api/storage', storagePublicRouter)
+
 app.use(express.json({ limit: '1mb' }))
 app.use(cookieParser())
 
@@ -99,6 +103,7 @@ app.use('/api/ssh-keys',      authMiddleware, idempotency(), sshRoutes)
 app.use('/api/notifications', authMiddleware, notificationRoutes)
 app.use('/api/api-keys',      authMiddleware, idempotency(), apiKeyRoutes)
 app.use('/api/announcements', authMiddleware, announcementRoutes)
+app.use('/api/storage',       authMiddleware, idempotency(), storageRoutes)
 
 // ─── Admin ──────────────────────────────────────────────────────────
 app.use('/api/admin', authMiddleware, idempotency(), adminRoutes)

@@ -101,3 +101,60 @@ export const adminAPI = {
     ),
   getNodes: () => api.get<{ data: ProxmoxNode[] }>('/admin/nodes'),
 }
+
+// ─── OBJECT STORAGE ──────────────────────────────────────────
+export interface StorageBucket {
+  id: string
+  name: string
+  region: string
+  sizeBytes: number
+  objects: number
+  isPublic: boolean
+  endpoint: string | null
+  createdAt: string
+}
+export interface StorageObjectMeta {
+  key: string
+  size: number
+  lastModified: string
+  contentType?: string
+  etag?: string
+}
+export interface StorageAccessKey {
+  id: string
+  name: string
+  accessKey: string
+  secretKey?: string
+  createdAt: string
+}
+
+export const storageAPI = {
+  listBuckets: () => api.get<{ data: StorageBucket[] }>('/storage/buckets'),
+  getBucket: (id: string) => api.get<{ data: StorageBucket & { liveStats?: { objects: number; sizeBytes: number } } }>(`/storage/buckets/${id}`),
+  createBucket: (name: string, region: string, isPublic: boolean) =>
+    api.post<{ data: StorageBucket }>('/storage/buckets', { name, region, isPublic }),
+  updateBucket: (id: string, data: { isPublic?: boolean }) =>
+    api.patch<{ data: StorageBucket }>(`/storage/buckets/${id}`, data),
+  deleteBucket: (id: string) => api.delete(`/storage/buckets/${id}`),
+  listObjects: (bucketId: string, prefix = '') =>
+    api.get<{ data: StorageObjectMeta[] }>(
+      `/storage/buckets/${bucketId}/objects?prefix=${encodeURIComponent(prefix)}`
+    ),
+  deleteObject: (bucketId: string, key: string) =>
+    api.delete(`/storage/buckets/${bucketId}/objects`, { data: { key } }),
+  presignPut: (bucketId: string, key: string, contentType?: string) =>
+    api.post<{
+      data: { url: string; method: 'PUT'; headers: Record<string, string>; key: string; expiresIn: number; mock: boolean }
+    }>(`/storage/buckets/${bucketId}/presign`, {
+      key, contentType, operation: 'put',
+    }),
+  presignGet: (bucketId: string, key: string) =>
+    api.post<{ data: { url: string; method: 'GET'; key: string; expiresIn: number; mock: boolean } }>(
+      `/storage/buckets/${bucketId}/presign`,
+      { key, operation: 'get' }
+    ),
+  listAccessKeys: () => api.get<{ data: StorageAccessKey[] }>('/storage/access-keys'),
+  createAccessKey: (name: string) =>
+    api.post<{ data: StorageAccessKey & { secretKey: string } }>('/storage/access-keys', { name }),
+  deleteAccessKey: (keyId: string) => api.delete(`/storage/access-keys/${keyId}`),
+}

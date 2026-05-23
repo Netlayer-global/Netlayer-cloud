@@ -150,6 +150,7 @@ export const openapiSpec = {
     { name: 'SSH Keys' },
     { name: 'Notifications' },
     { name: 'Health' },
+    { name: 'Storage' },
   ],
   paths: {
     '/healthz': {
@@ -417,6 +418,118 @@ export const openapiSpec = {
         },
         responses: { '200': { description: 'Order with provider info' } },
       },
+    },
+    '/api/storage/buckets': {
+      get: {
+        tags: ['Storage'],
+        summary: 'List my buckets',
+        responses: { '200': { description: 'OK' } },
+      },
+      post: {
+        tags: ['Storage'],
+        summary: 'Create bucket',
+        parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name'],
+                properties: {
+                  name: { type: 'string', minLength: 3, maxLength: 63 },
+                  region: { type: 'string', default: 'us-east-1' },
+                  isPublic: { type: 'boolean' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '201': { description: 'Created' },
+          '409': { description: 'Bucket name taken' },
+        },
+      },
+    },
+    '/api/storage/buckets/{id}': {
+      get: { tags: ['Storage'], summary: 'Get bucket', responses: { '200': { description: 'OK' } } },
+      patch: {
+        tags: ['Storage'],
+        summary: 'Update bucket settings',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { type: 'object', properties: { isPublic: { type: 'boolean' } } },
+            },
+          },
+        },
+        responses: { '200': { description: 'OK' } },
+      },
+      delete: { tags: ['Storage'], summary: 'Delete bucket', responses: { '200': { description: 'Deleted' } } },
+    },
+    '/api/storage/buckets/{id}/objects': {
+      get: {
+        tags: ['Storage'],
+        summary: 'List objects in bucket',
+        responses: { '200': { description: 'OK' } },
+      },
+      delete: {
+        tags: ['Storage'],
+        summary: 'Delete object',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { type: 'object', required: ['key'], properties: { key: { type: 'string' } } },
+            },
+          },
+        },
+        responses: { '200': { description: 'Deleted' } },
+      },
+    },
+    '/api/storage/buckets/{id}/presign': {
+      post: {
+        tags: ['Storage'],
+        summary: 'Get a presigned URL for upload (PUT) or download (GET)',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['key'],
+                properties: {
+                  key: { type: 'string' },
+                  contentType: { type: 'string' },
+                  operation: { type: 'string', enum: ['put', 'get'], default: 'put' },
+                  expirySec: { type: 'integer', minimum: 60, maximum: 3600, default: 900 },
+                },
+              },
+            },
+          },
+        },
+        responses: { '200': { description: 'OK' } },
+      },
+    },
+    '/api/storage/access-keys': {
+      get: { tags: ['Storage'], summary: 'List my storage access keys', responses: { '200': { description: 'OK' } } },
+      post: {
+        tags: ['Storage'],
+        summary: 'Create access key (secret returned ONCE)',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { type: 'object', required: ['name'], properties: { name: { type: 'string' } } },
+            },
+          },
+        },
+        responses: { '201': { description: 'Created' } },
+      },
+    },
+    '/api/storage/access-keys/{keyId}': {
+      delete: { tags: ['Storage'], summary: 'Revoke access key', responses: { '200': { description: 'Revoked' } } },
     },
   },
 } as const

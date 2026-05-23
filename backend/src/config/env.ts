@@ -29,6 +29,7 @@ const Schema = z.object({
   ZABBIX_MOCK_MODE: z.enum(['true', 'false']).default('true'),
   EMAIL_MOCK_MODE: z.enum(['true', 'false']).optional(),
   SMS_PROVIDER: z.enum(['twilio', 'msg91', 'mock']).default('mock'),
+  MINIO_MOCK_MODE: z.enum(['true', 'false']).default('true'),
 
   // Optional providers
   PROXMOX_HOST: z.string().optional(),
@@ -66,6 +67,13 @@ const Schema = z.object({
   MSG91_API_KEY: z.string().optional(),
   MSG91_SENDER: z.string().default('NETLYR'),
 
+  // Object Storage (MinIO / S3 compatible)
+  MINIO_ENDPOINT: z.string().optional(),
+  MINIO_ACCESS_KEY: z.string().optional(),
+  MINIO_SECRET_KEY: z.string().optional(),
+  MINIO_BUCKET_PREFIX: z.string().default('netlayer'),
+  MINIO_REGION: z.string().default('us-east-1'),
+
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   LOG_PRETTY: z.enum(['true', 'false']).default('true'),
 
@@ -101,6 +109,7 @@ export const config = {
   emailMock: env.EMAIL_MOCK_MODE === 'true' || !env.RESEND_API_KEY,
   metricsEnabled: env.METRICS_ENABLED === 'true',
   logPretty: env.LOG_PRETTY === 'true',
+  minioMock: env.MINIO_MOCK_MODE === 'true' || !env.MINIO_ENDPOINT,
 }
 
 export type Config = typeof config

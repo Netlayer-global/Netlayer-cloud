@@ -27,6 +27,7 @@ import DeployServer from './pages/DeployServer'
 import Billing from './pages/Billing'
 import SshKeys from './pages/SshKeys'
 import Settings from './pages/Settings'
+import ObjectStorage from './pages/ObjectStorage'
 import Placeholder from './pages/Placeholder'
 
 import AdminLayout from './pages/Admin/Layout'
@@ -97,6 +98,7 @@ export default function App() {
             <Route path="vms"       element={<Placeholder title="Virtual machines" description="Lightweight VMs for fast workloads."        icon={<Cpu size={28} />} />} />
             <Route path="k8s"       element={<Placeholder title="Kubernetes"      description="Managed Kubernetes clusters in one click." icon={<Hexagon size={28} />} />} />
             <Route path="storage"   element={<Placeholder title="Storage"         description="Block and object storage volumes."         icon={<Database size={28} />} />} />
+            <Route path="storage/object" element={<ObjectStorage />} />
             <Route path="network"   element={<Placeholder title="Network"         description="Private networks, floating IPs, firewalls." icon={<Network size={28} />} />} />
             <Route path="gpu"       element={<Placeholder title="GPU instances"   description="On-demand GPUs for AI / ML workloads."     icon={<Monitor size={28} />} />} />
             <Route path="team"      element={<Placeholder title="Team settings"   description="Invite teammates and manage roles."        icon={<Users size={28} />} />} />
