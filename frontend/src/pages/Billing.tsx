@@ -10,6 +10,7 @@ import { Badge } from '../components/ui/Badge'
 import { Skeleton } from '../components/ui/Skeleton'
 import { Table, THead, TBody, TR, TH, TD, EmptyTable } from '../components/ui/Table'
 import { useAuthStore } from '../store/authStore'
+import { AddCreditModal } from '../components/billing/AddCreditModal'
 import { cn, formatCurrency, formatDate, relativeTime } from '../lib/utils'
 
 const statusToBadge = (status: string) => {
@@ -40,6 +41,7 @@ export default function Billing() {
   const qc = useQueryClient()
   const { user } = useAuthStore()
   const [tab, setTab] = useState<'invoices' | 'transactions'>('invoices')
+  const [addCreditOpen, setAddCreditOpen] = useState(false)
 
   const { data: usage, isLoading: usageLoading } = useQuery({
     queryKey: ['usage'],
@@ -154,7 +156,7 @@ export default function Billing() {
                 {formatCurrency(usage?.balance || 0, user?.currency || 'INR')}
               </div>
             </div>
-            <Button><Plus size={14} /> Add funds</Button>
+            <Button onClick={() => setAddCreditOpen(true)}><Plus size={14} /> Add funds</Button>
           </div>
         </Card>
       )}
@@ -282,6 +284,13 @@ export default function Billing() {
           </TBody>
         </Table>
       )}
+
+      <AddCreditModal
+        open={addCreditOpen}
+        onClose={() => setAddCreditOpen(false)}
+        user={user || undefined}
+        onSuccess={() => setAddCreditOpen(false)}
+      />
     </div>
   )
 }

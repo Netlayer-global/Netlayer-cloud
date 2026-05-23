@@ -36,6 +36,45 @@ export class PaymentService {
     return toUSD / fromUSD
   }
 
+  /**
+   * Wallet top-up: create a payment-only invoice for an arbitrary amount
+   * and hand it to createOrder() so the existing Razorpay/Stripe + webhook +
+   * markInvoicePaid path credits the user's balance on success.
+   *
+   * No tax is charged here — wallet credits are not a taxable supply under
+   * Indian GST until the customer consumes them by deploying. The deploy
+   * path is what actually generates the GST invoice (see server.service).
+   */
+  async topUpWallet(userId: string, amount: number) {
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) throw new AppError('User not found', 404, 'NOT_FOUND')
+    if (amount < 100) {
+      throw new AppError('Minimum top-up is 100', 400, 'AMOUNT_TOO_LOW')
+    }
+    if (amount > 1_000_000) {
+      throw new AppError('Maximum top-up is 1,000,000', 400, 'AMOUNT_TOO_HIGH')
+    }
+
+    const currency = this.getCurrencyForCountry(user.country)
+    const invoice = await prisma.invoice.create({
+      data: {
+        userId,
+        amount,
+        tax: 0,
+        total: amount,
+        currency,
+        status: 'PENDING',
+        dueDate: new Date(Date.now() + 7 * 86_400_000),
+        items: JSON.stringify([
+          { description: `Wallet top-up`, qty: 1, unitPrice: amount, total: amount },
+        ]),
+        notes: 'Top-up invoice. Funds added to wallet on payment success.',
+      },
+    })
+
+    return this.createOrder(userId, invoice.id)
+  }
+
   async createOrder(userId: string, invoiceId: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } })
     if (!user) throw new AppError('User not found', 404, 'NOT_FOUND')

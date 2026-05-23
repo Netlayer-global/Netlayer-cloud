@@ -159,6 +159,8 @@ export const serverExtraAPI = {
 export const paymentAPI = {
   createOrder: (invoiceId: string) =>
     api.post('/billing/orders', { invoiceId }).then((r) => r.data.data),
+  topup: (amount: number) =>
+    api.post('/billing/topup', { amount }).then((r) => r.data.data),
   verifyRazorpay: (data: {
     razorpay_order_id: string
     razorpay_payment_id: string

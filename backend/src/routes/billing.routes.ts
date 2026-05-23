@@ -95,6 +95,18 @@ router.post('/orders', async (req: AuthedRequest, res, next) => {
   } catch (e) { next(e) }
 })
 
+// Wallet top-up — opens a fresh payment order for an arbitrary credit amount.
+// Frontend can call this directly without first creating an invoice.
+router.post('/topup', async (req: AuthedRequest, res, next) => {
+  try {
+    const { amount } = z.object({
+      amount: z.number().min(100).max(1_000_000),
+    }).parse(req.body)
+    const order = await paymentService.topUpWallet(req.user!.userId, amount)
+    res.json({ data: order })
+  } catch (e) { next(e) }
+})
+
 router.post('/verify-razorpay', async (req: AuthedRequest, res, next) => {
   try {
     const body = z

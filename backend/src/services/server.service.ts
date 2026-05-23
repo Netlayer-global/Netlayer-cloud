@@ -12,6 +12,7 @@ import { AppError } from '../utils/errors'
 import logger from '../utils/logger'
 import { startWorkflow } from '../workflows/engine'
 import { DeployServerWorkflow } from '../workflows/deployServer.workflow'
+import { computeTax } from './tax.service'
 
 const nano = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 8)
 const passwordNano = customAlphabet(
@@ -52,7 +53,33 @@ export class ServerService {
     if (!region?.isActive) throw new AppError('Region not available', 400, 'INVALID_REGION')
     if (!os?.isActive) throw new AppError('OS not available', 400, 'INVALID_OS')
 
-    // 3. Optional SSH key
+    // 3. Balance check — prepaid wallet must cover the first hour with tax.
+    // We bill hourly and the agent meters real consumption afterwards; the
+    // first-hour debit acts as an anti-abuse deposit.
+    const firstHourSubtotal = Number(plan.priceHourly.toFixed(2))
+    const taxRes = computeTax({
+      amount: firstHourSubtotal,
+      country: user.country || 'IN',
+      gstNumber: user.gstNumber || undefined,
+      vatNumber: user.vatNumber || undefined,
+    })
+    const taxAmount = taxRes.total
+    const firstHourTotal = Number((firstHourSubtotal + taxAmount).toFixed(2))
+
+    // Honour platform credit limit — users can carry a small negative balance
+    // (e.g. enterprise customers on net-30) but everyone else must be at zero+.
+    const minRequired = firstHourTotal
+    const effectiveBalance = user.balance + (user.creditLimit || 0)
+    if (effectiveBalance < minRequired) {
+      const shortfall = Number((minRequired - effectiveBalance).toFixed(2))
+      throw new AppError(
+        `Insufficient balance. Add ${user.currency} ${shortfall.toFixed(2)} to deploy this plan.`,
+        402,
+        'INSUFFICIENT_BALANCE'
+      )
+    }
+
+    // 4. Optional SSH key
     let sshPublicKey: string | undefined
     if (config.sshKeyId) {
       const key = await prisma.sshKey.findFirst({ where: { id: config.sshKeyId, userId } })
@@ -60,15 +87,63 @@ export class ServerService {
       sshPublicKey = key.publicKey
     }
 
-    // 4. Pick the best node
+    // 5. Pick the best node
     const node = await nodeSelector.selectBestNode(region.id, plan.cpu, plan.ramGB, plan.diskGB)
 
-    // 5. Hostname + password
+    // 6. Hostname + password
     const domain = process.env.CLOUDFLARE_DOMAIN || 'netlayer.com'
     const hostname = `srv-${nano()}.${domain}`
     const rootPassword = config.rootPassword || passwordNano()
 
-    // 6. Create DB record (PENDING)
+    // 7. Charge the first hour atomically: debit balance, create a PAID
+    // invoice covering the first hour, write a Transaction. The whole thing
+    // is a Prisma $transaction so a partial debit can never happen.
+    const balanceBefore = user.balance
+    const balanceAfter = Number((balanceBefore - firstHourTotal).toFixed(2))
+
+    const [, invoice] = await prisma.$transaction([
+      prisma.user.update({
+        where: { id: user.id },
+        data: { balance: balanceAfter },
+      }),
+      prisma.invoice.create({
+        data: {
+          userId: user.id,
+          amount: firstHourSubtotal,
+          tax: taxAmount,
+          taxBreakdown: JSON.stringify(taxRes),
+          total: firstHourTotal,
+          currency: user.currency,
+          status: 'PAID',
+          paidAt: new Date(),
+          paymentMethod: 'wallet',
+          dueDate: new Date(),
+          items: JSON.stringify([
+            {
+              description: `${plan.name} · 1 hour · ${region.city}`,
+              qty: 1,
+              unitPrice: firstHourSubtotal,
+              total: firstHourSubtotal,
+            },
+          ]),
+          notes: 'First-hour deposit. Hourly metering begins after deploy completes.',
+        },
+      }),
+      prisma.transaction.create({
+        data: {
+          userId: user.id,
+          type: 'debit',
+          amount: firstHourTotal,
+          currency: user.currency,
+          description: `Deploy ${plan.name} in ${region.city} — first hour`,
+          balanceBefore,
+          balanceAfter,
+        },
+      }),
+    ])
+
+    // 8. Create server DB row (PENDING) — invoice is already paid before
+    // any provisioning side-effect runs.
     const server = await prisma.server.create({
       data: {
         userId,
@@ -82,9 +157,16 @@ export class ServerService {
         rootPassword,
         specs: JSON.stringify({ cpu: plan.cpu, ram: plan.ramGB, disk: plan.diskGB }),
         bandwidth: JSON.stringify({ used: 0, limit: plan.bandwidthTB * 1000 }),
+        nextBillDate: new Date(Date.now() + 3600_000),
       },
       include: { plan: true, region: true, osTemplate: true, node: true },
     })
+
+    // Link the prepaid invoice to the server it covers
+    await prisma.invoice.update({
+      where: { id: invoice.id },
+      data: { notes: `${invoice.notes || ''}\nServer: ${server.id}` },
+    }).catch(() => {})
 
     await prisma.auditLog.create({
       data: {
@@ -92,7 +174,7 @@ export class ServerService {
         action: 'server.deploy_requested',
         resource: 'server',
         resourceId: server.id,
-        newValue: JSON.stringify({ name: config.name, plan: plan.name, region: region.city }),
+        newValue: JSON.stringify({ name: config.name, plan: plan.name, region: region.city, firstHourTotal }),
       },
     })
 

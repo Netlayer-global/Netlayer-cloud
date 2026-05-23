@@ -10,6 +10,8 @@ import { Select } from '../components/ui/Select'
 import { Spinner } from '../components/ui/Spinner'
 import { cn, formatCurrency } from '../lib/utils'
 import { getSocket } from '../lib/socket'
+import { AddCreditModal } from '../components/billing/AddCreditModal'
+import { useAuthStore } from '../store/authStore'
 import type { Plan, Region, OsTemplate } from '../types'
 
 const STEPS = ['Location', 'Plan', 'OS', 'Configure'] as const
@@ -39,6 +41,9 @@ export default function DeployServer() {
   const [provisioning, setProvisioning] = useState(false)
   const [provisionStatus, setProvisionStatus] = useState<string>('PENDING')
   const [provisionedId, setProvisionedId] = useState<string | null>(null)
+  const [topUpOpen, setTopUpOpen] = useState(false)
+  const [topUpShortfall, setTopUpShortfall] = useState<number | undefined>()
+  const user = useAuthStore((s) => s.user)
 
   const { data: regions = [] } = useQuery({
     queryKey: ['regions'],
@@ -94,7 +99,18 @@ export default function DeployServer() {
       })
     },
     onError: (e: any) => {
-      toast.error(e.response?.data?.error || 'Failed to deploy')
+      const code = e.response?.data?.code
+      const msg = e.response?.data?.error || 'Failed to deploy'
+      if (code === 'INSUFFICIENT_BALANCE') {
+        // Parse shortfall out of the message: "Add INR 23.59 to deploy this plan."
+        const m = /(\d+(?:\.\d+)?)/.exec(msg)
+        const shortfall = m ? parseFloat(m[1]) : undefined
+        setTopUpShortfall(shortfall)
+        setTopUpOpen(true)
+        toast.warning(msg)
+      } else {
+        toast.error(msg)
+      }
       setProvisioning(false)
     },
   })
@@ -263,6 +279,18 @@ export default function DeployServer() {
           </Button>
         </div>
       </div>
+
+      <AddCreditModal
+        open={topUpOpen}
+        onClose={() => setTopUpOpen(false)}
+        shortfall={topUpShortfall}
+        user={user || undefined}
+        onSuccess={() => {
+          setTopUpOpen(false)
+          // Auto-retry the deploy after the wallet has been credited.
+          setTimeout(() => create.mutate(), 600)
+        }}
+      />
     </div>
   )
 }
