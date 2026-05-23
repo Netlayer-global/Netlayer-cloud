@@ -19,6 +19,11 @@ import DocsPage from './pages/public/DocsPage'
 import FeaturesPage from './pages/public/FeaturesPage'
 import KubernetesPage from './pages/public/KubernetesPage'
 import AbuseReportPage from './pages/public/AbuseReportPage'
+import AboutPage from './pages/public/AboutPage'
+import CareersPage from './pages/public/CareersPage'
+import PrivacyPage from './pages/public/PrivacyPage'
+import TermsPage from './pages/public/TermsPage'
+import BlogPage from './pages/public/BlogPage'
 
 import Home from './pages/Home'
 import Servers from './pages/Servers'
@@ -88,6 +93,11 @@ export default function App() {
           <Route path="/features" element={<FeaturesPage />} />
           <Route path="/kubernetes" element={<KubernetesPage />} />
           <Route path="/abuse-report" element={<AbuseReportPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/careers" element={<CareersPage />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/legal/privacy" element={<PrivacyPage />} />
+          <Route path="/legal/terms" element={<TermsPage />} />
           <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
           <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

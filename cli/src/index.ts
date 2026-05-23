@@ -5,6 +5,12 @@ import pkg from '../package.json'
 import { authCommands } from './commands/auth'
 import { catalogCommands } from './commands/catalog'
 import { serverCommands } from './commands/server'
+import { volumeCommands } from './commands/volume'
+import { lbCommands } from './commands/lb'
+import { dbCommands } from './commands/db'
+import { dnsCommands } from './commands/dns'
+import { bucketCommands } from './commands/bucket'
+import { sshKeyCommands } from './commands/sshKey'
 import { configCommands } from './commands/config'
 
 const program = new Command()
@@ -18,6 +24,12 @@ program
 authCommands(program)
 catalogCommands(program)
 serverCommands(program)
+volumeCommands(program)
+lbCommands(program)
+dbCommands(program)
+dnsCommands(program)
+bucketCommands(program)
+sshKeyCommands(program)
 configCommands(program)
 
 program
