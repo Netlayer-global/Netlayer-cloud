@@ -205,3 +205,82 @@ export const dnsAPI = {
   deleteRecord: (zoneId: string, recordId: string) =>
     api.delete(`/dns/zones/${zoneId}/records/${recordId}`),
 }
+
+
+// ─── MARKETPLACE ───────────────────────────────────────────
+export interface AppTemplate {
+  id: string
+  name: string
+  slug: string
+  description: string
+  logo: string
+  category: string
+  minPlanSlug: string
+  envVars: { key: string; defaultValue?: string; description?: string }[]
+  ports: number[]
+  installs: number
+  isActive: boolean
+  createdAt: string
+  userDataScript?: string
+}
+
+export const marketplaceAPI = {
+  list: () => api.get<{ data: AppTemplate[] }>('/marketplace'),
+  categories: () => api.get<{ data: { category: string; count: number }[] }>('/marketplace/categories'),
+  get: (slug: string) => api.get<{ data: AppTemplate }>(`/marketplace/${slug}`),
+}
+
+// ─── ACTIVITY LOG ──────────────────────────────────────────
+export interface ActivityEntry {
+  id: string
+  action: string
+  resource: string
+  resourceId: string | null
+  oldValue: any
+  newValue: any
+  metadata: any
+  ipAddress: string | null
+  country: string | null
+  createdAt: string
+}
+
+export const activityAPI = {
+  list: (params: { page?: number; limit?: number; action?: string; resource?: string; from?: string; to?: string } = {}) =>
+    api.get<{ data: ActivityEntry[]; pagination: { page: number; limit: number; total: number } }>(
+      '/activity',
+      { params }
+    ),
+  summary: () => api.get<{ data: { action: string; count: number }[] }>('/activity/summary'),
+}
+
+// ─── MONITORING ────────────────────────────────────────────
+export interface MonitoringOverview {
+  totals: {
+    servers: number
+    running: number
+    stopped: number
+    building: number
+    error: number
+    volumes: number
+    databases: number
+    loadBalancers: number
+  }
+  byStatus: Record<string, number>
+  byRegion: { slug: string; city: string; flag: string; count: number }[]
+}
+
+export interface MonitoringPoint {
+  t: number
+  cpu: number
+  ram: number
+  netIn: number
+  netOut: number
+}
+
+export const monitoringAPI = {
+  overview: () => api.get<{ data: MonitoringOverview }>('/monitoring/overview'),
+  aggregate: (range: '1h' | '6h' | '24h' | '7d' | '30d' = '24h') =>
+    api.get<{ data: { points: MonitoringPoint[]; serverCount: number; range: string } }>(
+      `/monitoring/aggregate?range=${range}`
+    ),
+}

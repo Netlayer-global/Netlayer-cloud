@@ -10,7 +10,7 @@ import { platformAPI } from '../api/platform'
  */
 const FALLBACK = {
   modules: {
-    servers: true, deploy: true, vms: false, gpu: false, kubernetes: false, marketplace: false,
+    servers: true, deploy: true, vms: false, gpu: false, kubernetes: false, marketplace: true,
     objectStorage: true, blockStorage: true, managedDb: true,
     loadBalancers: true, dns: true, firewalls: true, vpc: true,
     monitoring: true, alerts: false, logs: false,

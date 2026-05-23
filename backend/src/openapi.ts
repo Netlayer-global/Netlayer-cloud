@@ -156,6 +156,9 @@ export const openapiSpec = {
     { name: 'Managed Databases' },
     { name: 'VPC' },
     { name: 'DNS' },
+    { name: 'Marketplace' },
+    { name: 'Activity' },
+    { name: 'Monitoring' },
   ],
   paths: {
     '/healthz': {

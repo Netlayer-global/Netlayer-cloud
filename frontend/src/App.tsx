@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
-import { Cpu, Hexagon, Database, Network, Monitor, Users, Folder, Activity } from 'lucide-react'
+import { Cpu, Hexagon, Database, Network, Monitor, Users, Folder } from 'lucide-react'
 
 import { DashboardLayout } from './components/Layout'
 import { ProtectedRoute, AdminRoute, PublicOnly } from './components/ProtectedRoute'
@@ -33,6 +33,9 @@ import LoadBalancers from './pages/LoadBalancers'
 import ManagedDatabases from './pages/ManagedDatabases'
 import VPCPage from './pages/VPC'
 import DnsZones from './pages/DnsZones'
+import Marketplace from './pages/Marketplace'
+import Monitoring from './pages/Monitoring'
+import Activity from './pages/Activity'
 import Placeholder from './pages/Placeholder'
 
 import AdminLayout from './pages/Admin/Layout'
@@ -101,7 +104,6 @@ export default function App() {
             <Route path="ssh-keys" element={<SshKeys />} />
             <Route path="settings" element={<Settings />} />
             <Route path="projects"  element={<ModuleGuard module="projects"><Placeholder title="Projects"        description="Group your infrastructure by environment." icon={<Folder size={28} />} /></ModuleGuard>} />
-            <Route path="activity"  element={<ModuleGuard module="activity"><Placeholder title="Activity"        description="Audit log of all actions on your account."  icon={<Activity size={28} />} /></ModuleGuard>} />
             <Route path="vms"       element={<ModuleGuard module="vms"><Placeholder title="Virtual machines" description="Lightweight VMs for fast workloads."        icon={<Cpu size={28} />} /></ModuleGuard>} />
             <Route path="k8s"       element={<ModuleGuard module="kubernetes"><Placeholder title="Kubernetes"      description="Managed Kubernetes clusters in one click." icon={<Hexagon size={28} />} /></ModuleGuard>} />
             <Route path="storage"   element={<Placeholder title="Storage"         description="Block and object storage volumes."         icon={<Database size={28} />} />} />
@@ -111,6 +113,9 @@ export default function App() {
             <Route path="databases"      element={<ModuleGuard module="managedDb"><ManagedDatabases /></ModuleGuard>} />
             <Route path="vpc"            element={<ModuleGuard module="vpc"><VPCPage /></ModuleGuard>} />
             <Route path="dns"            element={<ModuleGuard module="dns"><DnsZones /></ModuleGuard>} />
+            <Route path="marketplace"    element={<ModuleGuard module="marketplace"><Marketplace /></ModuleGuard>} />
+            <Route path="monitoring"     element={<ModuleGuard module="monitoring"><Monitoring /></ModuleGuard>} />
+            <Route path="activity"       element={<ModuleGuard module="activity"><Activity /></ModuleGuard>} />
             <Route path="network"   element={<Placeholder title="Network"         description="Private networks, floating IPs, firewalls." icon={<Network size={28} />} />} />
             <Route path="gpu"       element={<ModuleGuard module="gpu"><Placeholder title="GPU instances"   description="On-demand GPUs for AI / ML workloads."     icon={<Monitor size={28} />} /></ModuleGuard>} />
             <Route path="team"      element={<ModuleGuard module="team"><Placeholder title="Team settings"   description="Invite teammates and manage roles."        icon={<Users size={28} />} /></ModuleGuard>} />

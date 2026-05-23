@@ -18,7 +18,7 @@ export const MODULE_DEFINITIONS = [
   { key: 'vms',            label: 'Virtual machines', group: 'Compute',    default: false, required: false, desc: 'Lightweight VMs' },
   { key: 'gpu',            label: 'GPU instances',    group: 'Compute',    default: false, required: false, desc: 'NVIDIA A100/H100 GPUs' },
   { key: 'kubernetes',     label: 'Kubernetes',       group: 'Compute',    default: false, required: false, desc: 'Managed K8s clusters' },
-  { key: 'marketplace',    label: 'Marketplace',      group: 'Compute',    default: false, required: false, desc: 'One-click apps' },
+  { key: 'marketplace',    label: 'Marketplace',      group: 'Compute',    default: true,  required: false, desc: 'One-click apps' },
   // Storage
   { key: 'objectStorage',  label: 'Object storage',   group: 'Storage',    default: true,  required: false, desc: 'S3-compatible buckets' },
   { key: 'blockStorage',   label: 'Block volumes',    group: 'Storage',    default: true,  required: false, desc: 'NVMe persistent volumes' },

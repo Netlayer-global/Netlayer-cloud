@@ -39,6 +39,9 @@ import loadBalancersRoutes from './routes/loadBalancers.routes'
 import databasesRoutes from './routes/databases.routes'
 import vpcRoutes from './routes/vpc.routes'
 import dnsRoutes from './routes/dns.routes'
+import marketplaceRoutes from './routes/marketplace.routes'
+import activityRoutes from './routes/activity.routes'
+import monitoringRoutes from './routes/monitoring.routes'
 
 const app = express()
 const httpServer = createServer(app)
@@ -99,6 +102,7 @@ app.use('/api', planRoutes)
 app.use('/api/status', statusRoutes)
 app.use('/api/abuse', abuseRoutes)
 app.use('/api/platform', platformRoutes)
+app.use('/api/marketplace', marketplaceRoutes)
 
 // ─── Auth ───────────────────────────────────────────────────────────
 app.use('/api/auth', idempotency(), authRoutes)
@@ -116,6 +120,8 @@ app.use('/api/load-balancers', authMiddleware, idempotency(), loadBalancersRoute
 app.use('/api/databases',     authMiddleware, idempotency(), databasesRoutes)
 app.use('/api/vpc',           authMiddleware, idempotency(), vpcRoutes)
 app.use('/api/dns',           authMiddleware, idempotency(), dnsRoutes)
+app.use('/api/activity',      authMiddleware, activityRoutes)
+app.use('/api/monitoring',    authMiddleware, monitoringRoutes)
 
 // ─── Admin ──────────────────────────────────────────────────────────
 app.use('/api/admin', authMiddleware, idempotency(), adminRoutes)
