@@ -1,42 +1,67 @@
 import { useEffect, useRef, useState } from 'react'
 
-interface Options {
+interface CountUpOptions {
   to: number
-  duration?: number    // ms, default 1500
-  start?: number       // default 0
-  decimals?: number    // default 0
-  /** Only animate when this becomes true. */
+  decimals?: number
   enabled?: boolean
+  duration?: number
 }
 
 /**
- * Eased number ramp (cubic-out). Pairs with useInView so stat counters
- * only run when the section enters the viewport.
+ * Animated number counter. Supports two call shapes for backward compatibility:
+ *
+ *   const v = useCountUp(500_000, 1800, 0)         // returns formatted string
+ *   const v = useCountUp({ to: 500_000, enabled }) // returns raw number
+ *
+ * The second form is the original API used by the old landing StatsBar.
+ * The first form is the new ergonomics — returns a pre-formatted display string
+ * so callers don't have to call toFixed/toLocaleString themselves.
+ *
+ * Both honour `prefers-reduced-motion` by jumping straight to the final value.
  */
-export function useCountUp({ to, duration = 1500, start = 0, decimals = 0, enabled = true }: Options) {
-  const [value, setValue] = useState(start)
-  const startTime = useRef<number | null>(null)
-  const raf = useRef<number | null>(null)
+
+// Object-form overload — returns a number for callers that want to format themselves.
+export function useCountUp(options: CountUpOptions): number
+// Positional-form overload — returns a pre-formatted string.
+export function useCountUp(target: number, durationMs?: number, decimals?: number): string
+
+export function useCountUp(
+  arg1: number | CountUpOptions,
+  durationMs = 1800,
+  decimals = 0
+): string | number {
+  const objectForm = typeof arg1 === 'object'
+  const target = objectForm ? arg1.to : arg1
+  const duration = objectForm ? (arg1.duration ?? 1800) : durationMs
+  const enabled = objectForm ? (arg1.enabled ?? true) : true
+  const dec = objectForm ? (arg1.decimals ?? 0) : decimals
+
+  const [value, setValue] = useState(0)
+  const started = useRef(false)
 
   useEffect(() => {
     if (!enabled) return
-    startTime.current = null
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduceMotion) {
+      setValue(target)
+      return
+    }
+    if (started.current) return
+    started.current = true
 
+    let frame: number
+    const start = performance.now()
     const tick = (now: number) => {
-      if (startTime.current === null) startTime.current = now
-      const elapsed = now - startTime.current
-      const progress = Math.min(1, elapsed / duration)
-      const eased = 1 - Math.pow(1 - progress, 3)   // ease-out cubic
-      const current = start + (to - start) * eased
-      setValue(parseFloat(current.toFixed(decimals)))
-      if (progress < 1) raf.current = requestAnimationFrame(tick)
+      const t = Math.min(1, (now - start) / duration)
+      const eased = 1 - Math.pow(1 - t, 3)
+      setValue(target * eased)
+      if (t < 1) frame = requestAnimationFrame(tick)
     }
-    raf.current = requestAnimationFrame(tick)
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [target, duration, enabled])
 
-    return () => {
-      if (raf.current !== null) cancelAnimationFrame(raf.current)
-    }
-  }, [to, duration, start, decimals, enabled])
-
-  return value
+  if (objectForm) return value
+  if (dec > 0) return value.toFixed(dec)
+  return Math.floor(value).toLocaleString()
 }
