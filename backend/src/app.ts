@@ -33,6 +33,7 @@ import statusRoutes from './routes/status.routes'
 import adminStatusRoutes from './routes/admin-status.routes'
 import abuseRoutes from './routes/abuse.routes'
 import storageRoutes, { storagePublicRouter } from './routes/storage.routes'
+import platformRoutes from './routes/platform.routes'
 
 const app = express()
 const httpServer = createServer(app)
@@ -92,6 +93,7 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec, { customSiteTitle
 app.use('/api', planRoutes)
 app.use('/api/status', statusRoutes)
 app.use('/api/abuse', abuseRoutes)
+app.use('/api/platform', platformRoutes)
 
 // ─── Auth ───────────────────────────────────────────────────────────
 app.use('/api/auth', idempotency(), authRoutes)

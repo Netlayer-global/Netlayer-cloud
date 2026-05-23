@@ -68,6 +68,16 @@ export function TopNav() {
         </nav>
 
         <div className="hidden lg:flex items-center gap-2">
+          <Link
+            to="/status"
+            className="hidden xl:inline-flex items-center gap-2 h-8 px-3 rounded-full border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] transition-colors cursor-pointer"
+          >
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            </span>
+            <span className="text-[11px] text-gray-400">All systems operational</span>
+          </Link>
           <Link to="/login" className="px-3 h-9 inline-flex items-center text-[14px] text-gray-300 hover:text-white transition-colors">Sign In</Link>
           <Link
             to="/register"

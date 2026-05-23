@@ -7,7 +7,10 @@ import {
   Cpu,
   Hexagon,
   Database,
+  HardDrive,
   Network,
+  Globe,
+  Boxes,
   Monitor,
   CreditCard,
   Users,
@@ -20,10 +23,17 @@ import {
   Search,
   MoreVertical,
   Shield,
+  Key,
+  BarChart3,
+  Bell,
+  FileText,
+  LifeBuoy as TicketIcon,
+  Gift,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../store/authStore'
 import { serverAPI } from '../../api/endpoints'
+import { useModules } from '../../hooks/useModules'
 import { cn, initials } from '../../lib/utils'
 import { Badge } from '../ui/Badge'
 
@@ -67,6 +77,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 export function Sidebar() {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
+  const { isEnabled } = useModules()
 
   const { data: servers } = useQuery({
     queryKey: ['servers'],
@@ -89,6 +100,21 @@ export function Sidebar() {
       {n}
     </span>
   )
+
+  // Track whether each section has at least one visible item so we don't render
+  // empty section labels when the operator has disabled the entire group.
+  const computeShown =
+    isEnabled('servers') || isEnabled('vms') || isEnabled('gpu') ||
+    isEnabled('kubernetes') || isEnabled('marketplace')
+  const storageShown =
+    isEnabled('objectStorage') || isEnabled('blockStorage') || isEnabled('managedDb')
+  const networkShown =
+    isEnabled('loadBalancers') || isEnabled('dns') || isEnabled('vpc')
+  const monitoringShown =
+    isEnabled('monitoring') || isEnabled('alerts') || isEnabled('logs')
+  const accountShown =
+    isEnabled('billing') || isEnabled('apiKeys') || isEnabled('sshKeys') ||
+    isEnabled('team') || isEnabled('referrals') || isEnabled('support')
 
   return (
     <aside className="w-[220px] shrink-0 bg-[#0d0e0d] border-r border-[#2a2b2a] flex flex-col h-screen sticky top-0">
@@ -116,46 +142,112 @@ export function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
         <NavItem to="/dashboard/home" icon={LayoutDashboard} label="Home" />
-        <NavItem to="/dashboard/projects" icon={Folder} label="Projects" />
-        <NavItem to="/dashboard/activity" icon={Activity} label="Activity" />
+        {isEnabled('projects') && <NavItem to="/dashboard/projects" icon={Folder} label="Projects" />}
+        {isEnabled('activity') && <NavItem to="/dashboard/activity" icon={Activity} label="Activity" />}
 
-        <SectionLabel>Project: production</SectionLabel>
-        <NavItem
-          to="/dashboard/servers"
-          icon={ServerIcon}
-          label="Servers"
-          badge={countBadge(serverCount)}
-        />
-        <NavItem to="/dashboard/vms" icon={Cpu} label="Virtual machines" badge={countBadge(0)} />
-        <NavItem
-          to="/dashboard/k8s"
-          icon={Hexagon}
-          label="Kubernetes"
-          badge={<Badge variant="preview">Preview</Badge>}
-        />
-        <NavItem to="/dashboard/storage" icon={Database} label="Storage" />
-        <div className="ml-6 space-y-0.5">
-          <NavItem to="/dashboard/storage/object" icon={Database} label="Object Storage" />
-        </div>
-        <NavItem to="/dashboard/network" icon={Network} label="Network" />
-        <NavItem to="/dashboard/gpu" icon={Monitor} label="GPU instances" />
-
-        <SectionLabel>Account</SectionLabel>
-        <NavItem to="/dashboard/billing" icon={CreditCard} label="Usage & billing" />
-        <NavItem to="/dashboard/team" icon={Users} label="Team settings" />
-        <NavItem to="/dashboard/ssh-keys" icon={Shield} label="SSH keys" />
-        <NavItem to="/dashboard/settings" icon={Settings} label="Settings" />
-
-        {user?.role && ['SUPER_ADMIN', 'ADMIN', 'SUPPORT', 'BILLING'].includes(user.role) && (
+        {computeShown && (
           <>
-            <SectionLabel>Admin</SectionLabel>
-            <NavLink
-              to="/admin/dashboard"
-              className="h-8 rounded-md flex items-center gap-2 px-2 text-[13px] cursor-pointer transition-colors text-red-400 hover:bg-red-950/20"
-            >
-              <Shield size={16} className="shrink-0" />
-              <span className="flex-1 truncate">Admin panel</span>
-            </NavLink>
+            <SectionLabel>Compute</SectionLabel>
+            {isEnabled('servers') && (
+              <NavItem
+                to="/dashboard/servers"
+                icon={ServerIcon}
+                label="Servers"
+                badge={countBadge(serverCount)}
+              />
+            )}
+            {isEnabled('vms') && (
+              <NavItem to="/dashboard/vms" icon={Cpu} label="Virtual machines" badge={countBadge(0)} />
+            )}
+            {isEnabled('gpu') && (
+              <NavItem
+                to="/dashboard/gpu"
+                icon={Monitor}
+                label="GPU instances"
+                badge={<Badge variant="preview">New</Badge>}
+              />
+            )}
+            {isEnabled('kubernetes') && (
+              <NavItem
+                to="/dashboard/k8s"
+                icon={Hexagon}
+                label="Kubernetes"
+                badge={<Badge variant="preview">Preview</Badge>}
+              />
+            )}
+            {isEnabled('marketplace') && (
+              <NavItem to="/dashboard/marketplace" icon={Boxes} label="Marketplace" />
+            )}
+          </>
+        )}
+
+        {storageShown && (
+          <>
+            <SectionLabel>Storage</SectionLabel>
+            {isEnabled('blockStorage') && (
+              <NavItem to="/dashboard/storage/block" icon={HardDrive} label="Block volumes" />
+            )}
+            {isEnabled('objectStorage') && (
+              <NavItem to="/dashboard/storage/object" icon={Database} label="Object storage" />
+            )}
+            {isEnabled('managedDb') && (
+              <NavItem to="/dashboard/databases" icon={Database} label="Managed databases" />
+            )}
+          </>
+        )}
+
+        {networkShown && (
+          <>
+            <SectionLabel>Network</SectionLabel>
+            {isEnabled('loadBalancers') && (
+              <NavItem to="/dashboard/load-balancers" icon={Network} label="Load balancers" />
+            )}
+            {isEnabled('dns') && (
+              <NavItem to="/dashboard/dns" icon={Globe} label="DNS zones" />
+            )}
+            {isEnabled('vpc') && (
+              <NavItem to="/dashboard/vpc" icon={Network} label="VPC & private network" />
+            )}
+          </>
+        )}
+
+        {monitoringShown && (
+          <>
+            <SectionLabel>Monitoring</SectionLabel>
+            {isEnabled('monitoring') && (
+              <NavItem to="/dashboard/monitoring" icon={BarChart3} label="Metrics & graphs" />
+            )}
+            {isEnabled('alerts') && (
+              <NavItem to="/dashboard/alerts" icon={Bell} label="Alerts" />
+            )}
+            {isEnabled('logs') && (
+              <NavItem to="/dashboard/logs" icon={FileText} label="Logs" />
+            )}
+          </>
+        )}
+
+        {accountShown && (
+          <>
+            <SectionLabel>Account</SectionLabel>
+            {isEnabled('billing') && (
+              <NavItem to="/dashboard/billing" icon={CreditCard} label="Usage & billing" />
+            )}
+            {isEnabled('team') && (
+              <NavItem to="/dashboard/team" icon={Users} label="Team settings" />
+            )}
+            {isEnabled('sshKeys') && (
+              <NavItem to="/dashboard/ssh-keys" icon={Shield} label="SSH keys" />
+            )}
+            {isEnabled('apiKeys') && (
+              <NavItem to="/dashboard/api-keys" icon={Key} label="API keys" />
+            )}
+            {isEnabled('referrals') && (
+              <NavItem to="/dashboard/referrals" icon={Gift} label="Referrals" />
+            )}
+            {isEnabled('support') && (
+              <NavItem to="/dashboard/support" icon={TicketIcon} label="Support" />
+            )}
+            <NavItem to="/dashboard/settings" icon={Settings} label="Settings" />
           </>
         )}
       </nav>

@@ -44,6 +44,8 @@ import AdminAnnouncements from './pages/Admin/Announcements'
 import AdminAuditLogs from './pages/Admin/AuditLogs'
 import AdminSettings from './pages/Admin/Settings'
 
+import { ModuleGuard } from './components/ModuleGuard'
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 30_000 },
@@ -93,15 +95,15 @@ export default function App() {
             <Route path="billing" element={<Billing />} />
             <Route path="ssh-keys" element={<SshKeys />} />
             <Route path="settings" element={<Settings />} />
-            <Route path="projects"  element={<Placeholder title="Projects"        description="Group your infrastructure by environment." icon={<Folder size={28} />} />} />
-            <Route path="activity"  element={<Placeholder title="Activity"        description="Audit log of all actions on your account."  icon={<Activity size={28} />} />} />
-            <Route path="vms"       element={<Placeholder title="Virtual machines" description="Lightweight VMs for fast workloads."        icon={<Cpu size={28} />} />} />
-            <Route path="k8s"       element={<Placeholder title="Kubernetes"      description="Managed Kubernetes clusters in one click." icon={<Hexagon size={28} />} />} />
+            <Route path="projects"  element={<ModuleGuard module="projects"><Placeholder title="Projects"        description="Group your infrastructure by environment." icon={<Folder size={28} />} /></ModuleGuard>} />
+            <Route path="activity"  element={<ModuleGuard module="activity"><Placeholder title="Activity"        description="Audit log of all actions on your account."  icon={<Activity size={28} />} /></ModuleGuard>} />
+            <Route path="vms"       element={<ModuleGuard module="vms"><Placeholder title="Virtual machines" description="Lightweight VMs for fast workloads."        icon={<Cpu size={28} />} /></ModuleGuard>} />
+            <Route path="k8s"       element={<ModuleGuard module="kubernetes"><Placeholder title="Kubernetes"      description="Managed Kubernetes clusters in one click." icon={<Hexagon size={28} />} /></ModuleGuard>} />
             <Route path="storage"   element={<Placeholder title="Storage"         description="Block and object storage volumes."         icon={<Database size={28} />} />} />
-            <Route path="storage/object" element={<ObjectStorage />} />
+            <Route path="storage/object" element={<ModuleGuard module="objectStorage"><ObjectStorage /></ModuleGuard>} />
             <Route path="network"   element={<Placeholder title="Network"         description="Private networks, floating IPs, firewalls." icon={<Network size={28} />} />} />
-            <Route path="gpu"       element={<Placeholder title="GPU instances"   description="On-demand GPUs for AI / ML workloads."     icon={<Monitor size={28} />} />} />
-            <Route path="team"      element={<Placeholder title="Team settings"   description="Invite teammates and manage roles."        icon={<Users size={28} />} />} />
+            <Route path="gpu"       element={<ModuleGuard module="gpu"><Placeholder title="GPU instances"   description="On-demand GPUs for AI / ML workloads."     icon={<Monitor size={28} />} /></ModuleGuard>} />
+            <Route path="team"      element={<ModuleGuard module="team"><Placeholder title="Team settings"   description="Invite teammates and manage roles."        icon={<Users size={28} />} /></ModuleGuard>} />
           </Route>
 
           {/* Admin */}

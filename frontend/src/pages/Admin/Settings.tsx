@@ -8,6 +8,7 @@ import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { cn } from '../../lib/utils'
+import { ModulesCard } from './ModulesCard'
 
 export default function AdminSettings() {
   const qc = useQueryClient()
@@ -61,6 +62,8 @@ export default function AdminSettings() {
           { key: 'logoUrl', label: 'Logo URL' },
         ]}
       />
+
+      <ModulesCard />
 
       <SettingsCard
         title="Registration & limits"
