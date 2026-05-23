@@ -368,3 +368,27 @@ export const cannedAPI = {
     api.patch<{ data: CannedResponse }>(`/admin/canned-responses/${id}`, data),
   delete: (id: string) => api.delete(`/admin/canned-responses/${id}`),
 }
+
+
+// ─── API KEYS ──────────────────────────────────────────────
+export interface ApiKey {
+  id: string
+  name: string
+  keyPrefix: string
+  permissions: string[]
+  lastUsedAt: string | null
+  expiresAt: string | null
+  isActive: boolean
+  createdAt: string
+}
+
+export const apiKeysAPI = {
+  list: () => api.get<{ data: ApiKey[] }>('/api-keys'),
+  create: (name: string, expiresAt?: string, permissions?: string[]) =>
+    api.post<{ data: ApiKey & { key: string }; message: string }>('/api-keys', {
+      name,
+      ...(expiresAt ? { expiresAt } : {}),
+      ...(permissions ? { permissions } : {}),
+    }),
+  delete: (id: string) => api.delete(`/api-keys/${id}`),
+}

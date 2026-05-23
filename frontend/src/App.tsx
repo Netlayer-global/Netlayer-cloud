@@ -57,6 +57,7 @@ import AdminAbuse from './pages/Admin/Abuse'
 
 import Referrals from './pages/Referrals'
 import Support from './pages/Support'
+import ApiKeys from './pages/ApiKeys'
 
 import { ModuleGuard } from './components/ModuleGuard'
 
@@ -108,6 +109,7 @@ export default function App() {
             <Route path="deploy" element={<DeployServer />} />
             <Route path="billing" element={<Billing />} />
             <Route path="ssh-keys" element={<SshKeys />} />
+            <Route path="api-keys" element={<ModuleGuard module="apiKeys"><ApiKeys /></ModuleGuard>} />
             <Route path="settings" element={<Settings />} />
             <Route path="projects"  element={<ModuleGuard module="projects"><Placeholder title="Projects"        description="Group your infrastructure by environment." icon={<Folder size={28} />} /></ModuleGuard>} />
             <Route path="vms"       element={<ModuleGuard module="vms"><Placeholder title="Virtual machines" description="Lightweight VMs for fast workloads."        icon={<Cpu size={28} />} /></ModuleGuard>} />

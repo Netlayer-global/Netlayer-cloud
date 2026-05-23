@@ -6,9 +6,10 @@ export function makeClient(): AxiosInstance {
   const apiUrl = config.get('apiUrl')
   const apiKey = config.get('apiKey')
 
-  if (!apiKey) {
+  if (!apiKey || !apiKey.trim()) {
     console.error(chalk.red('No API key configured. Run:'))
     console.error(chalk.cyan('  nl login'))
+    console.error(chalk.gray('Then either paste a long-lived API key (preferred) or sign in with email + password.'))
     process.exit(1)
   }
 
