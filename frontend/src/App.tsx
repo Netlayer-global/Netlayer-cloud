@@ -51,6 +51,12 @@ import AdminRoles from './pages/Admin/Roles'
 import AdminAnnouncements from './pages/Admin/Announcements'
 import AdminAuditLogs from './pages/Admin/AuditLogs'
 import AdminSettings from './pages/Admin/Settings'
+import AdminWorkflows from './pages/Admin/Workflows'
+import AdminStatusPage from './pages/Admin/StatusManagement'
+import AdminAbuse from './pages/Admin/Abuse'
+
+import Referrals from './pages/Referrals'
+import Support from './pages/Support'
 
 import { ModuleGuard } from './components/ModuleGuard'
 
@@ -116,6 +122,9 @@ export default function App() {
             <Route path="marketplace"    element={<ModuleGuard module="marketplace"><Marketplace /></ModuleGuard>} />
             <Route path="monitoring"     element={<ModuleGuard module="monitoring"><Monitoring /></ModuleGuard>} />
             <Route path="activity"       element={<ModuleGuard module="activity"><Activity /></ModuleGuard>} />
+            <Route path="referrals"      element={<ModuleGuard module="referrals"><Referrals /></ModuleGuard>} />
+            <Route path="support"        element={<ModuleGuard module="support"><Support /></ModuleGuard>} />
+            <Route path="support/:id"    element={<ModuleGuard module="support"><Support /></ModuleGuard>} />
             <Route path="network"   element={<Placeholder title="Network"         description="Private networks, floating IPs, firewalls." icon={<Network size={28} />} />} />
             <Route path="gpu"       element={<ModuleGuard module="gpu"><Placeholder title="GPU instances"   description="On-demand GPUs for AI / ML workloads."     icon={<Monitor size={28} />} /></ModuleGuard>} />
             <Route path="team"      element={<ModuleGuard module="team"><Placeholder title="Team settings"   description="Invite teammates and manage roles."        icon={<Users size={28} />} /></ModuleGuard>} />
@@ -143,6 +152,9 @@ export default function App() {
             <Route path="roles"         element={<AdminRoles />} />
             <Route path="announcements" element={<AdminAnnouncements />} />
             <Route path="audit-logs"    element={<AdminAuditLogs />} />
+            <Route path="workflows"     element={<AdminWorkflows />} />
+            <Route path="status"        element={<AdminStatusPage />} />
+            <Route path="abuse"         element={<AdminAbuse />} />
             <Route path="settings"      element={<AdminSettings />} />
           </Route>
 

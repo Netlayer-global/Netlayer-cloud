@@ -39,7 +39,7 @@ export const MODULE_DEFINITIONS = [
   { key: 'apiKeys',        label: 'API keys',         group: 'Account',    default: true,  required: false, desc: 'Programmatic access' },
   { key: 'sshKeys',        label: 'SSH keys',         group: 'Account',    default: true,  required: true,  desc: 'SSH key management' },
   { key: 'billing',        label: 'Billing',          group: 'Account',    default: true,  required: true,  desc: 'Invoices & usage' },
-  { key: 'referrals',      label: 'Referrals',        group: 'Account',    default: false, required: false, desc: 'Referral program' },
+  { key: 'referrals',      label: 'Referrals',        group: 'Account',    default: true,  required: false, desc: 'Referral program' },
   { key: 'support',        label: 'Support tickets',  group: 'Account',    default: true,  required: false, desc: 'Help desk' },
 ] as const
 

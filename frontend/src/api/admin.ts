@@ -97,6 +97,29 @@ export const adminAPI = {
   updateSetting: (key: string, value: any) =>
     api.patch('/admin/settings', { key, value }).then((r) => r.data.data),
 
+  // Workflows
+  listWorkflows: (params: { page?: number; limit?: number; status?: string; type?: string } = {}) =>
+    api.get('/admin/workflows', { params }).then((r) => r.data),
+  getWorkflow: (id: string) => api.get(`/admin/workflows/${id}`).then((r) => r.data.data),
+  retryWorkflow: (id: string) => api.post(`/admin/workflows/${id}/retry`).then((r) => r.data),
+  cancelWorkflow: (id: string) => api.post(`/admin/workflows/${id}/cancel`).then((r) => r.data),
+
+  // Status incidents
+  listIncidents: () => api.get('/admin/status/incidents').then((r) => r.data.data),
+  createIncident: (data: any) => api.post('/admin/status/incidents', data).then((r) => r.data.data),
+  updateIncident: (id: string, data: any) =>
+    api.patch(`/admin/status/incidents/${id}`, data).then((r) => r.data.data),
+  deleteIncident: (id: string) => api.delete(`/admin/status/incidents/${id}`).then((r) => r.data),
+
+  // Abuse reports
+  listAbuseReports: (params: { page?: number; status?: string; type?: string } = {}) =>
+    api.get('/admin/abuse', { params }).then((r) => r.data),
+  getAbuseReport: (id: string) => api.get(`/admin/abuse/${id}`).then((r) => r.data.data),
+  updateAbuseReport: (id: string, data: { status?: string }) =>
+    api.patch(`/admin/abuse/${id}`, data).then((r) => r.data.data),
+  suspendServerForAbuse: (id: string) =>
+    api.post(`/admin/abuse/${id}/suspend-server`).then((r) => r.data),
+
   // Templates
   listEmailTemplates: () => api.get('/admin/email-templates').then((r) => r.data.data),
   updateEmailTemplate: (id: string, data: any) =>

@@ -15,7 +15,7 @@ const FALLBACK = {
     loadBalancers: true, dns: true, firewalls: true, vpc: true,
     monitoring: true, alerts: false, logs: false,
     projects: false, activity: true, team: false, apiKeys: true, sshKeys: true,
-    billing: true, referrals: false, support: true,
+    billing: true, referrals: true, support: true,
   } as Record<string, boolean>,
   definitions: [],
 }

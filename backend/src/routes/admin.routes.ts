@@ -31,6 +31,8 @@ import { clearConfigCache } from '../utils/config'
 import workflowRoutes from './admin-workflows.routes'
 import statusAdminRoutes from './admin-status.routes'
 import abuseAdminRoutes from './admin-abuse.routes'
+import cannedRoutes from './admin-canned.routes'
+import { slaState } from '../services/sla.service'
 
 const router = Router()
 router.use(adminOnly)
@@ -38,6 +40,7 @@ router.use(adminOnly)
 router.use('/workflows', workflowRoutes)
 router.use('/status/incidents', statusAdminRoutes)
 router.use('/abuse', abuseAdminRoutes)
+router.use('/canned-responses', cannedRoutes)
 
 // ─── DASHBOARD ───────────────────────────────────────────
 router.get('/stats', async (_req, res, next) => {
@@ -716,7 +719,10 @@ router.get('/tickets', async (req, res, next) => {
       prisma.supportTicket.count({ where }),
     ])
 
-    res.json({ data: tickets, pagination: { page, limit, total } })
+    res.json({
+      data: tickets.map((t: any) => ({ ...t, sla: slaState(t) })),
+      pagination: { page, limit, total },
+    })
   } catch (e) { next(e) }
 })
 
@@ -730,7 +736,7 @@ router.get('/tickets/:id', async (req, res, next) => {
       },
     })
     if (!ticket) throw new AppError('Ticket not found', 404, 'NOT_FOUND')
-    res.json({ data: ticket })
+    res.json({ data: { ...ticket, sla: slaState(ticket) } })
   } catch (e) { next(e) }
 })
 

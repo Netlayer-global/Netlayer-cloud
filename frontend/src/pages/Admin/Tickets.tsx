@@ -67,6 +67,7 @@ export default function AdminTickets() {
               <TH>Category</TH>
               <TH>Priority</TH>
               <TH>Status</TH>
+              <TH>SLA</TH>
               <TH className="text-right">Replies</TH>
               <TH>Created</TH>
               <TH>Updated</TH>
@@ -89,6 +90,7 @@ export default function AdminTickets() {
                 <TD className="text-xs capitalize">{t.category}</TD>
                 <TD><Badge variant={PRIORITY_VARIANT[t.priority]}>{t.priority.toLowerCase()}</Badge></TD>
                 <TD><Badge variant={STATUS_VARIANT[t.status]}>{t.status.toLowerCase().replace('_', ' ')}</Badge></TD>
+                <TD><SlaBadge sla={t.sla} /></TD>
                 <TD className="text-right">{t._count?.messages ?? 0}</TD>
                 <TD className="text-xs">{formatDate(t.createdAt)}</TD>
                 <TD className="text-xs">{relativeTime(t.updatedAt)}</TD>
@@ -174,6 +176,7 @@ export function AdminTicketDetail() {
           ))}
 
           <Card padding="p-4">
+            <CannedPicker onPick={(content) => setReply((prev) => prev ? prev + '\n\n' + content : content)} />
             <textarea
               className="w-full bg-[#1e1f1e] border border-[#333433] text-[#e8e8e6] rounded-md px-3 py-2 text-sm h-24 focus:border-[#e0fe56] focus:outline-none resize-none"
               placeholder={internal ? 'Internal note (not visible to user)…' : 'Reply to user…'}
@@ -251,5 +254,106 @@ export function AdminTicketDetail() {
         </div>
       </div>
     </div>
+  )
+}
+
+
+interface SlaInfo {
+  state: 'ok' | 'warning' | 'critical' | 'breached' | 'met' | 'resolved'
+  msRemaining: number
+  breached: boolean
+}
+
+function SlaBadge({ sla }: { sla?: SlaInfo }) {
+  if (!sla) return <span className="text-[#6a6a68] text-[11px]">—</span>
+
+  if (sla.state === 'met') {
+    return <Badge variant="running">SLA met</Badge>
+  }
+  if (sla.state === 'resolved') {
+    return <span className="text-[#6a6a68] text-[11px]">—</span>
+  }
+  if (sla.state === 'breached') {
+    return <Badge variant="error">BREACHED</Badge>
+  }
+
+  const ms = sla.msRemaining
+  const mins = Math.floor(ms / 60_000)
+  const hours = Math.floor(mins / 60)
+  const text = hours > 0 ? `${hours}h ${mins % 60}m` : `${mins}m`
+
+  const variant = sla.state === 'critical' ? 'error' : sla.state === 'warning' ? 'building' : 'running'
+  return <Badge variant={variant as any}>{text} left</Badge>
+}
+
+
+import { useQuery as useQuery2 } from '@tanstack/react-query'
+import { cannedAPI, type CannedResponse } from '../../api/infra'
+import { useState as useState2 } from 'react'
+import { Sparkles } from 'lucide-react'
+import { Modal as ModalC } from '../../components/ui/Modal'
+
+function CannedPicker({ onPick }: { onPick: (content: string) => void }) {
+  const [open, setOpen] = useState2(false)
+  const [filter, setFilter] = useState2('')
+
+  const { data: items = [] } = useQuery2({
+    queryKey: ['canned-responses'],
+    queryFn: () => cannedAPI.list().then((r) => r.data.data),
+  })
+
+  const filtered: CannedResponse[] = items.filter((c: CannedResponse) =>
+    !filter || c.title.toLowerCase().includes(filter.toLowerCase()) ||
+    c.content.toLowerCase().includes(filter.toLowerCase())
+  )
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mb-2 inline-flex items-center gap-1.5 text-xs text-[#a0a09e] hover:text-[#e8e8e6] cursor-pointer"
+      >
+        <Sparkles size={12} /> Insert canned response
+      </button>
+      <ModalC
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Canned responses"
+        description="Insert a templated response into your reply."
+        size="lg"
+      >
+        <div className="space-y-3">
+          <input
+            placeholder="Search…"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="w-full bg-[#1e1f1e] border border-[#333433] text-[#e8e8e6] rounded-md h-9 px-3 text-sm focus:border-[#e0fe56] focus:outline-none"
+          />
+          {filtered.length === 0 ? (
+            <div className="text-sm text-[#a0a09e] text-center py-6">
+              No canned responses. Create some at <code>/admin/canned-responses</code>.
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+              {filtered.map((c: CannedResponse) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => { onPick(c.content); setOpen(false) }}
+                  className="w-full text-left p-3 rounded-md bg-[#1e1f1e] border border-[#2a2b2a] hover:bg-[#252625] cursor-pointer transition-colors"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-medium text-[#e8e8e6]">{c.title}</span>
+                    <span className="text-[10px] text-[#6a6a68] uppercase tracking-wider">{c.category}</span>
+                  </div>
+                  <p className="text-xs text-[#a0a09e] line-clamp-3 whitespace-pre-wrap">{c.content}</p>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </ModalC>
+    </>
   )
 }

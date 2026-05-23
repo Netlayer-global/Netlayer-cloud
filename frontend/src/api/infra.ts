@@ -284,3 +284,87 @@ export const monitoringAPI = {
       `/monitoring/aggregate?range=${range}`
     ),
 }
+
+
+// ─── REFERRALS ─────────────────────────────────────────────
+export interface ReferralEntry {
+  id: string
+  status: 'pending' | 'rewarded' | 'expired'
+  reward: number
+  paidAt: string | null
+  createdAt: string
+  referee: { id: string; email: string; name: string; joinedAt: string } | null
+}
+export interface ReferralDashboard {
+  code: string
+  rewardPerReferral: number
+  triggerAmount: number
+  stats: { total: number; rewarded: number; pending: number; totalEarned: number }
+  referrals: ReferralEntry[]
+}
+export const referralAPI = {
+  dashboard: () => api.get<{ data: ReferralDashboard }>('/referrals'),
+  code: () => api.get<{ data: { code: string } }>('/referrals/code'),
+}
+
+// ─── TICKETS (customer) ────────────────────────────────────
+export interface SlaInfo {
+  state: 'ok' | 'warning' | 'critical' | 'breached' | 'met' | 'resolved'
+  msRemaining: number
+  breached: boolean
+}
+export interface TicketMessage {
+  id: string
+  ticketId: string
+  authorId: string
+  authorRole: 'user' | 'admin'
+  content: string
+  isInternal: boolean
+  createdAt: string
+}
+export interface SupportTicket {
+  id: string
+  ticketNumber: string
+  subject: string
+  status: 'OPEN' | 'IN_PROGRESS' | 'WAITING' | 'RESOLVED' | 'CLOSED'
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | 'CRITICAL'
+  category: string
+  rating: number | null
+  createdAt: string
+  updatedAt: string
+  resolvedAt: string | null
+  closedAt: string | null
+  firstReplyAt: string | null
+  slaTargetAt: string | null
+  slaBreached: boolean
+  sla?: SlaInfo
+  messages?: TicketMessage[]
+  _count?: { messages: number }
+}
+export const ticketsAPI = {
+  list: () => api.get<{ data: SupportTicket[] }>('/support'),
+  get: (id: string) => api.get<{ data: SupportTicket }>(`/support/${id}`),
+  create: (data: { subject: string; message: string; priority?: string; category?: string }) =>
+    api.post<{ data: SupportTicket }>('/support', data),
+  reply: (id: string, content: string) =>
+    api.post<{ data: TicketMessage }>(`/support/${id}/reply`, { content }),
+  rate: (id: string, rating: number) => api.post(`/support/${id}/rate`, { rating }),
+  close: (id: string) => api.post(`/support/${id}/close`),
+}
+
+// ─── CANNED RESPONSES (admin) ──────────────────────────────
+export interface CannedResponse {
+  id: string
+  title: string
+  content: string
+  category: string
+  createdAt: string
+}
+export const cannedAPI = {
+  list: () => api.get<{ data: CannedResponse[] }>('/admin/canned-responses'),
+  create: (data: { title: string; content: string; category?: string }) =>
+    api.post<{ data: CannedResponse }>('/admin/canned-responses', data),
+  update: (id: string, data: Partial<CannedResponse>) =>
+    api.patch<{ data: CannedResponse }>(`/admin/canned-responses/${id}`, data),
+  delete: (id: string) => api.delete(`/admin/canned-responses/${id}`),
+}

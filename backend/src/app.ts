@@ -42,6 +42,8 @@ import dnsRoutes from './routes/dns.routes'
 import marketplaceRoutes from './routes/marketplace.routes'
 import activityRoutes from './routes/activity.routes'
 import monitoringRoutes from './routes/monitoring.routes'
+import ticketsRoutes from './routes/tickets.routes'
+import referralRoutes from './routes/referral.routes'
 
 const app = express()
 const httpServer = createServer(app)
@@ -122,6 +124,8 @@ app.use('/api/vpc',           authMiddleware, idempotency(), vpcRoutes)
 app.use('/api/dns',           authMiddleware, idempotency(), dnsRoutes)
 app.use('/api/activity',      authMiddleware, activityRoutes)
 app.use('/api/monitoring',    authMiddleware, monitoringRoutes)
+app.use('/api/support',       authMiddleware, idempotency(), ticketsRoutes)
+app.use('/api/referrals',     authMiddleware, referralRoutes)
 
 // ─── Admin ──────────────────────────────────────────────────────────
 app.use('/api/admin', authMiddleware, idempotency(), adminRoutes)

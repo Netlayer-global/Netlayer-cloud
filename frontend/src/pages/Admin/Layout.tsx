@@ -14,6 +14,8 @@ import {
   ArrowLeft,
   ShieldAlert,
   LogOut,
+  GitBranch,
+  Activity,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '../../store/authStore'
@@ -35,6 +37,9 @@ const NAV: NavItem[] = [
   { to: '/admin/nodes',         icon: HardDrive,       label: 'Nodes',         roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/admin/billing',       icon: CreditCard,      label: 'Billing',       roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
   { to: '/admin/tickets',       icon: MessageSquare,   label: 'Tickets',       roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
+  { to: '/admin/abuse',         icon: ShieldAlert,     label: 'Abuse',         roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
+  { to: '/admin/workflows',     icon: GitBranch,       label: 'Workflows',     roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/admin/status',        icon: Activity,        label: 'Status page',   roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/admin/integrations',  icon: Plug,            label: 'Integrations',  roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/admin/roles',         icon: Shield,          label: 'Roles',         roles: ['SUPER_ADMIN'] },
   { to: '/admin/announcements', icon: Megaphone,       label: 'Announcements', roles: ['SUPER_ADMIN', 'ADMIN'] },
