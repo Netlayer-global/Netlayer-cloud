@@ -4,6 +4,7 @@ import { createQueue, shutdownQueues } from './queue'
 import { runNodeMonitor } from './handlers/nodeMonitor.handler'
 import { runDailyBilling, runMonthlyInvoices } from './handlers/billing.handler'
 import { runDunning } from './handlers/billing.handler'
+import { runBandwidthMeter } from './handlers/bandwidthMeter.handler'
 import { runZabbixSync } from './handlers/zabbix.handler'
 import { runCleanup } from './handlers/cleanup.handler'
 import { runReconciler } from './handlers/reconciler.handler'
@@ -28,6 +29,7 @@ const SCHEDULES = {
   billingDaily:   { queue: 'billing-daily',   cron: '0 0 * * *',   handler: runDailyBilling,    description: 'midnight daily' },
   billingMonthly: { queue: 'billing-monthly', cron: '0 0 1 * *',   handler: runMonthlyInvoices, description: '1st of month' },
   dunning:        { queue: 'dunning',          cron: '0 9 * * *',   handler: runDunning,         description: 'daily 9am — escalate non-payers' },
+  bandwidth:      { queue: 'bandwidth',        cron: '*/15 * * * *', handler: runBandwidthMeter, description: 'every 15 min — sample VM netin/netout' },
   zabbixSync:    { queue: 'zabbix-sync',     cron: '*/5 * * * *', handler: runZabbixSync,      description: 'every 5 min' },
   reconciler:     { queue: 'reconciler',       cron: '*/5 * * * *', handler: runReconciler,      description: 'every 5 min — resume stuck workflows' },
   slaBreach:      { queue: 'sla-breach',       cron: '*/5 * * * *', handler: runSlaBreach,       description: 'every 5 min — mark breached tickets' },

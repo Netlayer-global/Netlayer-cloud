@@ -1,0 +1,78 @@
+# NetLayer Cloud — Caddy reverse proxy (auto TLS via Let's Encrypt)
+#
+# Set CADDY_DOMAIN env var to the public hostname; Caddy will:
+#   1. acquire + auto-renew a TLS cert (HTTP-01 / TLS-ALPN-01 challenge)
+#   2. force-redirect http → https
+#   3. proxy / → frontend container, /api → backend container
+#   4. proxy Socket.io upgrade
+#
+# Logs: /data/caddy/logs/access.log (mounted to host)
+
+{
+  email admin@netlayer.com
+  servers {
+    metrics
+  }
+}
+
+{$CADDY_DOMAIN} {
+  encode gzip zstd
+
+  # Hardening
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    X-Frame-Options SAMEORIGIN
+    X-Content-Type-Options nosniff
+    Referrer-Policy strict-origin-when-cross-origin
+    Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    -Server
+  }
+
+  # Backend API — including webhooks (raw body)
+  handle /api/* {
+    reverse_proxy backend:5000 {
+      header_up Host {host}
+      header_up X-Real-IP {remote}
+      header_up X-Forwarded-For {remote}
+      header_up X-Forwarded-Proto {scheme}
+    }
+  }
+
+  # Swagger
+  handle /docs {
+    reverse_proxy backend:5000
+  }
+  handle /docs/* {
+    reverse_proxy backend:5000
+  }
+
+  # OpenAPI spec
+  handle /api/openapi.json {
+    reverse_proxy backend:5000
+  }
+
+  # Realtime (Socket.io)
+  handle /socket.io/* {
+    reverse_proxy backend:5000
+  }
+
+  # Healthz for uptime monitors
+  handle /healthz {
+    reverse_proxy backend:5000
+  }
+
+  # Everything else → frontend (SPA)
+  handle {
+    reverse_proxy frontend:80
+  }
+
+  # Per-IP rate limit (basic abuse protection — replace with Cloudflare for
+  # real DDoS at scale)
+  log {
+    output file /data/caddy/logs/access.log {
+      roll_size 100mb
+      roll_keep 10
+    }
+    format json
+  }
+}

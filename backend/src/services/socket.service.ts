@@ -1,11 +1,15 @@
 import { Server as IOServer } from 'socket.io'
 import { verifyAccessToken } from '../utils/jwt'
 import logger from '../utils/logger'
+import { registerConsoleNamespace } from './novnc.service'
 
 let io: IOServer | null = null
 
 export function setIo(instance: IOServer) {
   io = instance
+
+  // Round 21: console namespace for noVNC bridge
+  registerConsoleNamespace(io)
 
   io.on('connection', (socket) => {
     logger.debug(`Socket connected: ${socket.id}`)

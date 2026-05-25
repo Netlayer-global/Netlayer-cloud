@@ -1,0 +1,139 @@
+# NetLayer Cloud — production stack (single-host) — Round 21
+#
+# Boots:
+#   - postgres 15 (data → ./data/postgres)
+#   - redis 7 (passworded)
+#   - backend (build from backend/Dockerfile)
+#   - frontend (nginx serving Vite build + reverse-proxying /api)
+#   - caddy (terminates TLS, rate-limits, gzips, redirects http → https)
+#
+# Required: a populated `.env.prod` (copy from `.env.example` + fill).
+#
+# Usage on a fresh Ubuntu 22.04 / Debian 12 box:
+#   curl -sSL https://get.docker.com | sh
+#   git clone https://github.com/Netlayer-global/Netlayer-cloud.git
+#   cd Netlayer-cloud
+#   cp backend/.env.example .env.prod && nano .env.prod   # fill secrets
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+#
+# Verify: open https://your-domain.com → landing page loads.
+
+x-restart-policy: &restart_policy
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: netlayer-postgres
+    <<: *restart_policy
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-netlayer}
+      POSTGRES_USER: ${POSTGRES_USER:-netlayer}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./backend/scripts/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-netlayer}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # Postgres listens only on the docker network; never expose to internet.
+
+  redis:
+    image: redis:7-alpine
+    container_name: netlayer-redis
+    <<: *restart_policy
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - "256mb"
+      - --maxmemory-policy
+      - allkeys-lru
+    volumes:
+      - ./data/redis:/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: netlayer-backend
+    <<: *restart_policy
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-netlayer}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-netlayer}?schema=public
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set (use: openssl rand -hex 32)}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET must be set}
+      FRONTEND_URL: ${FRONTEND_URL:-https://netlayer.com}
+      # Payments — flip these on once Razorpay/Stripe credentials are live
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      # Email — Resend
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM: ${RESEND_FROM:-NetLayer Cloud <noreply@netlayer.com>}
+      # SMS
+      SMS_PROVIDER: ${SMS_PROVIDER:-mock}
+      MSG91_API_KEY: ${MSG91_API_KEY:-}
+      MSG91_SENDER: ${MSG91_SENDER:-NETLYR}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM: ${TWILIO_FROM:-}
+      # Cloudflare DNS
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:-}
+      CLOUDFLARE_ZONE_ID: ${CLOUDFLARE_ZONE_ID:-}
+      CLOUDFLARE_DOMAIN: ${CLOUDFLARE_DOMAIN:-netlayer.com}
+      # Proxmox — set to false once a real cluster is wired
+      PROXMOX_MOCK_MODE: ${PROXMOX_MOCK_MODE:-true}
+    expose:
+      - "5000"
+    # Database migrations run on startup so a fresh deploy auto-applies them.
+    # Seed runs separately (only on first boot) — see scripts/deploy.sh.
+    command: >
+      sh -c "npx prisma migrate deploy && node dist/index.js"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+    container_name: netlayer-frontend
+    <<: *restart_policy
+    depends_on:
+      - backend
+    expose:
+      - "80"
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: netlayer-caddy
+    <<: *restart_policy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      CADDY_DOMAIN: ${CADDY_DOMAIN:-netlayer.com}
+    depends_on:
+      - frontend
+      - backend
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./data/caddy:/data
+      - ./data/caddy-config:/config
+
+# Named volumes are intentionally not used — bind mounts under ./data make
+# backups trivial (one rsync of the data/ folder).

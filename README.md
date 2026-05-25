@@ -1,132 +1,148 @@
 # NetLayer Cloud
 
-Production-ready VPS hosting platform — DigitalOcean / Vultr / OVH-class.
+Production-grade VPS cloud platform inspired by DigitalOcean, Vultr, Linode,
+and Latitude.sh. Built for developers who want a fast, transparent,
+India-first cloud provider.
 
-## Stack
+[![CI](https://github.com/Netlayer-global/Netlayer-cloud/actions/workflows/ci.yml/badge.svg)](https://github.com/Netlayer-global/Netlayer-cloud/actions/workflows/ci.yml)
 
-- **Frontend** — React 18 + Vite + TypeScript + Tailwind v3
-- **Backend** — Node.js + Express + TypeScript + Prisma + SQLite (Postgres-ready)
-- **Infra** — Proxmox + Cloudflare + Razorpay/Stripe + Resend + Zabbix + Grafana (all with mock modes)
-- **Realtime** — Socket.io with Redis adapter
-- **Jobs** — BullMQ with in-memory fallback
-- **Workflows** — Custom Temporal-shaped engine with idempotent steps + compensation
-- **Agent** — Go skeleton with gRPC contract (per-host daemon, mock client)
-- **Observability** — pino + Prometheus + OpenAPI 3.0 + Swagger UI
+## What's inside
 
-## Quick start
+- **Frontend**: React 18 + Vite + TypeScript + Tailwind v3 + Framer Motion
+- **Backend**: Node.js + Express + TypeScript + Prisma (Postgres / SQLite)
+- **Realtime**: Socket.io with Redis adapter for horizontal scaling
+- **Jobs**: BullMQ with in-memory fallback when Redis isn't available
+- **Compute**: Proxmox VE 8.x with linked-clone Packer images (~30s deploys)
+- **Storage**: MinIO (S3-compatible) + Ceph RBD configs ready
+- **Observability**: Prometheus + Grafana + Loki + Jaeger preconfigured
+- **Payments**: Razorpay (India) + Stripe (international) with webhook signature verification
+- **Billing**: India-GST-compliant sequential invoice numbering, credit notes, GSTR-1 export
+
+## Features that ship today
+
+| Capability | Status |
+|---|---|
+| User auth + 2FA + RBAC | ✅ |
+| Customer dashboard | ✅ |
+| Admin panel (full operator suite) | ✅ |
+| Wallet billing + Razorpay/Stripe top-up | ✅ |
+| 30-second VPS deploy (linked clones) | ✅ |
+| Block volumes + object storage + managed DBs | ✅ |
+| VPC + DNS zones + load balancers | ✅ |
+| Floating IPs + IP pools | ✅ |
+| Snapshots + alerts + capacity planning | ✅ |
+| Marketplace (12 one-click apps) | ✅ |
+| Sequential invoice numbering (India FY) | ✅ |
+| Credit notes + GSTR-1 CSV export | ✅ |
+| Recurring billing + dunning workflow | ✅ |
+| CLI + Terraform provider | ✅ |
+| Production Docker stack with Caddy auto-TLS | ✅ |
+| 39 backend tests + 9 frontend tests, type-safe end-to-end | ✅ |
+
+## Quick start (development)
 
 ```bash
+git clone https://github.com/Netlayer-global/Netlayer-cloud.git
+cd Netlayer-cloud
+
+# Backend
 cd backend
 cp .env.example .env
 npm install
-npx prisma generate
 npx prisma migrate dev
 npx prisma db seed
-npm run dev          # → http://localhost:5000
-```
+npm run dev
 
-```bash
-cd frontend
-cp .env.example .env
+# Frontend (new terminal)
+cd ../frontend
 npm install
-npm run dev          # → http://localhost:5173
+npm run dev
 ```
 
-## Default admin accounts
+Open http://localhost:5173 — login with `admin@netlayer.com` / `Admin@123456`.
 
-| Email | Password | Role |
-|---|---|---|
-| `super@netlayer.com`   | `Super@123456`   | SUPER_ADMIN |
-| `admin@netlayer.com`   | `Admin@123456`   | ADMIN |
-| `support@netlayer.com` | `Support@123456` | SUPPORT |
-| `billing@netlayer.com` | `Billing@123456` | BILLING |
+## Production deployment
 
-Customer login: `/login` · Admin login: `/admin/login`
+See [`docs/PRODUCTION.md`](docs/PRODUCTION.md) for the full runbook.
 
-## Endpoints
-
-- Customer site: `http://localhost:5173`
-- Backend API:   `http://localhost:5000`
-- Health:        `http://localhost:5000/healthz`
-- Readiness:     `http://localhost:5000/readyz`
-- Metrics:       `http://localhost:5000/metrics`
-- API docs:      `http://localhost:5000/docs` (Swagger UI)
-- OpenAPI spec:  `http://localhost:5000/api/openapi.json`
-
-## Microservice mode
+TL;DR — on a fresh Ubuntu 22.04 / Debian 12 box with public IP + DNS pointed:
 
 ```bash
-cd backend
-npm run svc:all    # boots auth(5001) + billing(5002) + compute(5003) + admin(5004) + worker(5005)
+curl -sSL https://raw.githubusercontent.com/Netlayer-global/Netlayer-cloud/main/scripts/deploy.sh | sudo bash
+sudo nano /opt/netlayer/.env.prod    # set CADDY_DOMAIN + integration keys
+sudo bash /opt/netlayer/scripts/deploy.sh
 ```
 
-## Database switching
+The deploy script installs Docker, clones the repo to `/opt/netlayer`, runs
+`prisma migrate deploy` against Postgres, boots the full stack behind
+Caddy (auto-issued Let's Encrypt TLS), and seeds idempotently. Re-running
+the script upgrades the platform.
 
-```bash
-npm run db:switch:postgres   # cp prisma/schema.postgres.prisma → schema.prisma
-npm run db:switch:sqlite     # restore SQLite variant
-npm run db:migrate:to-postgres  # data migration script (when you have both DBs up)
+## Architecture
+
 ```
-
-## Tests
-
-```bash
-cd backend && npm test     # 30 vitest tests across schemas, auth, idempotency
+                     Caddy (TLS, gzip, rate-limit)
+                              │
+                  ┌───────────┴───────────┐
+            Frontend (nginx)         Backend (Express)
+                                          │
+                ┌─────────────────────────┼─────────────────────────┐
+                │                         │                         │
+            Postgres                   Redis                     MinIO
+                                          │
+                                  Proxmox cluster
+                                  (compute hosts)
 ```
 
 ## Repository layout
 
 ```
-netlayer-cloud/
-├── frontend/                     React + Vite SPA
-│   └── src/
-│       ├── pages/                Customer + admin pages
-│       ├── pages/Admin/          Dedicated admin panel
-│       ├── pages/public/         Pricing, Network, Status, Docs, Features, K8s, Abuse
-│       ├── components/landing/   Landing-page sections (TopNav, Hero, Pricing, Map, etc.)
-│       ├── components/ui/        Button, Card, Input, Modal, Table, Badge…
-│       ├── api/                  axios client + endpoint wrappers
-│       ├── hooks/                useTypewriter, useCountUp, useInView, useSocket
-│       └── store/                zustand stores
-├── backend/                      Express API + Prisma
-│   ├── prisma/
-│   │   ├── schema.prisma         Active schema (sqlite)
-│   │   ├── schema.sqlite.prisma  SQLite variant
-│   │   ├── schema.postgres.prisma Postgres variant
-│   │   ├── seed.ts               Seed data (15 regions, 12 apps, etc.)
-│   │   └── migrate-sqlite-to-postgres.ts
-│   └── src/
-│       ├── app.ts / index.ts     Monolith entry
-│       ├── config/env.ts         Zod-validated env
-│       ├── routes/               REST endpoints
-│       ├── services/             Proxmox, Cloudflare, Email, SMS, Grafana, Zabbix, Payment, Tax, Invoice, Server
-│       ├── workflows/            Workflow engine + deploy-server definition
-│       ├── jobs/                 BullMQ queue + cron handlers
-│       ├── observability/        Prometheus metrics
-│       ├── middleware/           auth, idempotency, rateLimit, errorHandler
-│       ├── services-runtime/     auth.svc, billing.svc, compute.svc, admin.svc, worker
-│       └── openapi.ts            OpenAPI 3.0 spec
-└── agent/                        Go skeleton (per-host daemon)
-    ├── proto/agent/v1/agent.proto
-    ├── cmd/agent/main.go
-    └── internal/{config,cpclient,vmmgr,netmgr,stormgr,obs}/
+backend/                 — Express API + Prisma schema + jobs
+frontend/                — React SPA + admin panel + landing
+agent/                   — Go agent that runs on each Proxmox host
+cli/                     — Node.js CLI (`nl ...`)
+terraform-provider-netlayer/ — Terraform provider
+packer/                  — Golden image build pipeline
+observability/           — Prometheus / Grafana / Loki / Jaeger compose
+deploy/                  — Kubernetes manifests + ArgoCD configs
+infra/                   — Terraform for cloud provisioning of host VMs
+scripts/                 — deploy.sh, backup.sh, helpers
+docs/                    — PRODUCTION.md + architecture docs
+docker-compose.yml       — local dev infra (Postgres + Redis + MinIO)
+docker-compose.prod.yml  — single-host production stack
+Caddyfile                — production reverse proxy config
 ```
 
-## Production hardening already done
+## Documentation
 
-- Pino structured logging with secret redaction
-- Request IDs propagated end-to-end
-- Idempotency-Key middleware (Redis-backed, falls open without)
-- Graceful shutdown drains queues + Prisma + Redis
-- 30 Vitest tests covering schemas, auth flow, admin gating, idempotency
-- Workflow engine with crash-resume reconciler
-- Per-country tax engine (IN GST split, EU VAT, GB VAT, SG GST, reverse-charge)
-- Invoice PDF generator (pdfkit, full layout)
+- [Production runbook](docs/PRODUCTION.md) — deployment, upgrades, backup/restore
+- [Architecture overview](#architecture) — top-level system design
+- API reference — `https://your-deployment.com/docs` (auto-generated Swagger)
+- OpenAPI spec — `https://your-deployment.com/api/openapi.json`
+- Customer-facing docs — `https://your-deployment.com/docs`
 
-## Mock vs real
+## Testing
 
-All external providers default to mock. To go live, set the relevant `*_MOCK_MODE=false` and fill the credentials in `.env` (or use the admin Integrations panel).
+```bash
+cd backend && npm test           # 39 tests
+cd frontend && npm test          # 9 tests
+```
+
+CI runs on every push to `main` and PR — backend tests, frontend tests,
+typecheck, and Docker image build matrix.
+
+## Contributing
+
+Issues + PRs welcome. The codebase follows these conventions:
+
+- **No stubs** — every feature must work end-to-end in mock mode
+- **30+ test green requirement** — no merge if tests fail
+- **TypeScript strict** — no `any` without comment justifying it
+- **Mock mode default** — every integration starts in mock and flips to live via env
+- **India-first** — all billing logic correctly handles GSTIN, fiscal year, and CGST/SGST/IGST split
 
 ## License
 
-Proprietary. © NetLayer Cloud Pvt. Ltd.
+Proprietary — © 2025 NetLayer Cloud Pvt. Ltd. Some folders may carry their
+own permissive licenses (CLI, Terraform provider, agent) — see individual
+README files.
