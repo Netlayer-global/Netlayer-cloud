@@ -26,6 +26,7 @@ import {
   Boxes,
   FileMinus,
   Receipt,
+  Building2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '../../store/authStore'
@@ -43,6 +44,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { to: '/admin/dashboard',     icon: LayoutDashboard, label: 'Overview',      roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT', 'BILLING'] },
   { to: '/admin/users',         icon: Users,           label: 'Users',         roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT', 'BILLING'] },
+  { to: '/admin/enterprise',    icon: Building2,       label: 'Enterprise',    roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/admin/servers',       icon: ServerIcon,      label: 'Servers',       roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
   { to: '/admin/nodes',         icon: HardDrive,       label: 'Nodes',         roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/admin/ip-pools',      icon: Globe,           label: 'IP pools',      roles: ['SUPER_ADMIN', 'ADMIN'] },

@@ -148,17 +148,19 @@ async function main() {
   console.log(`✓ ${roles.length} roles`)
 
   // ─── USERS ───────────────────────────────────────────
+  // billingMode: super/admin staff → wallet (legacy hourly testing path)
+  // Real customers default to retail (pay-per-deploy via Razorpay/Stripe)
   const seedUsers = [
-    { email: 'super@netlayer.com',   password: 'Super@123456',   firstName: 'Super',   lastName: 'Admin',   role: 'SUPER_ADMIN', balance: 100000, country: 'IN' },
-    { email: 'admin@netlayer.com',   password: 'Admin@123456',   firstName: 'Admin',   lastName: 'NetLayer', role: 'ADMIN',       balance: 10000,  country: 'IN' },
-    { email: 'support@netlayer.com', password: 'Support@123456', firstName: 'Support', lastName: 'Agent',    role: 'SUPPORT',     balance: 0,      country: 'IN' },
-    { email: 'billing@netlayer.com', password: 'Billing@123456', firstName: 'Billing', lastName: 'Agent',    role: 'BILLING',     balance: 0,      country: 'IN' },
+    { email: 'super@netlayer.com',   password: 'Super@123456',   firstName: 'Super',   lastName: 'Admin',   role: 'SUPER_ADMIN', balance: 100000, country: 'IN', billingMode: 'wallet' },
+    { email: 'admin@netlayer.com',   password: 'Admin@123456',   firstName: 'Admin',   lastName: 'NetLayer', role: 'ADMIN',       balance: 10000,  country: 'IN', billingMode: 'wallet' },
+    { email: 'support@netlayer.com', password: 'Support@123456', firstName: 'Support', lastName: 'Agent',    role: 'SUPPORT',     balance: 0,      country: 'IN', billingMode: 'wallet' },
+    { email: 'billing@netlayer.com', password: 'Billing@123456', firstName: 'Billing', lastName: 'Agent',    role: 'BILLING',     balance: 0,      country: 'IN', billingMode: 'wallet' },
   ]
   for (const u of seedUsers) {
     const passwordHash = await bcrypt.hash(u.password, 12)
     const user = await prisma.user.upsert({
       where: { email: u.email },
-      update: { role: u.role, balance: u.balance, country: u.country },
+      update: { role: u.role, balance: u.balance, country: u.country, billingMode: u.billingMode },
       create: {
         email: u.email,
         passwordHash,
@@ -168,6 +170,7 @@ async function main() {
         emailVerified: true,
         balance: u.balance,
         country: u.country,
+        billingMode: u.billingMode,
       },
     })
 

@@ -172,6 +172,18 @@ export class PaymentService {
     }
     if (body.event === 'payment.captured') {
       const payment = body.payload?.payment?.entity
+      if (!payment) return
+
+      // Round 22: pay-per-deploy orders take priority over wallet invoices.
+      const deployOrder = await prisma.deployOrder.findFirst({
+        where: { providerOrderId: payment.order_id, status: 'pending' },
+      })
+      if (deployOrder) {
+        const { default: deployOrderService } = await import('./deployOrder.service')
+        await deployOrderService.markOrderPaid(deployOrder.id, payment.id)
+        return
+      }
+
       const invoice = await prisma.invoice.findFirst({
         where: { razorpayOrderId: payment.order_id },
       })
@@ -214,6 +226,17 @@ export class PaymentService {
     const event = stripe.webhooks.constructEvent(body, signature, whSecret)
     if (event.type === 'payment_intent.succeeded') {
       const intent = event.data.object as Stripe.PaymentIntent
+
+      // Round 22: pay-per-deploy orders take priority over wallet invoices.
+      const deployOrder = await prisma.deployOrder.findFirst({
+        where: { providerOrderId: intent.id, status: 'pending' },
+      })
+      if (deployOrder) {
+        const { default: deployOrderService } = await import('./deployOrder.service')
+        await deployOrderService.markOrderPaid(deployOrder.id, intent.id)
+        return
+      }
+
       const invoice = await prisma.invoice.findFirst({ where: { stripePaymentId: intent.id } })
       if (invoice) {
         await this.markInvoicePaid(invoice.id, intent.id, 'stripe')

@@ -45,6 +45,20 @@ export class ServerService {
     if (!user) throw new AppError('User not found', 404, 'NOT_FOUND')
     if (user.status !== 'ACTIVE') throw new AppError('Account not active', 403, 'FORBIDDEN')
 
+    // Round 22: retail customers must go through the pay-per-deploy order
+    // flow. They never reach this method via the customer API — the route
+    // returns a 402 with `requiresCheckout: true` and the frontend opens
+    // the Razorpay/Stripe checkout instead. This guard exists so any code
+    // path (admin tools, scripts) that calls deployServer directly for a
+    // retail user still surfaces the right error.
+    if (user.billingMode === 'retail') {
+      throw new AppError(
+        'Retail customers must use the pay-per-deploy checkout flow',
+        400,
+        'USE_CHECKOUT_FLOW'
+      )
+    }
+
     // 2. Validate plan, region, os
     const [plan, region, os] = await Promise.all([
       prisma.plan.findUnique({ where: { id: config.planId } }),
@@ -70,15 +84,19 @@ export class ServerService {
 
     // Honour platform credit limit — users can carry a small negative balance
     // (e.g. enterprise customers on net-30) but everyone else must be at zero+.
-    const minRequired = firstHourTotal
-    const effectiveBalance = user.balance + (user.creditLimit || 0)
-    if (effectiveBalance < minRequired) {
-      const shortfall = Number((minRequired - effectiveBalance).toFixed(2))
-      throw new AppError(
-        `Insufficient balance. Add ${user.currency} ${shortfall.toFixed(2)} to deploy this plan.`,
-        402,
-        'INSUFFICIENT_BALANCE'
-      )
+    // Enterprise users skip the balance check entirely; their cost is
+    // tracked monthly against contract value via runMonthlyInvoices.
+    if (user.billingMode !== 'enterprise') {
+      const minRequired = firstHourTotal
+      const effectiveBalance = user.balance + (user.creditLimit || 0)
+      if (effectiveBalance < minRequired) {
+        const shortfall = Number((minRequired - effectiveBalance).toFixed(2))
+        throw new AppError(
+          `Insufficient balance. Add ${user.currency} ${shortfall.toFixed(2)} to deploy this plan.`,
+          402,
+          'INSUFFICIENT_BALANCE'
+        )
+      }
     }
 
     // 4. Optional SSH key
@@ -97,20 +115,30 @@ export class ServerService {
     const hostname = `srv-${nano()}.${domain}`
     const rootPassword = config.rootPassword || passwordNano()
 
-    // 7. Charge the first hour atomically: debit balance, create a PAID
-    // invoice covering the first hour, write a Transaction. The whole thing
-    // is a Prisma $transaction so a partial debit can never happen.
+    // 7. Charge the first hour atomically (wallet/enterprise users only).
+    // For wallet: debit balance + create PAID invoice + Transaction. For
+    // enterprise: skip wallet, create PENDING invoice (counts toward
+    // monthly contract aggregation).
     const balanceBefore = user.balance
-    const balanceAfter = Number((balanceBefore - firstHourTotal).toFixed(2))
+    const balanceAfter = user.billingMode === 'enterprise'
+      ? balanceBefore
+      : Number((balanceBefore - firstHourTotal).toFixed(2))
 
     // Round 20: sequential, India-GST-compliant invoice number
     const { number: invoiceNumber } = await invoiceNumberService.issue('invoice')
 
-    const [, invoice] = await prisma.$transaction([
-      prisma.user.update({
-        where: { id: user.id },
-        data: { balance: balanceAfter },
-      }),
+    const isEnterprise = user.billingMode === 'enterprise'
+
+    const txOps: any[] = []
+    if (!isEnterprise) {
+      txOps.push(
+        prisma.user.update({
+          where: { id: user.id },
+          data: { balance: balanceAfter },
+        })
+      )
+    }
+    txOps.push(
       prisma.invoice.create({
         data: {
           invoiceNumber,
@@ -120,10 +148,10 @@ export class ServerService {
           taxBreakdown: JSON.stringify(taxRes),
           total: firstHourTotal,
           currency: user.currency,
-          status: 'PAID',
-          paidAt: new Date(),
-          paymentMethod: 'wallet',
-          dueDate: new Date(),
+          status: isEnterprise ? 'PENDING' : 'PAID',
+          paidAt: isEnterprise ? null : new Date(),
+          paymentMethod: isEnterprise ? null : 'wallet',
+          dueDate: isEnterprise ? new Date(Date.now() + 7 * 86_400_000) : new Date(),
           items: JSON.stringify([
             {
               description: `${plan.name} · 1 hour · ${region.city}`,
@@ -132,21 +160,29 @@ export class ServerService {
               total: firstHourSubtotal,
             },
           ]),
-          notes: 'First-hour deposit. Hourly metering begins after deploy completes.',
+          notes: isEnterprise
+            ? `Enterprise contract usage. Aggregated into monthly invoice.`
+            : 'First-hour deposit. Hourly metering begins after deploy completes.',
         },
-      }),
-      prisma.transaction.create({
-        data: {
-          userId: user.id,
-          type: 'debit',
-          amount: firstHourTotal,
-          currency: user.currency,
-          description: `Deploy ${plan.name} in ${region.city} — first hour`,
-          balanceBefore,
-          balanceAfter,
-        },
-      }),
-    ])
+      })
+    )
+    if (!isEnterprise) {
+      txOps.push(
+        prisma.transaction.create({
+          data: {
+            userId: user.id,
+            type: 'debit',
+            amount: firstHourTotal,
+            currency: user.currency,
+            description: `Deploy ${plan.name} in ${region.city} — first hour`,
+            balanceBefore,
+            balanceAfter,
+          },
+        })
+      )
+    }
+    const txResult = await prisma.$transaction(txOps)
+    const invoice = txResult[isEnterprise ? 0 : 1]
 
     // 8. Create server DB row (PENDING) — invoice is already paid before
     // any provisioning side-effect runs.

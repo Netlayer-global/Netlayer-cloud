@@ -11,6 +11,7 @@ import { Select } from '../components/ui/Select'
 import { cn, formatCurrency } from '../lib/utils'
 import { AddCreditModal } from '../components/billing/AddCreditModal'
 import { DeployProgress } from '../components/DeployProgress'
+import { DeployCheckoutModal } from '../components/DeployCheckoutModal'
 import { useAuthStore } from '../store/authStore'
 import type { Plan, Region, OsTemplate } from '../types'
 
@@ -42,6 +43,8 @@ export default function DeployServer() {
   const [provisionedId, setProvisionedId] = useState<string | null>(null)
   const [topUpOpen, setTopUpOpen] = useState(false)
   const [topUpShortfall, setTopUpShortfall] = useState<number | undefined>()
+  // Round 22 — pay-per-deploy checkout for retail customers
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
   const user = useAuthStore((s) => s.user)
 
   const { data: regions = [] } = useQuery({
@@ -82,8 +85,16 @@ export default function DeployServer() {
     onError: (e: any) => {
       const code = e.response?.data?.code
       const msg = e.response?.data?.error || 'Failed to deploy'
+      // Round 22: retail users hit a 402 with USE_CHECKOUT_FLOW. Open the
+      // pay-per-deploy checkout modal instead of the wallet top-up flow.
+      if (code === 'USE_CHECKOUT_FLOW' || e.response?.data?.requiresCheckout) {
+        setCheckoutOpen(true)
+        setProvisioning(false)
+        return
+      }
       if (code === 'INSUFFICIENT_BALANCE') {
-        // Parse shortfall out of the message: "Add INR 23.59 to deploy this plan."
+        // Wallet/enterprise legacy path — show the top-up modal so admins
+        // can refill from inside the deploy wizard.
         const m = /(\d+(?:\.\d+)?)/.exec(msg)
         const shortfall = m ? parseFloat(m[1]) : undefined
         setTopUpShortfall(shortfall)
@@ -309,6 +320,43 @@ export default function DeployServer() {
           setTopUpOpen(false)
           // Auto-retry the deploy after the wallet has been credited.
           setTimeout(() => create.mutate(), 600)
+        }}
+      />
+
+      {/* Round 22 — retail customers pay first month upfront via Razorpay */}
+      <DeployCheckoutModal
+        open={checkoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        config={
+          plan && region && os
+            ? {
+                planId: plan.id,
+                regionId: region.id,
+                osTemplateId: os.id,
+                sshKeyId: sshKeyId || undefined,
+                hostname,
+                rootPassword,
+              }
+            : null
+        }
+        summary={
+          plan && region && os
+            ? {
+                planName: plan.name,
+                region: { city: region.city, flag: region.flag },
+                osName: os.name,
+                hostname,
+                amount: plan.priceInr,
+                tax: Number((plan.priceInr * 0.18).toFixed(2)),
+                total: Number((plan.priceInr * 1.18).toFixed(2)),
+                currency: user?.currency || 'INR',
+              }
+            : null
+        }
+        onPaid={(serverId) => {
+          setCheckoutOpen(false)
+          setProvisionedId(serverId)
+          setProvisioning(true)
         }}
       />
     </div>

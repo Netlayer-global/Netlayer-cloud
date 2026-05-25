@@ -16,6 +16,7 @@ export interface User {
   creditLimit?: number
   twoFactorEnabled?: boolean
   onboardingDone?: boolean
+  billingMode?: 'retail' | 'wallet' | 'enterprise'
   createdAt: string
   lastLoginAt?: string | null
 }

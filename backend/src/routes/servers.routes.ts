@@ -31,6 +31,22 @@ router.post('/', async (req: AuthedRequest, res, next) => {
       rootPassword: z.string().optional(),
     })
     const body = schema.parse(req.body)
+
+    // Round 22: retail users must use the pay-per-deploy flow. Surface a
+    // 402 with a clear pointer instead of letting deployServer throw.
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+      select: { billingMode: true },
+    })
+    if (user?.billingMode === 'retail') {
+      return res.status(402).json({
+        error: 'Retail customers must pay for the first month upfront. Create a deploy order instead.',
+        code: 'USE_CHECKOUT_FLOW',
+        requiresCheckout: true,
+        checkoutEndpoint: '/api/deploy-orders',
+      })
+    }
+
     const server = await serverService.deployServer(req.user!.userId, body)
     res.status(201).json({ data: serializeServer(server) })
   } catch (e) { next(e) }

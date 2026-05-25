@@ -41,6 +41,11 @@ model User {
   // Round 18 additions
   onboardingDone     Boolean    @default(false)
   dataExportedAt     DateTime?
+  // Round 22: per-user billing mode
+  // - retail (default): pay full month upfront for each deploy/renewal via Razorpay/Stripe
+  // - wallet:           legacy wallet model — admins can set this for power users
+  // - enterprise:       no payment required; admin grants servers; monthly invoice issued
+  billingMode        String     @default("retail")
   // ── billing/profile additions ──
   company            String?
   website            String?
@@ -88,6 +93,8 @@ model User {
   promoRedemptions   PromoRedemption[]
   // Round 20 additions
   creditNotes        CreditNote[]    @relation("UserCreditNotes")
+  // Round 22 additions
+  deployOrders       DeployOrder[]   @relation("UserDeployOrders")
 }
 
 model UserSession {
@@ -256,6 +263,9 @@ model Server {
   tags           String       @default("[]")
   notes          String?
   metadata       String?      // JSON: { deployTimeSeconds, fastDeploy, baseTemplateVmid, ... }
+  // Round 22: per-deploy billing
+  paidUntil      DateTime?                     // server paid through this date — auto-suspend after
+  pendingPaymentRef String?                    // razorpay order id during checkout, cleared on capture
   dnsRecordId    String?
   zabbixHostId   String?
   nextBillDate   DateTime?
@@ -990,4 +1000,49 @@ model CreditNote {
 
   @@index([userId, createdAt])
   @@index([invoiceId])
+}
+
+
+// ─── DEPLOY ORDERS (Round 22) ───────────────────────────────
+// Records a customer's deploy intent before payment. The full Razorpay /
+// Stripe order is tied to one of these rows — once payment captures, we
+// upgrade the linked Server row from AWAITING_PAYMENT to PENDING and the
+// fastDeploy pipeline kicks in.
+//
+// This lets us:
+//   - resume a stale checkout (browser closed, customer comes back next day)
+//   - cancel automatically after 24h (cleanup job)
+//   - audit "how many checkouts started but never paid"
+model DeployOrder {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation("UserDeployOrders", fields: [userId], references: [id])
+  // Server pre-created in AWAITING_PAYMENT state. Provisioning starts only
+  // once payment captures.
+  serverId          String   @unique
+  // Snapshot of the chosen config at order time (so price changes mid-checkout
+  // don't break the deal).
+  planId            String
+  regionId          String
+  osTemplateId      String
+  hostname          String
+  // Pricing — first month upfront, in customer's currency.
+  amount            Float                              // subtotal
+  tax               Float    @default(0)
+  taxBreakdown      String?                            // JSON
+  total             Float                              // amount + tax
+  currency          String   @default("INR")
+  // Payment provider state
+  provider          String   @default("razorpay")     // razorpay | stripe
+  providerOrderId   String?                           // rzp_order_xxx / pi_xxx
+  providerPaymentId String?                           // populated on capture
+  status            String   @default("pending")      // pending | paid | failed | expired | cancelled
+  expiresAt         DateTime                          // 24h from creation
+  paidAt            DateTime?
+  invoiceId         String?                           // populated after payment → links to Invoice
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([status, expiresAt])
 }

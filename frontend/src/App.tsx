@@ -81,6 +81,7 @@ import DnsAdmin from './pages/Admin/DnsAdmin'
 import MarketplaceAdmin from './pages/Admin/MarketplaceAdmin'
 import CreditNotesAdmin from './pages/Admin/CreditNotes'
 import Gstr1Export from './pages/Admin/Gstr1Export'
+import EnterpriseAdmin from './pages/Admin/Enterprise'
 
 import Referrals from './pages/Referrals'
 import Support from './pages/Support'
@@ -230,6 +231,7 @@ export default function App() {
             <Route path="marketplace"    element={<MarketplaceAdmin />} />
             <Route path="credit-notes"   element={<CreditNotesAdmin />} />
             <Route path="gstr1"          element={<Gstr1Export />} />
+            <Route path="enterprise"     element={<EnterpriseAdmin />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

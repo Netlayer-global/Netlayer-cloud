@@ -337,6 +337,50 @@ export const adminPlatformAPI = {
   marketplaceDelete: (id: string) => api.delete(`/admin/platform/marketplace/${id}`),
 }
 
+// ─── ROUND 22: Pay-per-deploy orders ─────────────────────────
+export interface DeployOrderResult {
+  orderId: string
+  serverId: string
+  amount: number
+  tax: number
+  total: number
+  currency: string
+  provider: 'razorpay' | 'stripe'
+  checkout: any
+}
+
+export const deployOrdersAPI = {
+  create: (data: {
+    planId: string
+    regionId: string
+    osTemplateId: string
+    sshKeyId?: string
+    hostname?: string
+    rootPassword?: string
+    preferredProvider?: 'razorpay' | 'stripe'
+  }) => api.post<{ data: DeployOrderResult }>('/deploy-orders', data),
+
+  list: () => api.get('/deploy-orders'),
+  get: (id: string) => api.get(`/deploy-orders/${id}`),
+
+  verifyPayment: (id: string, data: {
+    razorpay_payment_id?: string
+    razorpay_order_id?: string
+    razorpay_signature?: string
+    stripe_payment_intent_id?: string
+  }) => api.post<{ data: { success: boolean; alreadyPaid?: boolean; serverId: string } }>(`/deploy-orders/${id}/verify-payment`, data),
+
+  cancel: (id: string) => api.post(`/deploy-orders/${id}/cancel`),
+}
+
+// Round 22 admin: enterprise mode + admin-on-behalf deploy
+export const enterpriseAdminAPI = {
+  setBillingMode: (userId: string, data: { mode: 'retail' | 'wallet' | 'enterprise'; contractValue?: number; notes?: string }) =>
+    api.patch(`/admin/users/${userId}/billing-mode`, data),
+  deployForUser: (userId: string, data: { name: string; planId: string; regionId: string; osTemplateId: string; sshKeyId?: string; rootPassword?: string }) =>
+    api.post(`/admin/users/${userId}/deploy-server`, data),
+}
+
 // ─── BILLING ─────────────────────────────────────────────────
 export const billingAPI = {
   getInvoices: () => api.get<{ data: Invoice[] }>('/billing/invoices'),
