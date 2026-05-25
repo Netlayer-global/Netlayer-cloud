@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Check, Eye, EyeOff, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { catalogAPI, serverAPI, sshAPI } from '../api/endpoints'
@@ -119,6 +120,30 @@ export default function DeployServer() {
     }
   }, [regions, region])
 
+  // Round 19: prefill from URL params (used by Onboarding "deploy now" button).
+  // Auto-advances to Configure when all three are valid.
+  const [searchParams] = useSearchParams()
+  useEffect(() => {
+    if (!regions.length || !plans.length || !osList.length) return
+    const r = searchParams.get('region')
+    const p = searchParams.get('plan')
+    const o = searchParams.get('os')
+    let advanced = false
+    if (r && !region) {
+      const match = regions.find((x) => x.slug === r)
+      if (match) { setRegion(match); advanced = true }
+    }
+    if (p && !plan) {
+      const match = plans.find((x) => x.slug === p)
+      if (match) { setPlan(match); advanced = true }
+    }
+    if (o && !os) {
+      const match = osList.find((x) => x.slug === o)
+      if (match) { setOs(match); advanced = true }
+    }
+    if (advanced && r && p && o) setStepIdx(STEPS.length - 1)
+  }, [regions, plans, osList, searchParams, region, plan, os])
+
   return (
     <div className="max-w-7xl mx-auto">
       <DeployProgress
@@ -174,31 +199,41 @@ export default function DeployServer() {
 
       <div className="grid lg:grid-cols-[1fr_300px] gap-6 items-start">
         {/* Step content */}
-        <div className="bg-[#1e1f1e] border border-[#2a2b2a] rounded-lg p-6">
-          {STEPS[stepIdx] === 'Location' && (
-            <Step1Location regions={regions} selected={region} onSelect={setRegion} />
-          )}
-          {STEPS[stepIdx] === 'Plan' && (
-            <Step2Plan plans={plans} selected={plan} onSelect={setPlan} />
-          )}
-          {STEPS[stepIdx] === 'OS' && (
-            <Step3OS linux={linuxOs} windows={windowsOs} selected={os} onSelect={setOs} />
-          )}
-          {STEPS[stepIdx] === 'Configure' && (
-            <Step4Configure
-              hostname={hostname}
-              setHostname={setHostname}
-              sshKeys={sshKeys}
-              sshKeyId={sshKeyId}
-              setSshKeyId={setSshKeyId}
-              autoPassword={autoPassword}
-              setAutoPassword={setAutoPassword}
-              rootPassword={rootPassword}
-              setRootPassword={setRootPassword}
-              showPassword={showPassword}
-              setShowPassword={setShowPassword}
-            />
-          )}
+        <div className="bg-[#1e1f1e] border border-[#2a2b2a] rounded-lg p-6 overflow-hidden">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={stepIdx}
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+            >
+              {STEPS[stepIdx] === 'Location' && (
+                <Step1Location regions={regions} selected={region} onSelect={setRegion} />
+              )}
+              {STEPS[stepIdx] === 'Plan' && (
+                <Step2Plan plans={plans} selected={plan} onSelect={setPlan} />
+              )}
+              {STEPS[stepIdx] === 'OS' && (
+                <Step3OS linux={linuxOs} windows={windowsOs} selected={os} onSelect={setOs} />
+              )}
+              {STEPS[stepIdx] === 'Configure' && (
+                <Step4Configure
+                  hostname={hostname}
+                  setHostname={setHostname}
+                  sshKeys={sshKeys}
+                  sshKeyId={sshKeyId}
+                  setSshKeyId={setSshKeyId}
+                  autoPassword={autoPassword}
+                  setAutoPassword={setAutoPassword}
+                  rootPassword={rootPassword}
+                  setRootPassword={setRootPassword}
+                  showPassword={showPassword}
+                  setShowPassword={setShowPassword}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
 
           <div className="flex justify-between mt-8 pt-6 border-t border-[#2a2b2a]">
             <Button

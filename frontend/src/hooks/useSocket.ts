@@ -46,6 +46,21 @@ export function useSocket() {
       qc.invalidateQueries({ queryKey: ['admin-stats'] })
     })
 
+    // Round 19: real-time notification push
+    socket.on('notification', (payload: any) => {
+      qc.setQueryData(['notifications'], (old: any) => {
+        const items = [payload, ...((old?.data as any[]) ?? [])].slice(0, 50)
+        return { ...(old || {}), data: items, unreadCount: ((old?.unreadCount as number) ?? 0) + 1 }
+      })
+      // Toast for the user; never block on it.
+      try {
+        toast(payload.title, {
+          description: payload.message,
+          duration: 5000,
+        })
+      } catch {}
+    })
+
     socket.on('node:offline', (payload: any) => {
       if (user?.role && ['SUPER_ADMIN', 'ADMIN'].includes(user.role)) {
         toast.error(`Node ${payload.name} is OFFLINE`)
@@ -59,6 +74,7 @@ export function useSocket() {
       socket.off('server:alert')
       socket.off('admin:alert')
       socket.off('admin:server_update')
+      socket.off('notification')
       socket.off('node:offline')
     }
   }, [accessToken, qc, user])

@@ -46,6 +46,7 @@ import promoRoutes from './routes/promo.routes'
 import promoAdminRoutes from './routes/promoAdmin.routes'
 import ipPoolRoutes from './routes/ipPool.routes'
 import isoRoutes from './routes/iso.routes'
+import { publicIsoRouter } from './routes/iso.routes'
 import capacityRoutes from './routes/capacity.routes'
 import healthAdminRoutes from './routes/adminHealth.routes'
 import communicationsRoutes from './routes/communications.routes'
@@ -154,6 +155,7 @@ app.use('/api/floating-ips',  authMiddleware, idempotency(), floatingIpRoutes)
 app.use('/api/alert-rules',   authMiddleware, idempotency(), alertRulesRoutes)
 app.use('/api/snapshots',     authMiddleware, snapshotsAggregateRoutes)
 app.use('/api/billing/promo', authMiddleware, idempotency(), promoRoutes)
+app.use('/api/iso/public',    authMiddleware, publicIsoRouter)
 
 // ─── Admin ──────────────────────────────────────────────────────────
 app.use('/api/admin', authMiddleware, idempotency(), adminRoutes)

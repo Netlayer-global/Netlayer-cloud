@@ -79,4 +79,20 @@ router.get('/modules', async (_req, res, next) => {
   } catch (e) { next(e) }
 })
 
+/**
+ * Public platform metadata: brand name, support email, social URLs etc.
+ * Used by the landing page footer + legal pages so we don't hardcode addresses.
+ */
+router.get('/meta', async (_req, res, next) => {
+  try {
+    const cfg = await prisma.integrationConfig.findUnique({ where: { key: 'platform.meta' } })
+    let meta: any = {}
+    if (cfg?.value) {
+      try { meta = JSON.parse(cfg.value) } catch {}
+    }
+    res.setHeader('Cache-Control', 'public, max-age=120')
+    res.json({ data: meta })
+  } catch (e) { next(e) }
+})
+
 export default router

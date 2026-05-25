@@ -710,6 +710,45 @@ Try it yourself — sign up, hit "Deploy", and watch the timer.`,
     create: { key: 'network.floating_ip_pool', value: JSON.stringify({ pricePerMonth: 50 }) },
   })
 
+  // Round 19: platform meta + public rescue ISO
+  await prisma.integrationConfig.upsert({
+    where: { key: 'platform.meta' },
+    update: {},
+    create: {
+      key: 'platform.meta',
+      value: JSON.stringify({
+        name: 'NetLayer Cloud',
+        tagline: 'Infrastructure that deploys in seconds',
+        supportEmail: 'support@netlayer.com',
+        salesEmail: 'sales@netlayer.com',
+        legalEmail: 'legal@netlayer.com',
+        privacyEmail: 'privacy@netlayer.com',
+        twitterUrl: 'https://twitter.com/netlayercloud',
+        githubUrl: 'https://github.com/Netlayer-global',
+        discordUrl: 'https://discord.gg/netlayer',
+        linkedinUrl: 'https://linkedin.com/company/netlayer',
+        foundedYear: 2024,
+        headquarters: 'Mumbai, India',
+      }),
+    },
+  })
+
+  await prisma.isoImage.upsert({
+    where: { id: 'rescue-iso-seed' },
+    update: { isPublic: true, status: 'available' },
+    create: {
+      id: 'rescue-iso-seed',
+      name: 'NetLayer Rescue ISO',
+      filename: 'netlayer-rescue-amd64.iso',
+      status: 'available',
+      isPublic: true,
+      sizeBytes: BigInt(560 * 1024 * 1024),
+      downloadUrl: 'https://example.com/rescue.iso',
+    },
+  })
+
+  console.log('✓ Round 19 configs (platform.meta + rescue ISO)')
+
   console.log('✓ Round 18 configs')
 
   console.log('✅ Seed complete!')

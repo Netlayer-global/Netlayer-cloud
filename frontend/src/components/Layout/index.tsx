@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { useSocket } from '../../hooks/useSocket'
 import { AnnouncementBanner } from '../AnnouncementBanner'
+import { CommandPalette } from '../CommandPalette'
 
 export function DashboardLayout() {
   useSocket()
@@ -16,6 +17,7 @@ export function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+      <CommandPalette />
     </div>
   )
 }

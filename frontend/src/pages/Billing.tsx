@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Download, Wallet, ArrowDown, ArrowUp } from 'lucide-react'
+import { Plus, Download, Wallet, ArrowDown, ArrowUp, Calendar, Tag, Clock, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
-import { billingAPI } from '../api/endpoints'
+import { billingAPI, promoAPI } from '../api/endpoints'
 import { paymentAPI } from '../api/admin'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { Skeleton } from '../components/ui/Skeleton'
+import { Input } from '../components/ui/Input'
 import { Table, THead, TBody, TR, TH, TD, EmptyTable } from '../components/ui/Table'
 import { useAuthStore } from '../store/authStore'
 import { AddCreditModal } from '../components/billing/AddCreditModal'
@@ -161,6 +162,12 @@ export default function Billing() {
         </Card>
       )}
 
+      {/* Round 19: cost forecast + promo redeem (side-by-side on desktop) */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <ForecastCard usage={usage} loading={usageLoading} />
+        <PromoCard onRedeemed={() => qc.invalidateQueries({ queryKey: ['usage'] })} />
+      </div>
+
       <Card padding="p-5">
         <h2 className="text-sm font-medium text-[#e8e8e6] mb-4">This month</h2>
         {usageLoading ? (
@@ -240,12 +247,16 @@ export default function Billing() {
                       {inv.status === 'PENDING' && (
                         <Button size="sm" onClick={() => handlePay(inv)}>Pay now</Button>
                       )}
-                      <button
+                      <a
+                        href={`/api/billing/invoices/${inv.id}/pdf`}
+                        download={`NL-${inv.invoiceNumber || inv.id}.pdf`}
+                        target="_blank"
+                        rel="noreferrer"
                         className="h-7 w-7 rounded border border-[#333433] text-[#a0a09e] hover:bg-[#252625] hover:text-[#e8e8e6] flex items-center justify-center cursor-pointer transition-colors"
-                        title="Download"
+                        title="Download PDF"
                       >
                         <Download size={12} />
-                      </button>
+                      </a>
                     </div>
                   </TD>
                 </TR>
@@ -292,5 +303,142 @@ export default function Billing() {
         onSuccess={() => setAddCreditOpen(false)}
       />
     </div>
+  )
+}
+
+/* ════════════════════════════════════════════════════════════
+   Round 19 — Cost forecast + Promo redeem cards
+   ════════════════════════════════════════════════════════════ */
+
+function ForecastCard({ usage, loading }: { usage: any; loading: boolean }) {
+  if (loading) {
+    return <Card padding="p-5"><Skeleton className="h-32" /></Card>
+  }
+  const forecast = usage?.forecastMonthEnd ?? 0
+  const dayOfMonth = usage?.dayOfMonth ?? new Date().getDate()
+  const daysInMonth = dayOfMonth + (usage?.daysRemaining ?? 30 - dayOfMonth)
+  const runway = usage?.creditRunwayDays
+  const lowBalance = !!usage?.lowBalanceWarning
+  const dailyAvg = forecast > 0 ? Math.round(forecast / daysInMonth) : 0
+
+  const runwayColor =
+    runway == null ? 'text-[#a0a09e]' :
+    runway > 30 ? 'text-[#4ade80]' :
+    runway >= 15 ? 'text-amber-400' :
+    'text-red-400'
+
+  return (
+    <Card padding="p-5">
+      <div className="flex items-center gap-2 text-xs text-[#6a6a68] uppercase tracking-wide mb-2">
+        <Calendar size={12} />
+        Cost forecast
+      </div>
+      <div className="text-2xl font-medium text-[#e8e8e6] tabular-nums">
+        {formatCurrency(forecast, usage?.currency || 'INR')}
+      </div>
+      <div className="text-xs text-[#a0a09e] mt-1">
+        Based on {formatCurrency(dailyAvg, usage?.currency || 'INR')}/day current spend
+      </div>
+
+      <div className="mt-4">
+        <div className="flex items-center justify-between text-[11px] text-[#6a6a68] mb-1.5">
+          <span>Day {dayOfMonth} of {daysInMonth}</span>
+          <span>{Math.round((dayOfMonth / daysInMonth) * 100)}%</span>
+        </div>
+        <div className="h-1 rounded-full bg-[#252625] overflow-hidden">
+          <div
+            className="h-full bg-[#e0fe56] rounded-full transition-[width]"
+            style={{ width: `${(dayOfMonth / daysInMonth) * 100}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center gap-2 text-xs">
+        <Clock size={12} className="text-[#6a6a68]" />
+        <span className="text-[#a0a09e]">Balance covers</span>
+        <span className={cn('font-medium tabular-nums', runwayColor)}>
+          {runway != null ? `${runway} days` : '∞'}
+        </span>
+      </div>
+
+      {lowBalance && (
+        <div className="mt-3 flex items-start gap-2 px-3 py-2 rounded-md bg-amber-950/30 border border-amber-900/60 text-xs text-amber-300">
+          <AlertTriangle size={12} className="shrink-0 mt-0.5" />
+          <span>Balance may run out before month end. Consider topping up.</span>
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function PromoCard({ onRedeemed }: { onRedeemed: () => void }) {
+  const [code, setCode] = useState('')
+  const [open, setOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+
+  const redeem = useMutation({
+    mutationFn: () => promoAPI.redeem(code.trim().toUpperCase()),
+    onSuccess: (r: any) => {
+      const d = r.data.data
+      setSuccess(`${d.message}. New balance: ${formatCurrency(d.newBalance)}`)
+      setError(null)
+      setCode('')
+      onRedeemed()
+      toast.success(d.message)
+    },
+    onError: (e: any) => {
+      setError(e.response?.data?.error || 'Could not redeem code')
+      setSuccess(null)
+    },
+  })
+
+  return (
+    <Card padding="p-5">
+      <div className="flex items-center gap-2 text-xs text-[#6a6a68] uppercase tracking-wide mb-2">
+        <Tag size={12} />
+        Promo code
+      </div>
+
+      {!open ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="text-sm text-[#e0fe56] hover:underline cursor-pointer"
+        >
+          Have a promo code? →
+        </button>
+      ) : (
+        <div className="flex gap-2">
+          <Input
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="WELCOME500"
+            className="font-mono w-48 h-9"
+            onKeyDown={(e) => e.key === 'Enter' && code.trim() && redeem.mutate()}
+          />
+          <Button size="sm" onClick={() => redeem.mutate()} loading={redeem.isPending} disabled={!code.trim()}>
+            Apply
+          </Button>
+        </div>
+      )}
+
+      {success && (
+        <div className="mt-3 px-3 py-2 rounded-md bg-green-950/30 border border-green-900/60 text-xs text-[#4ade80]">
+          {success}
+        </div>
+      )}
+      {error && (
+        <div className="mt-3 px-3 py-2 rounded-md bg-red-950/30 border border-red-900/60 text-xs text-red-300">
+          {error}
+        </div>
+      )}
+
+      {!success && !error && (
+        <p className="text-xs text-[#6a6a68] mt-3">
+          Codes give credit instantly. Try <code className="text-[#e8e8e6] font-mono">WELCOME500</code> if you haven't already.
+        </p>
+      )}
+    </Card>
   )
 }

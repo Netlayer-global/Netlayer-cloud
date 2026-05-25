@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import {
   LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip,
 } from 'recharts'
-import { serverAPI, catalogAPI } from '../api/endpoints'
+import { serverAPI, catalogAPI, isoPublicAPI } from '../api/endpoints'
 import { serverExtraAPI } from '../api/admin'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
@@ -558,6 +558,36 @@ function FirewallTab({ serverId }: { serverId: string }) {
         </div>
         <Button onClick={() => setOpen(true)}><ShieldIcon size={13} /> Add rule</Button>
       </Card>
+
+      {/* Round 19: one-click template rules */}
+      <Card padding="p-4">
+        <div className="text-[11px] uppercase tracking-wider text-[#6a6a68] mb-2">Quick add</div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { label: 'Allow SSH',   payload: { direction: 'INBOUND', protocol: 'TCP', portFrom: 22,  portTo: 22,  sourceIp: '0.0.0.0/0', action: 'ACCEPT' } },
+            { label: 'Allow HTTP',  payload: { direction: 'INBOUND', protocol: 'TCP', portFrom: 80,  portTo: 80,  sourceIp: '0.0.0.0/0', action: 'ACCEPT' } },
+            { label: 'Allow HTTPS', payload: { direction: 'INBOUND', protocol: 'TCP', portFrom: 443, portTo: 443, sourceIp: '0.0.0.0/0', action: 'ACCEPT' } },
+            { label: 'Block all',   payload: { direction: 'INBOUND', protocol: 'ALL', sourceIp: '0.0.0.0/0', action: 'DROP' as const } },
+          ].map((t) => (
+            <button
+              key={t.label}
+              type="button"
+              onClick={() =>
+                serverExtraAPI
+                  .createFirewallRule(serverId, t.payload as any)
+                  .then(() => {
+                    toast.success(`${t.label} added`)
+                    qc.invalidateQueries({ queryKey: ['firewall', serverId] })
+                  })
+                  .catch((e: any) => toast.error(e.response?.data?.error || 'Failed'))
+              }
+              className="h-8 px-3 rounded-md text-xs border border-[#333433] bg-[#1e1f1e] text-[#a0a09e] hover:text-[#e8e8e6] hover:border-[#e0fe56]/40 cursor-pointer transition-colors"
+            >
+              + {t.label}
+            </button>
+          ))}
+        </div>
+      </Card>
       {isLoading ? (
         <Card padding="p-8" className="text-center"><Spinner size={24} color="lime" /></Card>
       ) : rules.length === 0 ? (
@@ -631,14 +661,30 @@ function FirewallTab({ serverId }: { serverId: string }) {
 // ─── Settings ──────────────────────────────────────
 function SettingsTab({ serverId, serverName, onDelete }: { serverId: string; serverName: string; onDelete: () => void }) {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const [name, setName] = useState(serverName)
   const [rebuildOsId, setRebuildOsId] = useState('')
   const [rebuildPwd, setRebuildPwd] = useState('')
+  const [resizeOpen, setResizeOpen] = useState(false)
+  const [cloneOpen, setCloneOpen] = useState(false)
+  const [rescueOpen, setRescueOpen] = useState(false)
 
   const { data: osList = [] } = useQuery({
     queryKey: ['os'],
     queryFn: () => catalogAPI.getOS().then((r) => r.data.data),
   })
+
+  const { data: server } = useQuery({
+    queryKey: ['server', serverId],
+    queryFn: () => serverAPI.get(serverId).then((r) => r.data.data),
+  })
+
+  const inRescue = (() => {
+    try {
+      const m = server && (server as any).notes ? JSON.parse((server as any).notes) : {}
+      return !!m.rescueMode
+    } catch { return false }
+  })()
 
   const rebuild = useMutation({
     mutationFn: () => serverAPI.rebuild(serverId, rebuildOsId, rebuildPwd),
@@ -647,6 +693,15 @@ function SettingsTab({ serverId, serverName, onDelete }: { serverId: string; ser
       qc.invalidateQueries({ queryKey: ['server', serverId] })
     },
     onError: (e: any) => toast.error(e.response?.data?.error || 'Rebuild failed'),
+  })
+
+  const exitRescue = useMutation({
+    mutationFn: () => serverAPI.rescueExit(serverId),
+    onSuccess: () => {
+      toast.success('Exiting rescue mode')
+      qc.invalidateQueries({ queryKey: ['server', serverId] })
+    },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Failed'),
   })
 
   return (
@@ -658,6 +713,87 @@ function SettingsTab({ serverId, serverName, onDelete }: { serverId: string; ser
           <Button variant="secondary">Save</Button>
         </div>
       </Card>
+
+      {/* Round 19: Resize plan */}
+      <Card padding="p-5">
+        <div className="flex items-start justify-between gap-4 mb-1">
+          <div>
+            <h3 className="text-sm font-medium text-[#e8e8e6]">Resize plan</h3>
+            <p className="text-xs text-[#a0a09e] mt-0.5">
+              Change CPU, RAM, and disk. Server stays online during upgrade.
+              {server?.plan && ` Current: ${server.plan.name}`}
+            </p>
+          </div>
+          <Button variant="secondary" onClick={() => setResizeOpen(true)}>
+            Upgrade plan
+          </Button>
+        </div>
+      </Card>
+
+      {/* Round 19: Clone server */}
+      <Card padding="p-5">
+        <div className="flex items-start justify-between gap-4 mb-1">
+          <div>
+            <h3 className="text-sm font-medium text-[#e8e8e6]">Clone server</h3>
+            <p className="text-xs text-[#a0a09e] mt-0.5">
+              Create an identical copy in the same region with the same plan.
+            </p>
+          </div>
+          <Button variant="secondary" onClick={() => setCloneOpen(true)}>
+            Clone server
+          </Button>
+        </div>
+      </Card>
+
+      {/* Round 19: Rescue mode */}
+      <Card padding="p-5" className={inRescue ? 'border-amber-900/40' : ''}>
+        {inRescue ? (
+          <>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-amber-950/60 border border-amber-900/60 text-amber-300">
+                Rescue mode
+              </span>
+            </div>
+            <p className="text-xs text-[#a0a09e] mb-3">
+              Server is booted from rescue ISO. Disk data is intact and mounted; finish recovery, then exit.
+            </p>
+            <Button variant="secondary" onClick={() => exitRescue.mutate()} loading={exitRescue.isPending}>
+              Exit rescue mode
+            </Button>
+          </>
+        ) : (
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-medium text-[#e8e8e6]">Rescue mode</h3>
+              <p className="text-xs text-[#a0a09e] mt-0.5">
+                Boot from a rescue ISO to recover an unbootable system.
+              </p>
+            </div>
+            <Button variant="secondary" onClick={() => setRescueOpen(true)}>
+              Enter rescue mode
+            </Button>
+          </div>
+        )}
+      </Card>
+
+      {/* Browser console */}
+      <Card padding="p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-medium text-[#e8e8e6]">Browser console</h3>
+            <p className="text-xs text-[#a0a09e] mt-0.5">
+              Open a serial console — useful when SSH is broken.
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            onClick={() => window.open(`/console?serverId=${serverId}`, '_blank', 'noopener')}
+          >
+            Open console
+          </Button>
+        </div>
+      </Card>
+
       <Card padding="p-5">
         <h3 className="text-sm font-medium text-[#e8e8e6] mb-1">Rebuild server</h3>
         <p className="text-xs text-[#a0a09e] mb-4">Reinstall the OS. All data will be lost.</p>
@@ -688,6 +824,277 @@ function SettingsTab({ serverId, serverName, onDelete }: { serverId: string; ser
         <p className="text-xs text-[#a0a09e] mb-4">Permanently delete this server.</p>
         <Button variant="danger" onClick={onDelete}><Trash2 size={13} /> Delete server</Button>
       </Card>
+
+      <ResizeModal
+        open={resizeOpen}
+        onClose={() => setResizeOpen(false)}
+        serverId={serverId}
+        currentPlanId={server?.plan?.id}
+        currentPlanName={server?.plan?.name}
+        currentStatus={(server as any)?.status}
+        onSuccess={() => {
+          setResizeOpen(false)
+          qc.invalidateQueries({ queryKey: ['server', serverId] })
+          toast.success('Server resized')
+        }}
+      />
+      <CloneModal
+        open={cloneOpen}
+        onClose={() => setCloneOpen(false)}
+        serverId={serverId}
+        defaultName={`${serverName}-copy`}
+        onSuccess={(newId) => {
+          setCloneOpen(false)
+          navigate(`/dashboard/servers/${newId}`)
+        }}
+      />
+      <RescueModal
+        open={rescueOpen}
+        onClose={() => setRescueOpen(false)}
+        serverId={serverId}
+        onSuccess={() => {
+          setRescueOpen(false)
+          qc.invalidateQueries({ queryKey: ['server', serverId] })
+        }}
+      />
     </div>
+  )
+}
+
+/* ════════════════════════════════════════════════════════════
+   Round 19 — Resize / Clone / Rescue modals
+   ════════════════════════════════════════════════════════════ */
+
+function ResizeModal({
+  open, onClose, serverId, currentPlanId, currentPlanName, currentStatus, onSuccess,
+}: {
+  open: boolean
+  onClose: () => void
+  serverId: string
+  currentPlanId?: string
+  currentPlanName?: string
+  currentStatus?: string
+  onSuccess: () => void
+}) {
+  const [selectedPlanId, setSelectedPlanId] = useState('')
+  const [confirmName, setConfirmName] = useState('')
+
+  const { data: plans = [] } = useQuery({
+    queryKey: ['plans'],
+    queryFn: () => catalogAPI.getPlans().then((r) => r.data.data),
+    enabled: open,
+  })
+
+  const current = plans.find((p: any) => p.id === currentPlanId)
+  const target = plans.find((p: any) => p.id === selectedPlanId)
+  const isUpgrade = current && target ? target.priceInr > current.priceInr : true
+  const running = currentStatus === 'RUNNING'
+
+  const resize = useMutation({
+    mutationFn: () => serverAPI.resize(serverId, selectedPlanId),
+    onSuccess,
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Resize failed'),
+  })
+
+  if (!open) return null
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Resize server"
+      size="lg"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button
+            disabled={!selectedPlanId || !target || target.id === currentPlanId}
+            loading={resize.isPending}
+            onClick={() => resize.mutate()}
+          >
+            Resize server
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <div className="text-xs text-[#a0a09e]">
+          Current plan: <strong className="text-[#e8e8e6]">{currentPlanName || '—'}</strong>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[360px] overflow-y-auto pr-1">
+          {plans.map((p: any) => {
+            const isCurrent = p.id === currentPlanId
+            const isSmaller = current && p.priceInr < current.priceInr
+            const blockedSmaller = running && isSmaller
+            const selected = p.id === selectedPlanId
+            return (
+              <button
+                key={p.id}
+                type="button"
+                disabled={isCurrent || blockedSmaller}
+                onClick={() => setSelectedPlanId(p.id)}
+                title={blockedSmaller ? 'Stop the server first to downsize' : undefined}
+                className={cn(
+                  'text-left p-3 rounded-lg border transition-colors',
+                  isCurrent
+                    ? 'border-[#e0fe56]/40 bg-[#e0fe56]/5'
+                    : selected
+                    ? 'border-[#e0fe56] bg-[#e0fe56]/10 cursor-pointer'
+                    : blockedSmaller
+                    ? 'border-[#2a2b2a] bg-[#161716] opacity-40 cursor-not-allowed'
+                    : 'border-[#2a2b2a] bg-[#161716] hover:border-[#e0fe56]/40 cursor-pointer'
+                )}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium text-[#e8e8e6]">{p.name}</span>
+                  {isCurrent && (
+                    <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#e0fe56] text-[#0d0e0d]">
+                      Current
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-[#a0a09e]">
+                  {p.cpu} vCPU · {p.ramGB} GB · {p.diskGB} GB
+                </div>
+                <div className="text-xs text-[#e0fe56] mt-1">₹{p.priceInr}/mo</div>
+              </button>
+            )
+          })}
+        </div>
+
+        {target && current && target.id !== current.id && (
+          <div className="bg-[#161716] border border-[#2a2b2a] rounded-md p-3 text-xs">
+            <div className="text-[10px] uppercase tracking-wider text-[#6a6a68] mb-2">Diff</div>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <div className="text-[#6a6a68] text-[11px]">CPU</div>
+                <div className="text-[#e8e8e6]">{current.cpu} → {target.cpu}</div>
+              </div>
+              <div>
+                <div className="text-[#6a6a68] text-[11px]">RAM</div>
+                <div className="text-[#e8e8e6]">{current.ramGB} → {target.ramGB} GB</div>
+              </div>
+              <div>
+                <div className="text-[#6a6a68] text-[11px]">Price</div>
+                <div className="text-[#e8e8e6]">₹{current.priceInr} → ₹{target.priceInr}/mo</div>
+              </div>
+            </div>
+            {isUpgrade && (
+              <div className="mt-2 text-[11px] text-[#a0a09e]">
+                Prorated charge for the remainder of this month will be debited from your wallet.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
+function CloneModal({
+  open, onClose, serverId, defaultName, onSuccess,
+}: {
+  open: boolean
+  onClose: () => void
+  serverId: string
+  defaultName: string
+  onSuccess: (newId: string) => void
+}) {
+  const [name, setName] = useState(defaultName)
+
+  const clone = useMutation({
+    mutationFn: () => serverAPI.clone(serverId, name),
+    onSuccess: (r: any) => {
+      toast.success('Cloning started')
+      onSuccess(r.data.data.id)
+    },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Clone failed'),
+  })
+
+  if (!open) return null
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Clone server"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => clone.mutate()} loading={clone.isPending} disabled={!name.trim()}>
+            Clone
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <Input label="New server name" value={name} onChange={(e) => setName(e.target.value)} />
+        <p className="text-xs text-[#a0a09e]">
+          Same region, plan, and OS. New IP and hostname will be assigned. First-hour charge applies as with any new deploy.
+        </p>
+      </div>
+    </Modal>
+  )
+}
+
+function RescueModal({
+  open, onClose, serverId, onSuccess,
+}: {
+  open: boolean
+  onClose: () => void
+  serverId: string
+  onSuccess: () => void
+}) {
+  const [isoId, setIsoId] = useState('')
+
+  const { data: isos = [] } = useQuery({
+    queryKey: ['public-isos'],
+    queryFn: () => isoPublicAPI.list().then((r: any) => r.data.data),
+    enabled: open,
+  })
+
+  const rescue = useMutation({
+    mutationFn: () => serverAPI.rescue(serverId, isoId),
+    onSuccess: () => {
+      toast.success('Booting into rescue mode')
+      onSuccess()
+    },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'Failed'),
+  })
+
+  if (!open) return null
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Enter rescue mode"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => rescue.mutate()} loading={rescue.isPending} disabled={!isoId}>
+            Boot into rescue
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <Select label="Rescue ISO" value={isoId} onChange={(e) => setIsoId(e.target.value)}>
+          <option value="">Choose an ISO…</option>
+          {isos.map((iso: any) => (
+            <option key={iso.id} value={iso.id}>{iso.name}</option>
+          ))}
+        </Select>
+        {isos.length === 0 && (
+          <p className="text-xs text-amber-400">
+            No public rescue ISOs available right now. Contact support.
+          </p>
+        )}
+        <div className="text-xs text-[#a0a09e] bg-[#161716] border border-[#2a2b2a] rounded-md p-3">
+          The server will reboot from the selected ISO. Your disk data remains intact and can be mounted from the rescue environment.
+        </div>
+      </div>
+    </Modal>
   )
 }

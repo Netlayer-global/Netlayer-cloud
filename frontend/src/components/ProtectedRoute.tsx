@@ -40,6 +40,17 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     )
   }
 
+  // Round 19: first-time user → onboarding wizard.
+  // Bypass for admin paths and the wizard itself, otherwise customers landing
+  // on /dashboard/home for the first time get redirected to /dashboard/onboarding.
+  const onAdmin = location.pathname.startsWith('/admin')
+  const onOnboarding = location.pathname === '/dashboard/onboarding'
+  const onConsole = location.pathname === '/console'
+  const effective = data || (useAuthStore.getState().user as any)
+  if (effective && effective.onboardingDone === false && !onAdmin && !onOnboarding && !onConsole) {
+    return <Navigate to="/dashboard/onboarding" replace />
+  }
+
   return <>{children}</>
 }
 

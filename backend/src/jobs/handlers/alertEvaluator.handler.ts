@@ -4,6 +4,7 @@ import logger from '../../utils/logger'
 import emailService from '../../services/email.service'
 import smsService from '../../services/sms.service'
 import { emitToUser } from '../../services/socket.service'
+import { notify } from '../../services/notify.service'
 
 /**
  * Alert evaluator. Runs every 5 minutes (see jobs/index.ts cron).
@@ -142,17 +143,13 @@ export async function alertEvaluatorHandler(): Promise<void> {
         }
 
         // Always create in-app notification + socket event
-        await prisma.notification
-          .create({
-            data: {
-              userId: rule.userId,
-              type: 'alert_fired',
-              title: `Alert: ${rule.name}`,
-              message: msg,
-              link: `/dashboard/servers/${server.id}`,
-            },
-          })
-          .catch(() => {})
+        await notify({
+          userId: rule.userId,
+          type: 'alert_fired',
+          title: `Alert: ${rule.name}`,
+          message: msg,
+          link: `/dashboard/servers/${server.id}`,
+        })
 
         emitToUser(rule.userId, 'server:alert', {
           serverId: server.id,

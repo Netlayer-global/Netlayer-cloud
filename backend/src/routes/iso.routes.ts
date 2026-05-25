@@ -97,6 +97,26 @@ router.delete('/:id', async (req, res, next) => {
   } catch (e) { next(e) }
 })
 
+/**
+ * Public list of rescue ISOs available to customers. Mounted under the
+ * authenticated `/api` so we don't expose internal ISOs but every signed-in
+ * customer can pick from the platform-curated rescue images.
+ *
+ * Note: this is exported as `publicIsoRouter` and mounted by app.ts at
+ * `/api/iso/public` outside the admin tree.
+ */
+export const publicIsoRouter = Router()
+publicIsoRouter.get('/', async (_req, res, next) => {
+  try {
+    const isos = await prisma.isoImage.findMany({
+      where: { isPublic: true, status: 'available' },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, name: true, filename: true, createdAt: true },
+    })
+    res.json({ data: isos })
+  } catch (e) { next(e) }
+})
+
 router.post('/:id/attach', async (req, res, next) => {
   try {
     const { serverId } = z.object({ serverId: z.string().min(1) }).parse(req.body)

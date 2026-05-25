@@ -65,12 +65,26 @@ router.get('/usage', async (req: AuthedRequest, res, next) => {
     const total = items.reduce((sum, i) => sum + i.amount, 0)
     const user = await prisma.user.findUnique({ where: { id: userId } })
 
+    // Round 19: month-end forecast + credit runway projection
+    const dayOfMonth = now.getDate()
+    const daysRemaining = daysInMonth - dayOfMonth
+    const forecastMonthEnd = dayOfMonth > 0 ? Math.round((total / dayOfMonth) * daysInMonth * 100) / 100 : total
+    const forecastPerDay = forecastMonthEnd / daysInMonth
+    const balance = user?.balance || 0
+    const creditRunwayDays = forecastPerDay > 0 ? Math.floor(balance / forecastPerDay) : null
+    const lowBalanceWarning = forecastMonthEnd > 0 && balance < forecastMonthEnd * 0.5
+
     res.json({
       data: {
-        balance: user?.balance || 0,
+        balance,
         total: Math.round(total * 100) / 100,
         items,
         period: { start: startOfMonth.toISOString(), end: now.toISOString() },
+        forecastMonthEnd,
+        dayOfMonth,
+        daysRemaining,
+        creditRunwayDays,
+        lowBalanceWarning,
       },
     })
   } catch (e) { next(e) }

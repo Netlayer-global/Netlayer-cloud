@@ -62,6 +62,15 @@ export const serverAPI = {
 
   rebuild: (id: string, osTemplateId: string, rootPassword: string) =>
     api.post(`/servers/${id}/rebuild`, { osTemplateId, rootPassword }),
+
+  // Round 18 extensions (inlined Round 19)
+  resize: (id: string, newPlanId: string) =>
+    api.post<{ data: Server }>(`/servers/${id}/resize`, { newPlanId }),
+  clone: (id: string, name?: string) =>
+    api.post<{ data: Server }>(`/servers/${id}/clone`, { name }),
+  rescue: (id: string, isoId: string) =>
+    api.post(`/servers/${id}/rescue`, { isoId }),
+  rescueExit: (id: string) => api.post(`/servers/${id}/rescue-exit`),
 }
 
 // ─── CATALOG ─────────────────────────────────────────────────
@@ -202,16 +211,10 @@ export const onboardingAPI = {
   requestDataExport: () => api.post('/auth/request-data-export'),
 }
 
-// Round 18: extended server actions
-Object.assign(serverAPI, {
-  resize: (id: string, newPlanId: string) =>
-    api.post(`/servers/${id}/resize`, { newPlanId }),
-  clone: (id: string, name?: string) =>
-    api.post(`/servers/${id}/clone`, { name }),
-  rescue: (id: string, isoId: string) =>
-    api.post(`/servers/${id}/rescue`, { isoId }),
-  rescueExit: (id: string) => api.post(`/servers/${id}/rescue-exit`),
-})
+// Round 18 admin ISO availability for customer-side rescue mode
+export const isoPublicAPI = {
+  list: () => api.get<{ data: { id: string; name: string; filename: string; createdAt: string }[] }>('/iso/public'),
+}
 
 // ─── ADMIN ROUND 18 ──────────────────────────────────────────
 export const ipPoolAPI = {
