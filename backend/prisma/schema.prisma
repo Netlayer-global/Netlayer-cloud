@@ -86,6 +86,8 @@ model User {
   floatingIps        FloatingIp[]
   alertRules         AlertRule[]
   promoRedemptions   PromoRedemption[]
+  // Round 20 additions
+  creditNotes        CreditNote[]    @relation("UserCreditNotes")
 }
 
 model UserSession {
@@ -346,6 +348,9 @@ model Invoice {
   notes             String?
   pdfUrl            String?   // populated after first download
   createdAt         DateTime  @default(now())
+
+  // Round 20: linked credit notes (refunds/adjustments)
+  creditNotes       CreditNote[] @relation("InvoiceCreditNotes")
 }
 
 model PaymentMethod {
@@ -936,4 +941,53 @@ model StatusSubscriber {
   id        String   @id @default(cuid())
   email     String   @unique
   createdAt DateTime @default(now())
+}
+
+
+// ─── INVOICE COUNTERS (Round 20) ────────────────────────────
+// Sequential, gap-free numbering per fiscal year + document type.
+// India GST mandates monotonic invoice numbers per FY for tax invoices and
+// separate sequence for credit notes.
+//
+// Format: NL/2025-26/000001  (tax invoice)
+//         CN/2025-26/000001  (credit note)
+//
+// Atomic increment via @@unique on (kind, fiscalYear) + Prisma transaction
+// with row-locking (Postgres) or single-writer guarantee (SQLite).
+model InvoiceCounter {
+  id          String   @id @default(cuid())
+  kind        String                          // 'invoice' | 'credit_note' | 'receipt'
+  fiscalYear  String                          // '2025-26'
+  current     Int      @default(0)
+  prefix      String   @default("NL")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([kind, fiscalYear])
+}
+
+// ─── CREDIT NOTES (Round 20) ────────────────────────────────
+// Issued when an invoice is refunded (full or partial). Linked to the
+// originating invoice. Has its own sequential numbering ("CN/2025-26/000001").
+model CreditNote {
+  id              String   @id @default(cuid())
+  creditNoteNumber String  @unique
+  invoiceId       String
+  invoice         Invoice  @relation("InvoiceCreditNotes", fields: [invoiceId], references: [id])
+  userId          String
+  user            User     @relation("UserCreditNotes", fields: [userId], references: [id])
+  amount          Float
+  tax             Float    @default(0)
+  taxBreakdown    String?                     // JSON
+  total           Float    @default(0)
+  currency        String   @default("INR")
+  reason          String                      // refund | adjustment | discount | error
+  notes           String?
+  issuedBy        String?                     // admin user id (nullable for system-issued)
+  refundReference String?                     // razorpay refund id, stripe refund id, etc.
+  pdfUrl          String?
+  createdAt       DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([invoiceId])
 }

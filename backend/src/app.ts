@@ -33,6 +33,10 @@ import { alertmanagerRouter } from './routes/webhook.routes'
 import healthRoutes from './routes/health.routes'
 import statusRoutes from './routes/status.routes'
 import adminStatusRoutes from './routes/admin-status.routes'
+// Round 20
+import creditNotesRoutes, { adminCreditNotesRouter } from './routes/creditNotes.routes'
+import gstr1Routes from './routes/gstr1.routes'
+import adminPlatformRoutes from './routes/adminPlatform.routes'
 import abuseRoutes from './routes/abuse.routes'
 import storageRoutes, { storagePublicRouter } from './routes/storage.routes'
 import platformRoutes from './routes/platform.routes'
@@ -157,6 +161,9 @@ app.use('/api/snapshots',     authMiddleware, snapshotsAggregateRoutes)
 app.use('/api/billing/promo', authMiddleware, idempotency(), promoRoutes)
 app.use('/api/iso/public',    authMiddleware, publicIsoRouter)
 
+// Round 20 customer billing routes
+app.use('/api/billing/credit-notes', authMiddleware, creditNotesRoutes)
+
 // ─── Admin ──────────────────────────────────────────────────────────
 app.use('/api/admin', authMiddleware, idempotency(), adminRoutes)
 
@@ -167,6 +174,11 @@ app.use('/api/admin/promos',         authMiddleware, adminOnly, promoAdminRoutes
 app.use('/api/admin/capacity',       authMiddleware, adminOnly, capacityRoutes)
 app.use('/api/admin/health',         authMiddleware, adminOnly, healthAdminRoutes)
 app.use('/api/admin/communications', authMiddleware, adminOnly, communicationsRoutes)
+
+// Round 20 admin routes
+app.use('/api/admin/credit-notes',   authMiddleware, adminOnly, adminCreditNotesRouter)
+app.use('/api/admin/gstr1',          authMiddleware, adminOnly, gstr1Routes)
+app.use('/api/admin/platform',       authMiddleware, adminOnly, adminPlatformRoutes)
 
 // ─── 404 + error handler ────────────────────────────────────────────
 app.use((req, res) => {

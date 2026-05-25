@@ -10,6 +10,7 @@ import referralService from './referral.service'
 import * as eventBus from '../events/bus'
 import { EVENTS } from '../events/bus'
 import { serializeInvoice } from '../utils/serialize'
+import invoiceNumberService from './invoiceNumber.service'
 
 const COUNTRY_CURRENCY: Record<string, string> = {
   IN: 'INR', US: 'USD', GB: 'GBP', DE: 'EUR', FR: 'EUR',
@@ -341,10 +342,30 @@ export class PaymentService {
     const before = user.balance
     const after = before - amount
 
+    // Round 20: issue a sequential credit note for India GST compliance.
+    // Done before the transaction so we never block on the upsert; if the
+    // transaction below fails, the counter has been incremented but the CN
+    // row never got written — admin can spot the gap and re-issue manually.
+    const { number: creditNoteNumber } = await invoiceNumberService.issue('credit_note')
+
     await prisma.$transaction([
       prisma.invoice.update({
         where: { id: invoice.id },
         data: { status: 'REFUNDED' },
+      }),
+      prisma.creditNote.create({
+        data: {
+          creditNoteNumber,
+          invoiceId: invoice.id,
+          userId: user.id,
+          amount,
+          tax: invoice.tax,
+          taxBreakdown: invoice.taxBreakdown,
+          total: amount,
+          currency: invoice.currency,
+          reason,
+          issuedBy: adminId,
+        },
       }),
       prisma.user.update({
         where: { id: user.id },
@@ -356,8 +377,8 @@ export class PaymentService {
           type: 'debit',
           amount,
           currency: invoice.currency,
-          description: `Refund: ${reason}`,
-          reference: invoice.invoiceNumber,
+          description: `Refund: ${reason} (CN ${creditNoteNumber})`,
+          reference: creditNoteNumber,
           invoiceId: invoice.id,
           balanceBefore: before,
           balanceAfter: after,
@@ -369,7 +390,7 @@ export class PaymentService {
           action: 'invoice.refunded',
           resource: 'invoice',
           resourceId: invoice.id,
-          newValue: JSON.stringify({ amount, reason }),
+          newValue: JSON.stringify({ amount, reason, creditNoteNumber }),
         },
       }),
     ])

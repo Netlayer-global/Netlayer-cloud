@@ -8,6 +8,7 @@ import grafanaService from './grafana.service'
 import zabbixService from './zabbix.service'
 import nodeSelector from './nodeSelector.service'
 import fastDeployService from './fastDeploy.service'
+import invoiceNumberService from './invoiceNumber.service'
 import { emitServerStatus, emitToAdmin } from './socket.service'
 import { AppError } from '../utils/errors'
 import logger from '../utils/logger'
@@ -102,6 +103,9 @@ export class ServerService {
     const balanceBefore = user.balance
     const balanceAfter = Number((balanceBefore - firstHourTotal).toFixed(2))
 
+    // Round 20: sequential, India-GST-compliant invoice number
+    const { number: invoiceNumber } = await invoiceNumberService.issue('invoice')
+
     const [, invoice] = await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
@@ -109,6 +113,7 @@ export class ServerService {
       }),
       prisma.invoice.create({
         data: {
+          invoiceNumber,
           userId: user.id,
           amount: firstHourSubtotal,
           tax: taxAmount,

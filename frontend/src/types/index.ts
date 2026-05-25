@@ -45,6 +45,7 @@ export interface Region {
   city: string
   flag: string
   isActive: boolean
+  latencyMs?: number
 }
 
 export interface OsTemplate {

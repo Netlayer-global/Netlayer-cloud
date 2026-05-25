@@ -21,6 +21,11 @@ import {
   Mail,
   Tag,
   Disc3,
+  Network,
+  Database as DatabaseIcon,
+  Boxes,
+  FileMinus,
+  Receipt,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '../../store/authStore'
@@ -45,8 +50,15 @@ const NAV: NavItem[] = [
   { to: '/admin/capacity',      icon: BarChart,        label: 'Capacity',      roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/admin/health',        icon: Activity,        label: 'Global health', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/admin/billing',       icon: CreditCard,      label: 'Billing',       roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
+  { to: '/admin/credit-notes',  icon: FileMinus,       label: 'Credit notes',  roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
+  { to: '/admin/gstr1',         icon: Receipt,         label: 'GSTR-1 export', roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
   { to: '/admin/promos',        icon: Tag,             label: 'Promo codes',   roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
   { to: '/admin/communications', icon: Mail,           label: 'Communications', roles: ['SUPER_ADMIN', 'ADMIN'] },
+  // Round 20: platform-wide views
+  { to: '/admin/networks',      icon: Network,         label: 'Networks',      roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/admin/storage',       icon: DatabaseIcon,    label: 'Storage',       roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/admin/dns',           icon: Globe,           label: 'DNS zones',     roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/admin/marketplace',   icon: Boxes,           label: 'Marketplace',   roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/admin/tickets',       icon: MessageSquare,   label: 'Tickets',       roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
   { to: '/admin/abuse',         icon: ShieldAlert,     label: 'Abuse',         roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
   { to: '/admin/workflows',     icon: GitBranch,       label: 'Workflows',     roles: ['SUPER_ADMIN', 'ADMIN'] },

@@ -216,6 +216,38 @@ export const isoPublicAPI = {
   list: () => api.get<{ data: { id: string; name: string; filename: string; createdAt: string }[] }>('/iso/public'),
 }
 
+// ─── PUBLIC STATUS ───────────────────────────────────────────
+export interface StatusSummary {
+  overall: 'operational' | 'degraded' | 'major_outage' | 'maintenance'
+  services: { name: string; status: string }[]
+  regions: { slug: string; status: string }[]
+  incidents: any[]
+}
+export const statusAPI = {
+  summary: () => api.get<{ data: StatusSummary }>('/status/summary'),
+  incidents: (limit = 50) => api.get<{ data: any[] }>(`/status/incidents?limit=${limit}`),
+  subscribe: (email: string) => api.post('/status/subscribe', { email }),
+}
+
+// ─── PLATFORM META (public) ──────────────────────────────────
+export interface PlatformMeta {
+  name?: string
+  tagline?: string
+  supportEmail?: string
+  salesEmail?: string
+  legalEmail?: string
+  privacyEmail?: string
+  twitterUrl?: string
+  githubUrl?: string
+  discordUrl?: string
+  linkedinUrl?: string
+  foundedYear?: number
+  headquarters?: string
+}
+export const platformMetaAPI = {
+  get: () => api.get<{ data: PlatformMeta }>('/platform/meta'),
+}
+
 // ─── ADMIN ROUND 18 ──────────────────────────────────────────
 export const ipPoolAPI = {
   list: () => api.get('/admin/ip-pools'),
@@ -261,6 +293,48 @@ export const communicationsAPI = {
   sendTest: (data: { to: string; subject: string; html: string }) =>
     api.post('/admin/communications/test-email', data),
   history: () => api.get('/admin/communications/history'),
+}
+
+// ─── ROUND 20: Credit notes, GSTR-1, admin platform-wide ─────
+export interface CreditNote {
+  id: string
+  creditNoteNumber: string
+  invoiceId: string
+  amount: number
+  tax: number
+  total: number
+  currency: string
+  reason: string
+  notes: string | null
+  createdAt: string
+  invoice: { invoiceNumber: string; total: number }
+  user?: { id: string; email: string; firstName: string; lastName: string }
+}
+
+export const creditNotesAPI = {
+  list: () => api.get<{ data: CreditNote[] }>('/billing/credit-notes'),
+  get: (id: string) => api.get<{ data: CreditNote }>(`/billing/credit-notes/${id}`),
+  pdfUrl: (id: string) => `/api/billing/credit-notes/${id}/pdf`,
+}
+
+export const adminCreditNotesAPI = {
+  list: () => api.get<{ data: CreditNote[] }>('/admin/credit-notes'),
+  pdfUrl: (id: string) => `/api/admin/credit-notes/${id}/pdf`,
+}
+
+export const gstr1API = {
+  exportUrl: (yyyymm: string) => `/api/admin/gstr1?month=${yyyymm}`,
+}
+
+export const adminPlatformAPI = {
+  networks: () => api.get('/admin/platform/networks'),
+  releaseFloatingIp: (id: string) => api.post(`/admin/platform/networks/floating-ips/${id}/release`),
+  storage: () => api.get('/admin/platform/storage'),
+  dns: () => api.get('/admin/platform/dns'),
+  marketplace: () => api.get('/admin/platform/marketplace'),
+  marketplaceCreate: (data: any) => api.post('/admin/platform/marketplace', data),
+  marketplaceUpdate: (id: string, data: any) => api.patch(`/admin/platform/marketplace/${id}`, data),
+  marketplaceDelete: (id: string) => api.delete(`/admin/platform/marketplace/${id}`),
 }
 
 // ─── BILLING ─────────────────────────────────────────────────

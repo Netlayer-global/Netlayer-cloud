@@ -132,7 +132,9 @@ export async function generateInvoicePDF({ invoiceId }: RenderOptions): Promise<
       doc.moveTo(50, tableY + 25).lineTo(545, tableY + 25).strokeColor('#e5e5e5').stroke()
 
       let rowY = tableY + 35
-      const fmt = (n: number) => `${invoice.currency === 'INR' ? '₹' : ''}${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      const currencySymbol: Record<string, string> = { INR: '₹', USD: '$', EUR: '€', GBP: '£', AUD: 'A$', AED: 'د.إ ' }
+      const sym = currencySymbol[invoice.currency] || `${invoice.currency} `
+      const fmt = (n: number) => `${sym}${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
       doc.font('Helvetica').fontSize(9).fillColor('#000')
       if (items.length === 0) {

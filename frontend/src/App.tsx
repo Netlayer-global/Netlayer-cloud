@@ -25,6 +25,7 @@ import PrivacyPage from './pages/public/PrivacyPage'
 import TermsPage from './pages/public/TermsPage'
 import BlogPage from './pages/public/BlogPage'
 import BlogPostPage from './pages/public/BlogPostPage'
+import PublicMarketplacePage from './pages/public/MarketplacePage'
 
 import Home from './pages/Home'
 import Servers from './pages/Servers'
@@ -73,6 +74,13 @@ import CapacityPlanning from './pages/Admin/CapacityPlanning'
 import GlobalHealth from './pages/Admin/GlobalHealth'
 import Communications from './pages/Admin/Communications'
 import IsoLibrary from './pages/Admin/IsoLibrary'
+// Round 20 admin pages
+import NetworksAdmin from './pages/Admin/NetworksAdmin'
+import StorageAdmin from './pages/Admin/StorageAdmin'
+import DnsAdmin from './pages/Admin/DnsAdmin'
+import MarketplaceAdmin from './pages/Admin/MarketplaceAdmin'
+import CreditNotesAdmin from './pages/Admin/CreditNotes'
+import Gstr1Export from './pages/Admin/Gstr1Export'
 
 import Referrals from './pages/Referrals'
 import Support from './pages/Support'
@@ -111,6 +119,7 @@ export default function App() {
           <Route path="/careers" element={<CareersPage />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
+          <Route path="/marketplace" element={<PublicMarketplacePage />} />
           <Route path="/legal/privacy" element={<PrivacyPage />} />
           <Route path="/legal/terms" element={<TermsPage />} />
           <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
@@ -214,6 +223,13 @@ export default function App() {
             <Route path="capacity"       element={<CapacityPlanning />} />
             <Route path="health"         element={<GlobalHealth />} />
             <Route path="communications" element={<Communications />} />
+            {/* Round 20 admin */}
+            <Route path="networks"       element={<NetworksAdmin />} />
+            <Route path="storage"        element={<StorageAdmin />} />
+            <Route path="dns"            element={<DnsAdmin />} />
+            <Route path="marketplace"    element={<MarketplaceAdmin />} />
+            <Route path="credit-notes"   element={<CreditNotesAdmin />} />
+            <Route path="gstr1"          element={<Gstr1Export />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

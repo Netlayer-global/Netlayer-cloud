@@ -1,173 +1,141 @@
+import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import {
-  Zap, Shield, Globe, HardDrive, Activity, Lock, Cpu, Cloud, Network, Code2,
-  CreditCard, Phone, Database, Layers, GitBranch, FileText, Server, Wrench, Check,
+  Zap, HardDrive, Wifi, ShieldCheck, Cpu, Lock, Network, Globe2,
+  Camera, Database, Cloud, GitMerge,
 } from 'lucide-react'
-import { TopNav } from '../../components/landing/TopNav'
-import { CTA } from '../../components/landing/CTA'
-import { Footer } from '../../components/landing/Footer'
+import { LandingNav, LandingFooter } from '../Landing'
 
 interface Feature {
-  icon: any
+  Icon: any
   title: string
   desc: string
-  color: string
-  bg: string
 }
 
-const SECTIONS: Array<{ title: string; features: Feature[] }> = [
-  {
-    title: 'Compute',
-    features: [
-      { icon: Zap,    title: '60-second deploy',         desc: 'Provision a fresh VM in under a minute.',                   color: 'text-[#0070f3]', bg: 'bg-[#0070f3]/10' },
-      { icon: Cpu,    title: 'Bare metal & VMs',          desc: 'Pick virtualised or dedicated hardware per workload.',       color: 'text-orange-400', bg: 'bg-orange-500/10' },
-      { icon: HardDrive, title: 'NVMe SSD on every plan', desc: 'No spinning disks, ever. Even on entry tier.',              color: 'text-[#00d4ff]', bg: 'bg-[#00d4ff]/10' },
-      { icon: Server, title: 'Live migration',           desc: 'Zero-downtime moves between hosts during maintenance.',     color: 'text-purple-400', bg: 'bg-purple-500/10' },
-    ],
-  },
-  {
-    title: 'Networking',
-    features: [
-      { icon: Shield, title: 'Free DDoS protection',     desc: '2 Tbps+ scrubbing capacity included on every server.',      color: 'text-green-400', bg: 'bg-green-500/10' },
-      { icon: Globe,  title: 'IPv6 by default',          desc: 'Dual-stack from day one. No extra forms, no waiting.',       color: 'text-[#00d4ff]', bg: 'bg-[#00d4ff]/10' },
-      { icon: Network, title: 'Private VPC',             desc: 'Tenant-isolated overlay networks via VXLAN/EVPN.',           color: 'text-purple-400', bg: 'bg-purple-500/10' },
-      { icon: Layers, title: 'Anycast edge',             desc: 'Single-IP multi-region routing for global apps.',           color: 'text-amber-400', bg: 'bg-amber-500/10' },
-    ],
-  },
-  {
-    title: 'Storage',
-    features: [
-      { icon: Database,  title: 'Block volumes',          desc: 'Persistent NVMe attached to any server, resize online.',  color: 'text-[#0070f3]', bg: 'bg-[#0070f3]/10' },
-      { icon: Cloud,     title: 'S3-compatible object',   desc: 'Drop-in replacement for AWS S3 in your code.',            color: 'text-amber-400', bg: 'bg-amber-500/10' },
-      { icon: GitBranch, title: 'Snapshots',              desc: 'Per-VM, per-volume, scheduled or on-demand.',             color: 'text-purple-400', bg: 'bg-purple-500/10' },
-      { icon: HardDrive, title: 'Cross-region backup',    desc: 'Replicate snapshots to a different region for DR.',       color: 'text-[#00d4ff]', bg: 'bg-[#00d4ff]/10' },
-    ],
-  },
-  {
-    title: 'Security',
-    features: [
-      { icon: Lock,    title: 'Hardware-isolated tenants', desc: 'KVM + AppArmor + per-tenant uid mapping.',                color: 'text-green-400', bg: 'bg-green-500/10' },
-      { icon: Shield,  title: 'Distributed firewall',     desc: 'nftables synced from your dashboard, applied per VM.',     color: 'text-[#0070f3]', bg: 'bg-[#0070f3]/10' },
-      { icon: Wrench,  title: '2FA + WebAuthn',           desc: 'Account, API key, and admin endpoints all 2FA-aware.',     color: 'text-purple-400', bg: 'bg-purple-500/10' },
-      { icon: FileText, title: 'Tamper-evident audit',    desc: 'Every privileged action append-only with hash chain.',     color: 'text-amber-400', bg: 'bg-amber-500/10' },
-    ],
-  },
-  {
-    title: 'Developer experience',
-    features: [
-      { icon: Code2,    title: 'API + 4 SDKs',             desc: 'TypeScript, Python, Go, plus a Terraform provider.',       color: 'text-[#0070f3]', bg: 'bg-[#0070f3]/10' },
-      { icon: Activity, title: 'Prometheus metrics',       desc: 'Every VM exports node-exporter, ready to scrape.',         color: 'text-orange-400', bg: 'bg-orange-500/10' },
-      { icon: Server,   title: 'Webhooks',                 desc: 'Get notified of every server state change in your app.',   color: 'text-[#00d4ff]', bg: 'bg-[#00d4ff]/10' },
-      { icon: Cpu,      title: 'CLI with autocomplete',    desc: 'A single static binary that feels like git.',              color: 'text-purple-400', bg: 'bg-purple-500/10' },
-    ],
-  },
-  {
-    title: 'Billing & support',
-    features: [
-      { icon: CreditCard, title: 'Hourly billing',         desc: 'Pay for the seconds you used. Cap at the monthly price.',  color: 'text-green-400', bg: 'bg-green-500/10' },
-      { icon: FileText,   title: 'GST + VAT invoices',     desc: 'Compliant invoices for India, EU, UK, Singapore.',         color: 'text-[#0070f3]', bg: 'bg-[#0070f3]/10' },
-      { icon: Phone,      title: '24/7 support',           desc: 'Real engineers, real fast. P1 response under 5 minutes.',  color: 'text-amber-400', bg: 'bg-amber-500/10' },
-      { icon: Shield,     title: 'No contracts',           desc: 'Pay-as-you-go. Cancel anytime, no penalties.',             color: 'text-purple-400', bg: 'bg-purple-500/10' },
-    ],
-  },
+const FEATURES: Feature[] = [
+  { Icon: Zap,         title: '30-second deploys',      desc: 'Linked-clone images and pre-warmed pools across every region.' },
+  { Icon: HardDrive,   title: 'NVMe SSD on every plan', desc: 'No tiered HDD pricing — all storage is fast by default.' },
+  { Icon: Wifi,        title: '25 Gbps networking',     desc: 'Per-host uplinks with line-rate throughput on every flow.' },
+  { Icon: ShieldCheck, title: 'Free DDoS protection',   desc: 'Always-on hardware DDoS scrubbing on every IP.' },
+  { Icon: Cpu,         title: 'KVM hypervisor',         desc: 'Strong isolation, full virtualization, no shared kernels.' },
+  { Icon: Lock,        title: 'Full root access',       desc: 'You bring the OS, we get out of your way.' },
+  { Icon: Network,     title: 'Private VPC',            desc: 'Isolated software-defined networks free on every region.' },
+  { Icon: Globe2,      title: 'Free IPv6',              desc: '/64 IPv6 block on every server, IPv4 + IPv6 dual stack.' },
+  { Icon: Camera,      title: 'Snapshots',              desc: 'Point-in-time disk snapshots, restore in seconds.' },
+  { Icon: HardDrive,   title: 'Block storage',          desc: 'Detachable NVMe volumes that survive server lifecycle.' },
+  { Icon: Cloud,       title: 'Object storage',         desc: 'S3-compatible buckets with optional public access.' },
+  { Icon: Database,    title: 'Managed databases',      desc: 'Postgres, MySQL, Redis with automated backups and failover.' },
 ]
-
-const COMPETITOR_CHECKLIST = [
-  { feature: 'Hourly billing',                we: true, them: 'partial' },
-  { feature: 'Free DDoS protection',          we: true, them: 'paid'    },
-  { feature: 'Free IPv6',                     we: true, them: 'limited' },
-  { feature: 'Free private networking',       we: true, them: 'paid'    },
-  { feature: 'GST invoice (India)',           we: true, them: 'no'      },
-  { feature: 'Razorpay support (INR)',        we: true, them: 'no'      },
-  { feature: 'Bare metal in <5 min',          we: true, them: 'days'    },
-  { feature: 'Per-VM live migration',         we: true, them: 'partial' },
-  { feature: 'S3-compatible object storage',  we: true, them: true      },
-  { feature: 'Managed Kubernetes',            we: true, them: true      },
-  { feature: 'Webhooks for VM events',        we: true, them: 'partial' },
-  { feature: 'Single-region edge LB',         we: true, them: true      },
-] as const
 
 export default function FeaturesPage() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white antialiased">
-      <TopNav />
-      <main className="pt-24 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <header className="text-center max-w-2xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3 h-7 rounded-full border border-white/[0.08] bg-white/[0.03] text-xs text-gray-300 mb-6">
-              All plans · No upgrades · No add-ons
-            </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight">
-              Everything included.
-              <br />
-              <span className="bg-gradient-to-r from-[#0070f3] via-[#00a0ff] to-[#00d4ff] bg-clip-text text-transparent">
-                Nothing held back.
-              </span>
-            </h1>
-            <p className="mt-5 text-lg text-gray-400">
-              Every feature on this page is on every plan, including the entry tier.
-            </p>
-          </header>
+    <div className="nl-v3 min-h-screen">
+      <LandingNav />
 
-          {SECTIONS.map((section) => (
-            <section key={section.title} className="mb-16">
-              <h2 className="text-xs uppercase tracking-widest text-[#0070f3] font-semibold mb-5">
-                {section.title}
-              </h2>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {section.features.map((f) => (
-                  <div
-                    key={f.title}
-                    className="bg-[#111] border border-white/[0.06] rounded-xl p-5 hover:border-white/[0.15] transition-colors"
-                  >
-                    <div className={`w-9 h-9 rounded-lg ${f.bg} ${f.color} flex items-center justify-center mb-3`}>
-                      <f.icon size={16} />
-                    </div>
-                    <h3 className="text-sm font-semibold text-white">{f.title}</h3>
-                    <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">{f.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ))}
+      <section className="pt-28 pb-12 px-4 sm:px-6 max-w-5xl mx-auto text-center">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+          <span
+            className="inline-block px-3 h-7 leading-7 rounded-full text-xs"
+            style={{ border: '1px solid var(--brand-b)', background: 'var(--brand-d)', color: 'var(--brand)' }}
+          >
+            Features
+          </span>
+          <h1
+            className="mt-6 font-semibold tracking-tight"
+            style={{ fontSize: 'clamp(36px, 5vw, 56px)', lineHeight: 1.05 }}
+          >
+            All the cloud, none of the bloat
+          </h1>
+          <p className="mt-5 text-lg max-w-2xl mx-auto" style={{ color: 'var(--t-med)' }}>
+            Compute, storage, network, and managed services — built for developers who want
+            maximum control and minimum surprise.
+          </p>
+        </motion.div>
+      </section>
 
-          {/* Quick comparison */}
-          <section className="my-20">
-            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-center mb-2">
-              How NetLayer compares
-            </h2>
-            <p className="text-sm text-gray-400 text-center mb-8">
-              Side-by-side with the cloud providers we hear about most.
-            </p>
-            <div className="rounded-xl border border-white/[0.06] bg-[#111] overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/[0.06] text-left text-xs uppercase tracking-wider text-gray-500">
-                    <th className="px-4 py-3">Feature</th>
-                    <th className="px-4 py-3 text-center text-[#0070f3]">NetLayer</th>
-                    <th className="px-4 py-3 text-center text-gray-400">Other clouds</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {COMPETITOR_CHECKLIST.map((row) => (
-                    <tr key={row.feature} className="border-b border-white/[0.04] last:border-b-0">
-                      <td className="px-4 py-3 text-gray-300">{row.feature}</td>
-                      <td className="px-4 py-3 text-center bg-[#0070f3]/[0.04]">
-                        <Check size={16} className="text-[#00d4ff] mx-auto" />
-                      </td>
-                      <td className="px-4 py-3 text-center text-xs text-gray-500">
-                        {row.them === true ? <Check size={16} className="text-gray-500 mx-auto" /> : row.them}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+      {/* Performance benchmarks */}
+      <section className="py-12 px-4 sm:px-6 max-w-6xl mx-auto">
+        <div className="text-center mb-10">
+          <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--brand)' }}>
+            Benchmarks
+          </span>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight">Built on bare metal performance</h2>
+          <p className="mt-3 text-sm" style={{ color: 'var(--t-med)' }}>
+            AMD EPYC Gen4 + all-NVMe SSD across every plan. Numbers from internal fio + iperf3 runs.
+          </p>
         </div>
+        <div className="nl-card p-6 max-w-3xl mx-auto">
+          {[
+            { label: 'NVMe Sequential Read',  value: '14.2 GB/s', pct: 92 },
+            { label: 'NVMe Sequential Write', value: '8.7 GB/s',  pct: 71 },
+            { label: 'Network Throughput',    value: '25 Gbps',   pct: 98 },
+            { label: 'CPU Single-Thread',     value: '5.8 GHz',   pct: 82 },
+            { label: 'Deploy Speed',          value: '15 seconds', pct: 96 },
+          ].map((b, i) => (
+            <Bar key={b.label} label={b.label} value={b.value} pct={b.pct} delay={i * 0.08} />
+          ))}
+        </div>
+      </section>
 
-        <CTA />
-      </main>
-      <Footer />
+      {/* All features grid */}
+      <section className="py-16 px-4 sm:px-6 max-w-6xl mx-auto">
+        <div className="text-center mb-10">
+          <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--brand)' }}>
+            Everything included
+          </span>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight">All features</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {FEATURES.map((f, i) => (
+            <motion.div
+              key={f.title}
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.3, delay: (i % 6) * 0.05 }}
+              className="nl-card p-5"
+            >
+              <f.Icon size={18} style={{ color: 'var(--brand)' }} />
+              <div className="mt-3 text-sm font-medium" style={{ color: 'var(--t-hi)' }}>{f.title}</div>
+              <div className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--t-med)' }}>{f.desc}</div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      <section className="py-16 px-4 sm:px-6 text-center">
+        <h2 className="text-2xl font-semibold tracking-tight">Try it free</h2>
+        <p className="mt-3 text-sm" style={{ color: 'var(--t-med)' }}>
+          ₹3,500 in starter credits. No card required.
+        </p>
+        <div className="mt-6 flex justify-center gap-3">
+          <Link to="/register" className="nl-btn-primary">Start free</Link>
+          <Link to="/pricing" className="nl-btn-ghost">View pricing →</Link>
+        </div>
+      </section>
+
+      <LandingFooter />
+    </div>
+  )
+}
+
+function Bar({ label, value, pct, delay }: { label: string; value: string; pct: number; delay: number }) {
+  return (
+    <div className="mb-4 last:mb-0">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs" style={{ color: 'var(--t-med)' }}>{label}</span>
+        <span className="text-xs font-mono" style={{ color: 'var(--brand)' }}>{value}</span>
+      </div>
+      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--b-default)' }}>
+        <motion.div
+          initial={{ width: '0%' }}
+          whileInView={{ width: `${pct}%` }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 1.2, delay, ease: [0.22, 1, 0.36, 1] }}
+          className="h-full rounded-full"
+          style={{ background: 'linear-gradient(90deg, var(--brand), #a8e620)' }}
+        />
+      </div>
     </div>
   )
 }

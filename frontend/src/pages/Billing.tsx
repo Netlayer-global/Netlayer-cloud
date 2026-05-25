@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Download, Wallet, ArrowDown, ArrowUp, Calendar, Tag, Clock, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
-import { billingAPI, promoAPI } from '../api/endpoints'
+import { billingAPI, promoAPI, creditNotesAPI } from '../api/endpoints'
 import { paymentAPI } from '../api/admin'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
@@ -41,7 +41,7 @@ const loadRazorpayScript = () =>
 export default function Billing() {
   const qc = useQueryClient()
   const { user } = useAuthStore()
-  const [tab, setTab] = useState<'invoices' | 'transactions'>('invoices')
+  const [tab, setTab] = useState<'invoices' | 'transactions' | 'credit-notes'>('invoices')
   const [addCreditOpen, setAddCreditOpen] = useState(false)
 
   const { data: usage, isLoading: usageLoading } = useQuery({
@@ -202,7 +202,7 @@ export default function Billing() {
       </Card>
 
       <div className="flex items-center bg-[#1e1f1e] border border-[#2a2b2a] rounded-md p-0.5 w-fit">
-        {(['invoices', 'transactions'] as const).map((t) => (
+        {(['invoices', 'transactions', 'credit-notes'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -211,7 +211,7 @@ export default function Billing() {
               tab === t ? 'bg-[#252625] text-[#e8e8e6]' : 'text-[#a0a09e] hover:text-[#e8e8e6]'
             )}
           >
-            {t}
+            {t.replace('-', ' ')}
           </button>
         ))}
       </div>
@@ -264,10 +264,11 @@ export default function Billing() {
             </TBody>
           </Table>
         )
-      ) : transactions.length === 0 ? (
-        <EmptyTable message="No transactions yet." />
-      ) : (
-        <Table>
+      ) : tab === 'transactions' ? (
+        transactions.length === 0 ? (
+          <EmptyTable message="No transactions yet." />
+        ) : (
+          <Table>
           <THead>
             <tr>
               <TH>Type</TH><TH>Description</TH>
@@ -294,6 +295,9 @@ export default function Billing() {
             ))}
           </TBody>
         </Table>
+        )
+      ) : (
+        <CreditNotesPanel />
       )}
 
       <AddCreditModal
@@ -440,5 +444,60 @@ function PromoCard({ onRedeemed }: { onRedeemed: () => void }) {
         </p>
       )}
     </Card>
+  )
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   Round 20 — Credit notes panel (customer view)
+   ════════════════════════════════════════════════════════════ */
+
+function CreditNotesPanel() {
+  const { data: cns = [], isLoading } = useQuery({
+    queryKey: ['credit-notes'],
+    queryFn: () => creditNotesAPI.list().then((r) => r.data.data),
+  })
+
+  if (isLoading) return <Skeleton className="h-32" />
+  if (cns.length === 0) return <EmptyTable message="No credit notes yet. Refunds and adjustments will appear here." />
+
+  return (
+    <Table>
+      <THead>
+        <tr>
+          <TH>CN Number</TH>
+          <TH>Against invoice</TH>
+          <TH>Reason</TH>
+          <TH className="text-right">Amount</TH>
+          <TH>Issued</TH>
+          <TH className="w-20 text-right">PDF</TH>
+        </tr>
+      </THead>
+      <TBody>
+        {cns.map((cn: any) => (
+          <TR key={cn.id}>
+            <TD className="font-mono text-xs text-[#e8e8e6]">{cn.creditNoteNumber}</TD>
+            <TD className="font-mono text-xs">{cn.invoice?.invoiceNumber || '—'}</TD>
+            <TD className="text-xs uppercase tracking-wide">{cn.reason}</TD>
+            <TD className="text-right tabular-nums text-[#e8e8e6]">
+              {formatCurrency(cn.total, cn.currency)}
+            </TD>
+            <TD className="text-xs">{formatDate(cn.createdAt)}</TD>
+            <TD className="text-right">
+              <a
+                href={creditNotesAPI.pdfUrl(cn.id)}
+                download
+                target="_blank"
+                rel="noreferrer"
+                className="h-7 w-7 rounded border border-[#333433] text-[#a0a09e] hover:bg-[#252625] hover:text-[#e8e8e6] inline-flex items-center justify-center cursor-pointer transition-colors"
+                title="Download PDF"
+              >
+                <Download size={12} />
+              </a>
+            </TD>
+          </TR>
+        ))}
+      </TBody>
+    </Table>
   )
 }
