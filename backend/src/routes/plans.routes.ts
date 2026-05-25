@@ -9,7 +9,15 @@ router.get('/plans', async (_req, res, next) => {
       where: { isActive: true },
       orderBy: { sortOrder: 'asc' },
     })
-    res.json({ data: plans })
+    // Round 23: serialize raidSupported (JSON-string in DB) and expose stockAvailable
+    const out = plans.map((p) => ({
+      ...p,
+      raidSupported: (() => {
+        try { return JSON.parse(p.raidSupported || '[]') } catch { return [] }
+      })(),
+      stockAvailable: Math.max(0, (p.stockTotal || 0) - (p.stockReserved || 0)),
+    }))
+    res.json({ data: out })
   } catch (e) {
     next(e)
   }

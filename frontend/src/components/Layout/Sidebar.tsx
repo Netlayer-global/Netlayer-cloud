@@ -31,6 +31,7 @@ import {
   Gift,
   Camera,
   Radio,
+  Disc3,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../store/authStore'
@@ -198,6 +199,7 @@ export function Sidebar() {
             {isEnabled('snapshots') && (
               <NavItem to="/dashboard/snapshots" icon={Camera} label="Snapshots" />
             )}
+            <NavItem to="/dashboard/custom-isos" icon={Disc3} label="Custom ISOs" />
           </>
         )}
 

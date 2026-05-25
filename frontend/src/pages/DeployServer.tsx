@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Eye, EyeOff, RefreshCw } from 'lucide-react'
+import { Check, Eye, EyeOff, RefreshCw, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
-import { catalogAPI, serverAPI, sshAPI } from '../api/endpoints'
+import { catalogAPI, serverAPI, sshAPI, customerIsoAPI } from '../api/endpoints'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
@@ -39,6 +39,10 @@ export default function DeployServer() {
   const [autoPassword, setAutoPassword] = useState(true)
   const [rootPassword, setRootPassword] = useState(generatePassword())
   const [showPassword, setShowPassword] = useState(false)
+  // Round 23: billing cycle / RAID / custom ISO
+  const [billingCycle, setBillingCycle] = useState<'hourly' | 'monthly' | 'yearly'>('monthly')
+  const [raidConfig, setRaidConfig] = useState<string>('')
+  const [customIsoId, setCustomIsoId] = useState<string>('')
   const [provisioning, setProvisioning] = useState(false)
   const [provisionedId, setProvisionedId] = useState<string | null>(null)
   const [topUpOpen, setTopUpOpen] = useState(false)
@@ -62,6 +66,11 @@ export default function DeployServer() {
   const { data: sshKeys = [] } = useQuery({
     queryKey: ['ssh-keys'],
     queryFn: () => sshAPI.list().then((r) => r.data.data),
+  })
+  // Round 23: customer's uploaded ISOs (for "Custom OS" step)
+  const { data: customIsos = [] } = useQuery({
+    queryKey: ['customer', 'iso'],
+    queryFn: () => customerIsoAPI.list().then((r: any) => r.data.data),
   })
 
   const linuxOs = osList.filter((o) => o.family === 'LINUX')
@@ -130,6 +139,20 @@ export default function DeployServer() {
       setRegion(regions.find((r) => r.slug === 'mumbai') || regions[0])
     }
   }, [regions, region])
+
+  // Round 23: when a non-bare-metal plan is picked, clear RAID. When the
+  // current cycle isn't supported by the new plan, fall back.
+  useEffect(() => {
+    if (!plan) return
+    const isBareMetal = plan.category === 'bare-metal' || plan.category === 'gpu'
+    if (!isBareMetal && raidConfig) setRaidConfig('')
+    if (billingCycle === 'yearly' && (!plan.yearlyEnabled || !(plan.priceYearly && plan.priceYearly > 0))) {
+      setBillingCycle('monthly')
+    }
+    if (billingCycle === 'hourly' && plan.hourlyEnabled === false) {
+      setBillingCycle('monthly')
+    }
+  }, [plan, billingCycle, raidConfig])
 
   // Round 19: prefill from URL params (used by Onboarding "deploy now" button).
   // Auto-advances to Configure when all three are valid.
@@ -230,6 +253,8 @@ export default function DeployServer() {
               )}
               {STEPS[stepIdx] === 'Configure' && (
                 <Step4Configure
+                  plan={plan}
+                  customIsos={customIsos}
                   hostname={hostname}
                   setHostname={setHostname}
                   sshKeys={sshKeys}
@@ -241,6 +266,12 @@ export default function DeployServer() {
                   setRootPassword={setRootPassword}
                   showPassword={showPassword}
                   setShowPassword={setShowPassword}
+                  billingCycle={billingCycle}
+                  setBillingCycle={setBillingCycle}
+                  raidConfig={raidConfig}
+                  setRaidConfig={setRaidConfig}
+                  customIsoId={customIsoId}
+                  setCustomIsoId={setCustomIsoId}
                 />
               )}
             </motion.div>
@@ -286,18 +317,52 @@ export default function DeployServer() {
             <SummaryRow label="Hostname" value={<span className="font-mono text-xs">{hostname || 'â€”'}</span>} />
           </div>
           <div className="border-t border-[#2a2b2a] my-4 pt-4 space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-[#a0a09e]">Monthly</span>
-              <span className="text-[#e8e8e6] font-medium">
-                {plan ? `${formatCurrency(plan.priceInr)}/mo` : 'â€”'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-[#6a6a68]">Hourly</span>
-              <span className="text-[#a0a09e]">
-                {plan ? `${formatCurrency(plan.priceHourly)}/hr` : 'â€”'}
-              </span>
-            </div>
+            {(() => {
+              if (!plan) {
+                return (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[#a0a09e]">Total</span>
+                    <span className="text-[#6a6a68]">—</span>
+                  </div>
+                )
+              }
+              const cycleLabel: Record<string, string> = { hourly: '/hr', monthly: '/mo', yearly: '/yr' }
+              const cyclePrice = (() => {
+                if (billingCycle === 'yearly') return plan.priceYearly || plan.priceInr * 10
+                if (billingCycle === 'hourly') return plan.priceHourly
+                return plan.priceInr
+              })()
+              const monthlyEq = billingCycle === 'yearly' && plan.priceYearly
+                ? Math.round(plan.priceYearly / 12)
+                : null
+              return (
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[#a0a09e]">{billingCycle === 'yearly' ? 'Yearly (prepaid)' : billingCycle === 'hourly' ? 'Hourly' : 'Monthly'}</span>
+                    <span className="text-[#e8e8e6] font-medium">
+                      {formatCurrency(cyclePrice)}{cycleLabel[billingCycle]}
+                    </span>
+                  </div>
+                  {monthlyEq && (
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-[#e0fe56]">≈ {formatCurrency(monthlyEq)}/mo (save 2 months)</span>
+                    </div>
+                  )}
+                  {plan.stockTotal && plan.stockTotal > 0 ? (
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-[#6a6a68]">Stock</span>
+                      <span className={cn(
+                        (plan.stockAvailable ?? 0) === 0 ? 'text-red-400' :
+                        (plan.stockAvailable ?? 0) <= 2 ? 'text-amber-400' :
+                        'text-[#4ade80]'
+                      )}>
+                        {plan.stockAvailable ?? 0} / {plan.stockTotal} available
+                      </span>
+                    </div>
+                  ) : null}
+                </>
+              )
+            })()}
           </div>
           <Button
             className="w-full"
@@ -336,21 +401,31 @@ export default function DeployServer() {
                 sshKeyId: sshKeyId || undefined,
                 hostname,
                 rootPassword,
+                billingCycle,
+                raidConfig: (raidConfig || undefined) as any,
+                customIsoId: customIsoId || undefined,
               }
             : null
         }
         summary={
           plan && region && os
-            ? {
-                planName: plan.name,
-                region: { city: region.city, flag: region.flag },
-                osName: os.name,
-                hostname,
-                amount: plan.priceInr,
-                tax: Number((plan.priceInr * 0.18).toFixed(2)),
-                total: Number((plan.priceInr * 1.18).toFixed(2)),
-                currency: user?.currency || 'INR',
-              }
+            ? (() => {
+                const sub = billingCycle === 'yearly'
+                  ? (plan.priceYearly || plan.priceInr * 10)
+                  : billingCycle === 'hourly'
+                  ? plan.priceHourly
+                  : plan.priceInr
+                return {
+                  planName: plan.name,
+                  region: { city: region.city, flag: region.flag },
+                  osName: os.name,
+                  hostname,
+                  amount: sub,
+                  tax: Number((sub * 0.18).toFixed(2)),
+                  total: Number((sub * 1.18).toFixed(2)),
+                  currency: user?.currency || 'INR',
+                }
+              })()
             : null
         }
         onPaid={(serverId) => {
@@ -475,9 +550,24 @@ function Step2Plan({
                 <div>{p.diskGB} GB SSD</div>
                 <div>{p.bandwidthTB} TB BW</div>
               </div>
+              {p.cpuModel && (
+                <div className="text-[10.5px] text-[#6a6a68] mt-1.5 truncate">{p.cpuModel}</div>
+              )}
               <div className="mt-3 pt-3 border-t border-[#2a2b2a]">
-                <div className="text-base font-medium text-[#e8e8e6]">
-                  {formatCurrency(p.priceInr)}<span className="text-xs text-[#6a6a68]">/mo</span>
+                <div className="flex items-end justify-between">
+                  <div className="text-base font-medium text-[#e8e8e6]">
+                    {formatCurrency(p.priceInr)}<span className="text-xs text-[#6a6a68]">/mo</span>
+                  </div>
+                  {p.stockTotal && p.stockTotal > 0 ? (
+                    <span className={cn(
+                      'text-[10px] font-medium px-1.5 py-0.5 rounded border',
+                      (p.stockAvailable ?? 0) === 0 ? 'text-red-400 border-red-900/60 bg-red-950/20' :
+                      (p.stockAvailable ?? 0) <= 2 ? 'text-amber-400 border-amber-900/60 bg-amber-950/20' :
+                      'text-[#4ade80] border-green-900/60 bg-green-950/20'
+                    )}>
+                      {(p.stockAvailable ?? 0) === 0 ? 'Sold out' : `${p.stockAvailable ?? 0} avail`}
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </button>
@@ -546,6 +636,8 @@ function Step3OS({
 
 // â”€â”€â”€ Step 4: Configure â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Step4Configure({
+  plan,
+  customIsos,
   hostname,
   setHostname,
   sshKeys,
@@ -557,7 +649,15 @@ function Step4Configure({
   setRootPassword,
   showPassword,
   setShowPassword,
+  billingCycle,
+  setBillingCycle,
+  raidConfig,
+  setRaidConfig,
+  customIsoId,
+  setCustomIsoId,
 }: {
+  plan: Plan | null
+  customIsos: any[]
   hostname: string
   setHostname: (s: string) => void
   sshKeys: any[]
@@ -569,13 +669,90 @@ function Step4Configure({
   setRootPassword: (s: string) => void
   showPassword: boolean
   setShowPassword: (b: boolean) => void
+  billingCycle: 'hourly' | 'monthly' | 'yearly'
+  setBillingCycle: (c: 'hourly' | 'monthly' | 'yearly') => void
+  raidConfig: string
+  setRaidConfig: (r: string) => void
+  customIsoId: string
+  setCustomIsoId: (id: string) => void
 }) {
+  const isBareMetal = plan?.category === 'bare-metal' || plan?.category === 'gpu'
+  const raidOptions: string[] = (() => {
+    if (!plan) return []
+    const r = plan.raidSupported as string | string[] | undefined
+    if (Array.isArray(r)) return r
+    if (typeof r === 'string') {
+      try { return JSON.parse(r) } catch { return [] }
+    }
+    return []
+  })()
+  const cycles: { key: 'hourly' | 'monthly' | 'yearly'; label: string; price: number | undefined; suffix: string; disabled: boolean; badge?: string }[] = plan
+    ? [
+        {
+          key: 'hourly',
+          label: 'Hourly',
+          price: plan.priceHourly,
+          suffix: '/hr',
+          disabled: plan.hourlyEnabled === false,
+        },
+        {
+          key: 'monthly',
+          label: 'Monthly',
+          price: plan.priceInr,
+          suffix: '/mo',
+          disabled: plan.monthlyEnabled === false,
+        },
+        {
+          key: 'yearly',
+          label: 'Yearly',
+          price: plan.priceYearly && plan.priceYearly > 0 ? plan.priceYearly : undefined,
+          suffix: '/yr',
+          disabled: !plan.yearlyEnabled || !(plan.priceYearly && plan.priceYearly > 0),
+          badge: 'Save 2 months',
+        },
+      ]
+    : []
+
   return (
     <div>
       <h2 className="text-lg font-medium text-[#e8e8e6] mb-1">Configure</h2>
       <p className="text-sm text-[#a0a09e] mb-5">Final details before deployment.</p>
 
-      <div className="space-y-4 max-w-md">
+      <div className="space-y-5 max-w-xl">
+        {/* Billing cycle picker */}
+        {plan && (
+          <div>
+            <label className="block text-xs text-[#a0a09e] mb-2">Billing cycle</label>
+            <div className="grid grid-cols-3 gap-2">
+              {cycles.map((c) => (
+                <button
+                  key={c.key}
+                  type="button"
+                  disabled={c.disabled}
+                  onClick={() => !c.disabled && setBillingCycle(c.key)}
+                  className={cn(
+                    'relative text-left p-3 rounded-md border transition-colors',
+                    c.disabled
+                      ? 'opacity-40 cursor-not-allowed border-[#2a2b2a] bg-[#161716]'
+                      : billingCycle === c.key
+                      ? 'border-[#e0fe56] bg-[#e0fe56]/5 cursor-pointer'
+                      : 'border-[#2a2b2a] bg-[#161716] hover:border-[#333433] cursor-pointer'
+                  )}
+                >
+                  <div className="text-xs font-medium text-[#e8e8e6]">{c.label}</div>
+                  <div className="text-[11px] text-[#a0a09e] mt-0.5 tabular-nums">
+                    {c.price !== undefined ? `${formatCurrency(c.price)}${c.suffix}` : 'â€”'}
+                  </div>
+                  {c.badge && !c.disabled && (
+                    <span className="text-[9px] uppercase font-bold text-[#e0fe56] block mt-1">{c.badge}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Hostname */}
         <div>
           <label className="block text-xs text-[#a0a09e] mb-1.5">Hostname</label>
           <div className="flex gap-2">
@@ -585,11 +762,36 @@ function Step4Configure({
               size="md"
               onClick={() => setHostname(generateHostname())}
               type="button"
+              title="Generate new"
             >
               <RefreshCw size={13} />
             </Button>
           </div>
         </div>
+
+        {/* RAID — bare metal only */}
+        {isBareMetal && raidOptions.length > 0 && (
+          <Select label="RAID configuration" value={raidConfig} onChange={(e) => setRaidConfig(e.target.value)}>
+            <option value="">No RAID (single disk)</option>
+            {raidOptions.map((r) => (
+              <option key={r} value={r}>{r.toUpperCase()}</option>
+            ))}
+          </Select>
+        )}
+
+        {/* Custom ISO selector */}
+        {customIsos.length > 0 && (
+          <Select
+            label="Custom ISO (optional, replaces selected OS)"
+            value={customIsoId}
+            onChange={(e) => setCustomIsoId(e.target.value)}
+          >
+            <option value="">Use selected OS template</option>
+            {customIsos.map((iso: any) => (
+              <option key={iso.id} value={iso.id}>{iso.name}</option>
+            ))}
+          </Select>
+        )}
 
         <Select
           label="SSH key (optional)"
@@ -632,7 +834,9 @@ function Step4Configure({
             </button>
           </div>
           {rootPassword.length < 8 && (
-            <p className="text-xs text-red-400 mt-1">Password must be at least 8 characters.</p>
+            <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
+              <AlertTriangle size={11} /> Password must be at least 8 characters.
+            </p>
           )}
         </div>
       </div>

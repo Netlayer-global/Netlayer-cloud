@@ -82,6 +82,11 @@ import MarketplaceAdmin from './pages/Admin/MarketplaceAdmin'
 import CreditNotesAdmin from './pages/Admin/CreditNotes'
 import Gstr1Export from './pages/Admin/Gstr1Export'
 import EnterpriseAdmin from './pages/Admin/Enterprise'
+// Round 23 admin pages
+import PlansAdmin from './pages/Admin/PlansAdmin'
+import OrgSettings from './pages/Admin/OrgSettings'
+// Round 23 customer page
+import CustomIsos from './pages/CustomIsos'
 
 import Referrals from './pages/Referrals'
 import Support from './pages/Support'
@@ -186,6 +191,7 @@ export default function App() {
             <Route path="floating-ips"   element={<ModuleGuard module="floatingIps"><FloatingIPs /></ModuleGuard>} />
             <Route path="alerts"         element={<ModuleGuard module="alerts"><Alerts /></ModuleGuard>} />
             <Route path="snapshots"      element={<ModuleGuard module="snapshots"><Snapshots /></ModuleGuard>} />
+            <Route path="custom-isos"    element={<CustomIsos />} />
             <Route path="network"   element={<Placeholder title="Network"         description="Private networks, floating IPs, firewalls." icon={<Network size={28} />} />} />
             <Route path="gpu"       element={<ModuleGuard module="gpu"><Placeholder title="GPU instances"   description="On-demand GPUs for AI / ML workloads."     icon={<Monitor size={28} />} /></ModuleGuard>} />
             <Route path="team"      element={<ModuleGuard module="team"><Placeholder title="Team settings"   description="Invite teammates and manage roles."        icon={<Users size={28} />} /></ModuleGuard>} />
@@ -232,6 +238,9 @@ export default function App() {
             <Route path="credit-notes"   element={<CreditNotesAdmin />} />
             <Route path="gstr1"          element={<Gstr1Export />} />
             <Route path="enterprise"     element={<EnterpriseAdmin />} />
+            {/* Round 23 admin */}
+            <Route path="plans"          element={<PlansAdmin />} />
+            <Route path="org-settings"   element={<OrgSettings />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -40,6 +40,10 @@ export interface CreateOrderInput {
   hostname?: string
   rootPassword?: string
   preferredProvider?: 'razorpay' | 'stripe'
+  // Round 23 — billing cycle picker, RAID config, custom ISO
+  billingCycle?: 'hourly' | 'monthly' | 'yearly'
+  raidConfig?: 'raid0' | 'raid1' | 'raid10' | 'raid5' | 'raid6' | 'passthrough'
+  customIsoId?: string
 }
 
 export interface DeployOrderResult {
@@ -73,6 +77,52 @@ export class DeployOrderService {
     if (!region?.isActive) throw new AppError('Region not available', 400, 'INVALID_REGION')
     if (!os?.isActive)     throw new AppError('OS not available', 400, 'INVALID_OS')
 
+    // Round 23: stock check (bare-metal). stockTotal=0 → unlimited (cloud VM).
+    if (plan.stockTotal > 0) {
+      const available = plan.stockTotal - plan.stockReserved
+      if (available <= 0) {
+        throw new AppError(
+          `${plan.name} is sold out in ${region.city}. Try another region or join the waitlist.`,
+          503,
+          'OUT_OF_STOCK'
+        )
+      }
+    }
+
+    // Round 23: validate billing cycle availability and resolve price
+    const cycle = input.billingCycle || 'monthly'
+    if (cycle === 'monthly' && !plan.monthlyEnabled) {
+      throw new AppError('Monthly billing not available for this plan', 400, 'CYCLE_DISABLED')
+    }
+    if (cycle === 'yearly' && (!plan.yearlyEnabled || plan.priceYearly <= 0)) {
+      throw new AppError('Yearly billing not available for this plan', 400, 'CYCLE_DISABLED')
+    }
+    if (cycle === 'hourly' && !plan.hourlyEnabled) {
+      throw new AppError('Hourly billing not available for this plan', 400, 'CYCLE_DISABLED')
+    }
+
+    // Round 23: validate RAID config when provided
+    if (input.raidConfig) {
+      const supported: string[] = (() => {
+        try { return JSON.parse(plan.raidSupported || '[]') } catch { return [] }
+      })()
+      if (!supported.includes(input.raidConfig)) {
+        throw new AppError(
+          `RAID config "${input.raidConfig}" not supported by this plan. Available: ${supported.join(', ') || 'none'}`,
+          400,
+          'INVALID_RAID'
+        )
+      }
+    }
+
+    // Round 23: validate custom ISO ownership
+    if (input.customIsoId) {
+      const iso = await prisma.isoImage.findFirst({
+        where: { id: input.customIsoId, userId: input.userId },
+      })
+      if (!iso) throw new AppError('Custom ISO not found or not owned by you', 404, 'NOT_FOUND')
+    }
+
     let sshPublicKey: string | undefined
     if (input.sshKeyId) {
       const key = await prisma.sshKey.findFirst({
@@ -88,8 +138,17 @@ export class DeployOrderService {
     const hostname = input.hostname || `srv-${nano()}.${domain}`
     const rootPassword = input.rootPassword || passwordNano()
 
-    // Price the first month upfront (not first hour like wallet flow).
-    const subtotal = Number(plan.priceInr.toFixed(2))
+    // Price the period upfront based on chosen billing cycle.
+    // - hourly: charge first hour as deposit (frontend usually picks
+    //   monthly for the checkout flow, hourly is for the wallet path).
+    // - monthly (default): full month upfront.
+    // - yearly: full year upfront (priceYearly is typically 10× monthly,
+    //   so customers save 2 months by paying yearly).
+    const subtotal = (() => {
+      if (cycle === 'yearly') return Number(plan.priceYearly.toFixed(2))
+      if (cycle === 'hourly') return Number(plan.priceHourly.toFixed(2))
+      return Number(plan.priceInr.toFixed(2))
+    })()
     const taxRes = computeTax({
       amount: subtotal,
       country: user.country || 'IN',
@@ -101,22 +160,35 @@ export class DeployOrderService {
 
     // Pre-allocate the server in AWAITING_PAYMENT state so capacity
     // accounting starts correctly + customer can resume.
-    const server = await prisma.server.create({
-      data: {
-        userId: user.id,
-        nodeId: node.id,
-        name: hostname.split('.')[0],
-        hostname,
-        planId: plan.id,
-        regionId: region.id,
-        osTemplateId: os.id,
-        status: 'AWAITING_PAYMENT',
-        rootPassword,
-        specs: JSON.stringify({ cpu: plan.cpu, ram: plan.ramGB, disk: plan.diskGB }),
-        bandwidth: JSON.stringify({ used: 0, limit: plan.bandwidthTB * 1000 }),
-        notes: sshPublicKey ? JSON.stringify({ sshPublicKey }) : null,
-      },
-    })
+    // Round 23: bump stockReserved atomically for bare-metal plans.
+    const [server] = await prisma.$transaction([
+      prisma.server.create({
+        data: {
+          userId: user.id,
+          nodeId: node.id,
+          name: hostname.split('.')[0],
+          hostname,
+          planId: plan.id,
+          regionId: region.id,
+          osTemplateId: os.id,
+          status: 'AWAITING_PAYMENT',
+          rootPassword,
+          specs: JSON.stringify({ cpu: plan.cpu, ram: plan.ramGB, disk: plan.diskGB }),
+          bandwidth: JSON.stringify({ used: 0, limit: plan.bandwidthTB * 1000 }),
+          notes: sshPublicKey ? JSON.stringify({ sshPublicKey }) : null,
+          // Round 23
+          billingCycle: cycle,
+          raidConfig: input.raidConfig || null,
+          customIsoId: input.customIsoId || null,
+        },
+      }),
+      ...(plan.stockTotal > 0
+        ? [prisma.plan.update({
+            where: { id: plan.id },
+            data: { stockReserved: { increment: 1 } },
+          })]
+        : []),
+    ])
 
     // Pick payment provider — INR → Razorpay, anything else → Stripe.
     const provider: 'razorpay' | 'stripe' =
@@ -222,8 +294,17 @@ export class DeployOrderService {
     // Sequential invoice number (India FY).
     const { number: invoiceNumber } = await invoiceNumberService.issue('invoice')
 
+    // Round 23: paidUntil reflects the chosen billing cycle (server row
+    // already stores billingCycle from createOrder).
+    const serverRow = await prisma.server.findUnique({
+      where: { id: order.serverId },
+      select: { billingCycle: true },
+    })
+    const cycle = serverRow?.billingCycle || 'monthly'
     const paidAt = new Date()
-    const paidUntil = new Date(paidAt.getTime() + 30 * 86_400_000)
+    const cycleDays = cycle === 'yearly' ? 365 : cycle === 'hourly' ? 1 / 24 : 30
+    const paidUntil = new Date(paidAt.getTime() + cycleDays * 86_400_000)
+    const cycleLabel = cycle === 'yearly' ? '365 days' : cycle === 'hourly' ? '1 hour' : '30 days'
 
     const [, , invoice] = await prisma.$transaction([
       prisma.deployOrder.update({
@@ -256,13 +337,13 @@ export class DeployOrderService {
           dueDate: paidAt,
           items: JSON.stringify([
             {
-              description: `Server ${order.hostname} · 30 days`,
+              description: `Server ${order.hostname} · ${cycleLabel}`,
               qty: 1,
               unitPrice: order.amount,
               total: order.amount,
             },
           ]),
-          notes: `Pay-per-deploy first month. Order ${order.id}.`,
+          notes: `Pay-per-deploy ${cycle} cycle. Order ${order.id}.`,
         },
       }),
       prisma.auditLog.create({
@@ -336,11 +417,19 @@ export class DeployOrderService {
    * job sweeps expired orders.
    */
   async cancelOrder(orderId: string, reason: string): Promise<void> {
-    const order = await prisma.deployOrder.findUnique({ where: { id: orderId } })
+    const order = await prisma.deployOrder.findUnique({
+      where: { id: orderId },
+      include: { user: true },
+    })
     if (!order) return
     if (order.status !== 'pending') return
 
-    await prisma.$transaction([
+    const server = await prisma.server.findUnique({
+      where: { id: order.serverId },
+      include: { plan: true },
+    })
+
+    const ops: any[] = [
       prisma.deployOrder.update({
         where: { id: order.id },
         data: { status: 'cancelled' },
@@ -358,7 +447,18 @@ export class DeployOrderService {
           newValue: JSON.stringify({ reason }),
         },
       }),
-    ])
+    ]
+    // Round 23: release the reserved stock slot for bare-metal
+    if (server?.plan?.stockTotal && server.plan.stockTotal > 0) {
+      ops.push(
+        prisma.plan.update({
+          where: { id: server.plan.id },
+          data: { stockReserved: { decrement: 1 } },
+        })
+      )
+    }
+
+    await prisma.$transaction(ops)
   }
 
   /** Sweep expired pending orders. Called by cron every 15 minutes. */

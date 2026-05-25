@@ -13,6 +13,9 @@ import prisma from '../utils/prisma'
  *   CN/2025-26/000001  → credit note
  *   RC/2025-26/000001  → receipt (top-up)
  *
+ * Round 23: prefixes are configurable via platform.gst settings
+ *   { invoicePrefix: 'NL', creditNotePrefix: 'CN', receiptPrefix: 'RC' }
+ *
  * Concurrency:
  *   - We wrap the increment in a Prisma `$transaction` with an UPDATE on
  *     a unique row (kind, fiscalYear). On Postgres this acquires a row
@@ -23,10 +26,37 @@ import prisma from '../utils/prisma'
 
 export type CounterKind = 'invoice' | 'credit_note' | 'receipt'
 
-const PREFIX_BY_KIND: Record<CounterKind, string> = {
+const FALLBACK_PREFIX: Record<CounterKind, string> = {
   invoice:     'NL',
   credit_note: 'CN',
   receipt:     'RC',
+}
+
+const PREFIX_KEY_BY_KIND: Record<CounterKind, string> = {
+  invoice:     'invoicePrefix',
+  credit_note: 'creditNotePrefix',
+  receipt:     'receiptPrefix',
+}
+
+let prefixCache: { fetchedAt: number; values: Record<CounterKind, string> } | null = null
+
+async function loadPrefixes(): Promise<Record<CounterKind, string>> {
+  // 60s cache so we don't hit the DB every issue() call.
+  if (prefixCache && Date.now() - prefixCache.fetchedAt < 60_000) {
+    return prefixCache.values
+  }
+  const cfg = await prisma.integrationConfig.findUnique({ where: { key: 'platform.gst' } })
+  let stored: Record<string, string> = {}
+  if (cfg?.value) {
+    try { stored = JSON.parse(cfg.value) } catch {}
+  }
+  const values: Record<CounterKind, string> = {
+    invoice:     stored[PREFIX_KEY_BY_KIND.invoice]     || FALLBACK_PREFIX.invoice,
+    credit_note: stored[PREFIX_KEY_BY_KIND.credit_note] || FALLBACK_PREFIX.credit_note,
+    receipt:     stored[PREFIX_KEY_BY_KIND.receipt]     || FALLBACK_PREFIX.receipt,
+  }
+  prefixCache = { fetchedAt: Date.now(), values }
+  return values
 }
 
 /**
@@ -57,7 +87,8 @@ export class InvoiceNumberService {
    */
   async issue(kind: CounterKind, date: Date = new Date()): Promise<IssuedNumber> {
     const fiscalYear = getFiscalYear(date)
-    const prefix = PREFIX_BY_KIND[kind]
+    const prefixes = await loadPrefixes()
+    const prefix = prefixes[kind]
 
     // The transaction guarantees the upsert+read happens atomically. We use
     // upsert so the very first invoice in a new FY auto-creates the counter
@@ -93,7 +124,8 @@ export class InvoiceNumberService {
    */
   async peek(kind: CounterKind, date: Date = new Date()): Promise<string> {
     const fiscalYear = getFiscalYear(date)
-    const prefix = PREFIX_BY_KIND[kind]
+    const prefixes = await loadPrefixes()
+    const prefix = prefixes[kind]
     const counter = await prisma.invoiceCounter.findUnique({
       where: { kind_fiscalYear: { kind, fiscalYear } },
     })

@@ -327,6 +327,15 @@ export class ServerService {
       })
     }
 
+    // Round 23: release reserved bare-metal stock slot
+    const planRow = await prisma.plan.findUnique({ where: { id: server.planId } })
+    if (planRow && planRow.stockTotal > 0 && planRow.stockReserved > 0) {
+      await prisma.plan.update({
+        where: { id: planRow.id },
+        data: { stockReserved: { decrement: 1 } },
+      })
+    }
+
     await prisma.auditLog.create({
       data: {
         userId: isAdmin ? userId : server.userId,

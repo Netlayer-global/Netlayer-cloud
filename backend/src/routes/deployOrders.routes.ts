@@ -32,6 +32,10 @@ router.post('/', async (req: AuthedRequest, res, next) => {
         hostname: z.string().min(3).max(64).optional(),
         rootPassword: z.string().min(8).optional(),
         preferredProvider: z.enum(['razorpay', 'stripe']).optional(),
+        // Round 23
+        billingCycle: z.enum(['hourly', 'monthly', 'yearly']).optional(),
+        raidConfig: z.enum(['raid0', 'raid1', 'raid10', 'raid5', 'raid6', 'passthrough']).optional(),
+        customIsoId: z.string().optional(),
       })
       .parse(req.body)
 

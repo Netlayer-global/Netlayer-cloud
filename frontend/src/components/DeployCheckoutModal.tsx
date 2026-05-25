@@ -44,6 +44,10 @@ interface Props {
     sshKeyId?: string
     hostname?: string
     rootPassword?: string
+    // Round 23
+    billingCycle?: 'hourly' | 'monthly' | 'yearly'
+    raidConfig?: 'raid0' | 'raid1' | 'raid10' | 'raid5' | 'raid6' | 'passthrough'
+    customIsoId?: string
   } | null
   /** Pre-computed line summary for display while order is being created. */
   summary: CheckoutSummary | null

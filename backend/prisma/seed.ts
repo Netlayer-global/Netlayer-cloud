@@ -9,16 +9,63 @@ async function main() {
   console.log('🌱 Seeding NetLayer database...')
 
   // ─── PLANS ───────────────────────────────────────────
-  const plans = [
+  // Round 23 — yearly = 10 × monthly (2 months free for prepaid yearly)
+  const yearly = (m: number) => Math.round(m * 10)
+  const computePlans = [
     { name: 'c2.small',   slug: 'c2-small',   cpu: 1,  ramGB: 2,  diskGB: 40,   bandwidthTB: 1,  priceMonthly: 199,  priceHourly: 0.27, priceInr: 199,  isPopular: false, sortOrder: 1 },
     { name: 'c2.medium',  slug: 'c2-medium',  cpu: 2,  ramGB: 4,  diskGB: 80,   bandwidthTB: 2,  priceMonthly: 399,  priceHourly: 0.54, priceInr: 399,  isPopular: false, sortOrder: 2 },
     { name: 'c3.large',   slug: 'c3-large',   cpu: 4,  ramGB: 8,  diskGB: 160,  bandwidthTB: 3,  priceMonthly: 799,  priceHourly: 1.09, priceInr: 799,  isPopular: true,  sortOrder: 3 },
     { name: 'c3.xlarge',  slug: 'c3-xlarge',  cpu: 8,  ramGB: 16, diskGB: 320,  bandwidthTB: 5,  priceMonthly: 1499, priceHourly: 2.05, priceInr: 1499, isPopular: false, sortOrder: 4 },
     { name: 'c4.2xlarge', slug: 'c4-2xlarge', cpu: 16, ramGB: 32, diskGB: 640,  bandwidthTB: 8,  priceMonthly: 2999, priceHourly: 4.10, priceInr: 2999, isPopular: false, sortOrder: 5 },
     { name: 'c4.4xlarge', slug: 'c4-4xlarge', cpu: 32, ramGB: 64, diskGB: 1280, bandwidthTB: 10, priceMonthly: 5999, priceHourly: 8.21, priceInr: 5999, isPopular: false, sortOrder: 6 },
+  ].map((p) => ({
+    ...p,
+    category: 'compute',
+    priceYearly: yearly(p.priceMonthly),
+    yearlyEnabled: true,
+    diskType: 'nvme',
+    diskCount: 1,
+    raidSupported: '[]',
+    stockTotal: 0, // unlimited
+  }))
+
+  // Bare-metal plans (latitude.sh / OVH-style dedicated servers)
+  const bareMetalPlans = [
+    {
+      name: 'bm.epyc-1', slug: 'bm-epyc-1', category: 'bare-metal',
+      cpu: 16, ramGB: 64, diskGB: 1920, bandwidthTB: 20,
+      priceMonthly: 14999, priceHourly: 0, priceInr: 14999, priceYearly: yearly(14999),
+      hourlyEnabled: false, monthlyEnabled: true, yearlyEnabled: true,
+      cpuModel: 'AMD EPYC 7402P', cpuCores: 16, cpuThreads: 32,
+      diskType: 'nvme', diskCount: 2, raidSupported: '["raid0","raid1"]',
+      ipv4Included: 1, ipv6Included: 1, stockTotal: 4,
+      sortOrder: 100, isActive: true, isPopular: false,
+    },
+    {
+      name: 'bm.epyc-2', slug: 'bm-epyc-2', category: 'bare-metal',
+      cpu: 32, ramGB: 128, diskGB: 3840, bandwidthTB: 30,
+      priceMonthly: 24999, priceHourly: 0, priceInr: 24999, priceYearly: yearly(24999),
+      hourlyEnabled: false, monthlyEnabled: true, yearlyEnabled: true,
+      cpuModel: 'AMD EPYC 7543P', cpuCores: 32, cpuThreads: 64,
+      diskType: 'nvme', diskCount: 4, raidSupported: '["raid0","raid1","raid10"]',
+      ipv4Included: 1, ipv6Included: 1, stockTotal: 2,
+      sortOrder: 101, isActive: true, isPopular: true,
+    },
+    {
+      name: 'bm.gpu-l40', slug: 'bm-gpu-l40', category: 'bare-metal',
+      cpu: 32, ramGB: 256, diskGB: 7680, bandwidthTB: 50,
+      priceMonthly: 89999, priceHourly: 0, priceInr: 89999, priceYearly: yearly(89999),
+      hourlyEnabled: false, monthlyEnabled: true, yearlyEnabled: true,
+      cpuModel: 'Intel Xeon Gold 6448Y + 1× NVIDIA L40 48GB', cpuCores: 32, cpuThreads: 64,
+      diskType: 'nvme', diskCount: 2, raidSupported: '["raid0","raid1"]',
+      ipv4Included: 1, ipv6Included: 1, stockTotal: 1,
+      sortOrder: 200, isActive: true, isPopular: false,
+    },
   ]
-  for (const p of plans) await prisma.plan.upsert({ where: { slug: p.slug }, update: p, create: p })
-  console.log(`✓ ${plans.length} plans`)
+
+  const plans = [...computePlans, ...bareMetalPlans]
+  for (const p of plans) await prisma.plan.upsert({ where: { slug: p.slug }, update: p as any, create: p as any })
+  console.log(`✓ ${plans.length} plans (${computePlans.length} compute + ${bareMetalPlans.length} bare-metal)`)
 
   // ─── REGIONS ─────────────────────────────────────────
   const regions = [

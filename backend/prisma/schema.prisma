@@ -218,7 +218,7 @@ model Plan {
   id            String   @id @default(cuid())
   name          String
   slug          String   @unique
-  category      String   @default("compute")  // compute | bare-metal | storage
+  category      String   @default("compute")  // compute | bare-metal | storage | gpu
   cpu           Int
   ramGB         Int
   diskGB        Int
@@ -226,10 +226,29 @@ model Plan {
   priceMonthly  Float
   priceHourly   Float
   priceInr      Float
+  // Round 23: yearly with prepaid discount + per-cycle availability flags
+  priceYearly   Float    @default(0)                // 0 means yearly billing not offered
+  hourlyEnabled Boolean  @default(true)             // Hide if you only want monthly billing
+  monthlyEnabled Boolean @default(true)
+  yearlyEnabled Boolean  @default(false)
+  // Bare-metal specifics (ignored for category='compute')
+  cpuModel      String?                              // e.g. "AMD EPYC 7402P"
+  cpuCores      Int?                                 // physical cores (vs vCPU `cpu`)
+  cpuThreads    Int?
+  diskType      String   @default("nvme")            // nvme | ssd | hdd
+  diskCount     Int      @default(1)                 // 2 disks → RAID-1 default
+  raidSupported String   @default("[]")              // JSON: ["raid0","raid1","raid10"]
+  ipv4Included  Int      @default(1)
+  ipv6Included  Int      @default(1)
+  // Stock management (latitude.sh-style availability)
+  stockTotal    Int      @default(0)                 // 0 = unlimited (cloud VM)
+  stockReserved Int      @default(0)                 // currently allocated
+  // Visibility
   isActive      Boolean  @default(true)
   isPopular     Boolean  @default(false)
   sortOrder     Int      @default(0)
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
 
   servers       Server[]
 }
@@ -266,6 +285,11 @@ model Server {
   // Round 22: per-deploy billing
   paidUntil      DateTime?                     // server paid through this date — auto-suspend after
   pendingPaymentRef String?                    // razorpay order id during checkout, cleared on capture
+  // Round 23: billing cycle picked at deploy time
+  billingCycle   String       @default("monthly")  // hourly | monthly | yearly
+  // Round 23: bare-metal RAID + custom ISO
+  raidConfig     String?                       // raid0 | raid1 | raid10 | passthrough
+  customIsoId    String?                       // if set, deploy boots from this customer-uploaded ISO
   dnsRecordId    String?
   zabbixHostId   String?
   nextBillDate   DateTime?

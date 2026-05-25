@@ -40,6 +40,10 @@ import adminPlatformRoutes from './routes/adminPlatform.routes'
 // Round 22
 import deployOrderRoutes from './routes/deployOrders.routes'
 import enterpriseAdminRoutes from './routes/enterprise.routes'
+// Round 23
+import plansAdminRoutes from './routes/plansAdmin.routes'
+import orgSettingsRoutes from './routes/orgSettings.routes'
+import customerIsoRoutes from './routes/customerIso.routes'
 import abuseRoutes from './routes/abuse.routes'
 import storageRoutes, { storagePublicRouter } from './routes/storage.routes'
 import platformRoutes from './routes/platform.routes'
@@ -170,6 +174,9 @@ app.use('/api/billing/credit-notes', authMiddleware, creditNotesRoutes)
 // Round 22: pay-per-deploy orders (customer)
 app.use('/api/deploy-orders',  authMiddleware, idempotency(), deployOrderRoutes)
 
+// Round 23: customer custom ISOs
+app.use('/api/iso/custom',     authMiddleware, customerIsoRoutes)
+
 // ─── Admin ──────────────────────────────────────────────────────────
 app.use('/api/admin', authMiddleware, idempotency(), adminRoutes)
 
@@ -186,6 +193,10 @@ app.use('/api/admin/credit-notes',   authMiddleware, adminOnly, adminCreditNotes
 app.use('/api/admin/gstr1',          authMiddleware, adminOnly, gstr1Routes)
 app.use('/api/admin/platform',       authMiddleware, adminOnly, adminPlatformRoutes)
 app.use('/api/admin',                authMiddleware, adminOnly, enterpriseAdminRoutes)
+
+// Round 23 admin
+app.use('/api/admin/plans',          authMiddleware, adminOnly, idempotency(), plansAdminRoutes)
+app.use('/api/admin/org-settings',   authMiddleware, adminOnly, orgSettingsRoutes)
 
 // ─── 404 + error handler ────────────────────────────────────────────
 app.use((req, res) => {

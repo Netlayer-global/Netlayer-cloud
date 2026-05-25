@@ -376,6 +376,10 @@ export const deployOrdersAPI = {
     hostname?: string
     rootPassword?: string
     preferredProvider?: 'razorpay' | 'stripe'
+    // Round 23
+    billingCycle?: 'hourly' | 'monthly' | 'yearly'
+    raidConfig?: 'raid0' | 'raid1' | 'raid10' | 'raid5' | 'raid6' | 'passthrough'
+    customIsoId?: string
   }) => api.post<{ data: DeployOrderResult }>('/deploy-orders', data),
 
   list: () => api.get('/deploy-orders'),
@@ -397,6 +401,41 @@ export const enterpriseAdminAPI = {
     api.patch(`/admin/users/${userId}/billing-mode`, data),
   deployForUser: (userId: string, data: { name: string; planId: string; regionId: string; osTemplateId: string; sshKeyId?: string; rootPassword?: string }) =>
     api.post(`/admin/users/${userId}/deploy-server`, data),
+}
+
+// ─── ROUND 23: Admin Plans CRUD + Org settings + Customer ISOs ─
+export const plansAdminAPI = {
+  list: () => api.get('/admin/plans'),
+  get: (id: string) => api.get(`/admin/plans/${id}`),
+  create: (data: any) => api.post('/admin/plans', data),
+  update: (id: string, data: any) => api.patch(`/admin/plans/${id}`, data),
+  delete: (id: string) => api.delete(`/admin/plans/${id}`),
+  adjustStock: (id: string, data: { delta?: number; total?: number }) =>
+    api.post(`/admin/plans/${id}/stock`, data),
+}
+
+export interface OrgSettings {
+  organization: Record<string, any>
+  gst: Record<string, any>
+  invoicing: Record<string, any>
+  legal: Record<string, any>
+}
+export const orgSettingsAPI = {
+  get: () => api.get<{ data: OrgSettings }>('/admin/org-settings'),
+  update: (data: Partial<OrgSettings>) => api.patch('/admin/org-settings', data),
+}
+
+export const customerIsoAPI = {
+  list: () => api.get('/iso/custom'),
+  upload: (formData: FormData, onProgress?: (pct: number) => void) =>
+    api.post('/iso/custom/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (e) => {
+        if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100))
+      },
+      timeout: 30 * 60 * 1000,
+    }),
+  delete: (id: string) => api.delete(`/iso/custom/${id}`),
 }
 
 // ─── BILLING ─────────────────────────────────────────────────

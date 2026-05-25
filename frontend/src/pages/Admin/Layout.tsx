@@ -52,6 +52,8 @@ const NAV: NavItem[] = [
   { to: '/admin/capacity',      icon: BarChart,        label: 'Capacity',      roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/admin/health',        icon: Activity,        label: 'Global health', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/admin/billing',       icon: CreditCard,      label: 'Billing',       roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
+  { to: '/admin/plans',         icon: Tag,             label: 'Plans',         roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/admin/org-settings',  icon: Building2,       label: 'Org settings',  roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/admin/credit-notes',  icon: FileMinus,       label: 'Credit notes',  roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
   { to: '/admin/gstr1',         icon: Receipt,         label: 'GSTR-1 export', roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
   { to: '/admin/promos',        icon: Tag,             label: 'Promo codes',   roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
