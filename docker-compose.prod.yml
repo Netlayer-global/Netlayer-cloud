@@ -98,8 +98,14 @@ services:
       CLOUDFLARE_DOMAIN: ${CLOUDFLARE_DOMAIN:-netlayer.com}
       # Proxmox — set to false once a real cluster is wired
       PROXMOX_MOCK_MODE: ${PROXMOX_MOCK_MODE:-true}
+      # Round 22+: ISO uploads land here. In production this should be a
+      # bind mount onto the cluster's shared NFS / Ceph storage so every
+      # Proxmox node can read uploaded ISOs.
+      ISO_UPLOAD_DIR: /app/data/iso
     expose:
       - "5000"
+    volumes:
+      - ./data/iso:/app/data/iso
     # Database migrations run on startup so a fresh deploy auto-applies them.
     # Seed runs separately (only on first boot) — see scripts/deploy.sh.
     command: >

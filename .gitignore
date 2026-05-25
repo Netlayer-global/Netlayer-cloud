@@ -71,3 +71,16 @@ agent/journal.db
 # Python bytecode (from skill scripts)
 __pycache__/
 *.py[cod]
+
+
+# Production deployment data (Round 21+)
+data/
+.env.prod
+backend/data/
+**/data/iso/*
+
+# Production migration_lock for postgres deploys
+backend/prisma/postgres-init/
+
+# Redis dump
+dump.rdb

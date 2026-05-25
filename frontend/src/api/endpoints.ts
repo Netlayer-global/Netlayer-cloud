@@ -285,6 +285,24 @@ export const isoAdminAPI = {
   delete: (id: string) => api.delete(`/admin/iso/${id}`),
   attach: (id: string, serverId: string) => api.post(`/admin/iso/${id}/attach`, { serverId }),
   detach: (id: string, serverId: string) => api.post(`/admin/iso/${id}/detach`, { serverId }),
+  /**
+   * Upload an ISO from the operator's PC. Backend writes it to data/iso/
+   * with a stamped filename. Returns onUploadProgress to drive the UI bar.
+   */
+  upload: (
+    formData: FormData,
+    onProgress?: (pct: number) => void,
+  ) =>
+    api.post('/admin/iso/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (e) => {
+        if (onProgress && e.total) {
+          onProgress(Math.round((e.loaded / e.total) * 100))
+        }
+      },
+      // Big files can take a while — bump default 30s ceiling.
+      timeout: 30 * 60 * 1000,
+    }),
 }
 
 export const communicationsAPI = {

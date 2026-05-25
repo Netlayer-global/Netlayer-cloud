@@ -35,6 +35,14 @@
       header_up X-Real-IP {remote}
       header_up X-Forwarded-For {remote}
       header_up X-Forwarded-Proto {scheme}
+      # ISO uploads can hit 8 GB. Caddy buffers in 4 MB chunks.
+      transport http {
+        read_timeout 30m
+        write_timeout 30m
+      }
+    }
+    request_body {
+      max_size 8GB
     }
   }
 

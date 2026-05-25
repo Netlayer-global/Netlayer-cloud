@@ -1,11 +1,45 @@
 import { Router } from 'express'
 import { z } from 'zod'
+import multer from 'multer'
+import path from 'path'
+import fs from 'fs'
 import prisma from '../utils/prisma'
 import { AppError } from '../utils/errors'
 import logger from '../utils/logger'
 
 const router = Router()
 const mockMode = process.env.PROXMOX_MOCK_MODE === 'true'
+
+/**
+ * Upload destination for ISOs. Default: ./data/iso (created lazily). In
+ * production with a real Proxmox cluster, this directory should be the
+ * cluster's shared NFS / Ceph mount so every node sees the same file.
+ */
+const ISO_DIR = process.env.ISO_UPLOAD_DIR || path.resolve(process.cwd(), 'data', 'iso')
+fs.mkdirSync(ISO_DIR, { recursive: true })
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, ISO_DIR),
+    filename: (_req, file, cb) => {
+      // Sanitise filename to prevent path traversal / collisions.
+      const safe = file.originalname.toLowerCase().replace(/[^a-z0-9.-]+/g, '-')
+      const stamped = `${Date.now()}-${safe}`
+      cb(null, stamped)
+    },
+  }),
+  limits: {
+    fileSize: 8 * 1024 ** 3,        // 8 GB hard cap (Windows Server ISOs ~5 GB)
+    files: 1,
+  },
+  fileFilter: (_req, file, cb) => {
+    // Accept only ISO / IMG / QCOW2 by extension. Mime sniffing is
+    // unreliable for these formats so extension is the practical guard.
+    const ok = /\.(iso|img|qcow2)$/i.test(file.originalname)
+    if (!ok) return cb(new Error('Only .iso / .img / .qcow2 files are allowed'))
+    cb(null, true)
+  },
+})
 
 /**
  * ISO image library (admin). In mock mode we simulate the Proxmox download
@@ -73,6 +107,68 @@ router.post('/', async (req, res, next) => {
 
     res.status(201).json({ data: serialize(iso) })
   } catch (e) { next(e) }
+})
+
+/**
+ * Round 22+ — direct upload from operator's PC.
+ *
+ * Multipart form-data:
+ *   - file        (the .iso / .img / .qcow2)
+ *   - name        display name
+ *   - nodeId      optional, "all" or a specific node id
+ *   - isPublic    "true" | "false"
+ *
+ * Pipeline:
+ *   1. Multer streams the upload to ISO_DIR with a stamped filename.
+ *   2. We create the IsoImage row with the local file path.
+ *   3. Real Proxmox: would `pvesm upload local <path>` to make it
+ *      available cluster-wide. Mock mode just marks `available` immediately.
+ *
+ * Note on idempotency: middleware/idempotency.ts is mounted at the app level
+ * for /api/admin/iso, but we deliberately bypass it here because multipart
+ * bodies don't roundtrip cleanly through the in-memory store. Customers
+ * uploading the same ISO twice get two rows — that's fine, admin can dedupe.
+ */
+router.post('/upload', upload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) throw new AppError('No file uploaded', 400, 'NO_FILE')
+    const file = req.file
+
+    const name     = (req.body?.name as string) || file.originalname.replace(/\.(iso|img|qcow2)$/i, '')
+    const nodeId   = req.body?.nodeId && req.body.nodeId !== 'all' ? String(req.body.nodeId) : null
+    const isPublic = req.body?.isPublic === 'true' || req.body?.isPublic === true
+
+    const iso = await prisma.isoImage.create({
+      data: {
+        name,
+        filename: file.filename,
+        nodeId,
+        downloadUrl: `file://${file.path}`,
+        sizeBytes: BigInt(file.size),
+        // For local uploads we mark available right away; in real Proxmox
+        // mode the operator would trigger a "sync to cluster" job after.
+        status: 'available',
+        isPublic,
+      },
+    })
+
+    logger.info({ isoId: iso.id, size: file.size, path: file.path }, 'ISO uploaded')
+
+    res.status(201).json({
+      data: {
+        ...serialize(iso),
+        message: mockMode
+          ? 'ISO uploaded. Available immediately (mock mode).'
+          : 'ISO uploaded. Run "pvesm upload local <path>" or use admin/iso/:id/sync to push to Proxmox cluster.',
+      },
+    })
+  } catch (e: any) {
+    // Multer errors come through with a `code` field.
+    if (e?.code === 'LIMIT_FILE_SIZE') {
+      return next(new AppError('File too large (max 8 GB)', 413, 'FILE_TOO_LARGE'))
+    }
+    next(e)
+  }
 })
 
 router.get('/:id/status', async (req, res, next) => {
