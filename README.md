@@ -35,9 +35,15 @@ India-first cloud provider.
 | Sequential invoice numbering (India FY) | ✅ |
 | Credit notes + GSTR-1 CSV export | ✅ |
 | Recurring billing + dunning workflow | ✅ |
+| Pay-per-deploy + enterprise billing modes | ✅ |
+| Plans CRUD + bare-metal stock management | ✅ |
+| Hourly / monthly / yearly billing cycles | ✅ |
+| Customer custom ISO upload (4 GB cap) | ✅ |
+| Admin ISO library (8 GB cap, rescue mode) | ✅ |
+| Org / GST / invoicing settings UI | ✅ |
 | CLI + Terraform provider | ✅ |
 | Production Docker stack with Caddy auto-TLS | ✅ |
-| 39 backend tests + 9 frontend tests, type-safe end-to-end | ✅ |
+| 53 backend tests + 9 frontend tests, type-safe end-to-end | ✅ |
 
 ## Quick start (development)
 
@@ -98,7 +104,15 @@ the script upgrades the platform.
 
 ```
 backend/                 — Express API + Prisma schema + jobs
+  src/routes/            — REST endpoints (incl. plans CRUD, org settings, deploy orders)
+  src/services/          — Business logic (deployOrder, invoiceNumber, server, ...)
+  prisma/                — Schema + migrations + seed
+  tests/                 — Vitest suites (53 tests covering Round 23)
 frontend/                — React SPA + admin panel + landing
+  src/pages/             — Top-level routes (Landing, DeployServer, Admin/*)
+  src/pages/Admin/       — Operator UI (Plans, OrgSettings, Enterprise, ...)
+  src/components/landing-v3/ — Modular landing page sections
+  src/api/endpoints.ts   — Typed API client
 agent/                   — Go agent that runs on each Proxmox host
 cli/                     — Node.js CLI (`nl ...`)
 terraform-provider-netlayer/ — Terraform provider
@@ -107,7 +121,7 @@ observability/           — Prometheus / Grafana / Loki / Jaeger compose
 deploy/                  — Kubernetes manifests + ArgoCD configs
 infra/                   — Terraform for cloud provisioning of host VMs
 scripts/                 — deploy.sh, backup.sh, helpers
-docs/                    — PRODUCTION.md + architecture docs
+docs/                    — DEPLOY.md + PRODUCTION.md + architecture docs
 docker-compose.yml       — local dev infra (Postgres + Redis + MinIO)
 docker-compose.prod.yml  — single-host production stack
 Caddyfile                — production reverse proxy config
@@ -124,7 +138,7 @@ Caddyfile                — production reverse proxy config
 ## Testing
 
 ```bash
-cd backend && npm test           # 39 tests
+cd backend && npm test           # 53 tests
 cd frontend && npm test          # 9 tests
 ```
 

@@ -375,6 +375,35 @@ Alert via email + SMS if unreachable for > 2 minutes.
 
 Already at `https://app.netlayer.com/status`. Customers can subscribe via the email box. Admin → Status management → can post incidents.
 
+### 6.5 Plans, pricing, and stock management
+
+Once the stack is live, manage your catalogue from the admin panel:
+
+- **`/admin/plans`** — full Plans CRUD. Create compute, bare-metal, GPU, and storage plans. For bare-metal/GPU plans set:
+  - `cpuModel` (e.g. "AMD EPYC 7402P")
+  - `diskType` (nvme / ssd / hdd) and `diskCount`
+  - `raidSupported` array (raid0 / raid1 / raid10 / raid5 / raid6 / passthrough)
+  - `stockTotal` — number of physical units in inventory. Set to `0` for unlimited (cloud VMs).
+  - `priceYearly` — usually `priceMonthly × 10` (gives customer 2 months free)
+  - Per-cycle toggles (`hourlyEnabled`, `monthlyEnabled`, `yearlyEnabled`) — e.g. bare metal usually disables hourly
+- **`/admin/plans/<id>/stock`** — POST `{ delta: 5 }` adds inventory; `{ total: 20 }` sets absolute. Reservations bump automatically when customers create deploy orders, and release when they cancel or destroy the server.
+
+### 6.6 Organization + GST settings
+
+The whole India-GST chain reads from one place:
+
+- **`/admin/org-settings`** has 4 tabs:
+  - **Organization** — legal name, address, phone, website (printed on invoices, used in landing footer, terms/privacy pages)
+  - **GST & Tax** — GSTIN, PAN, HSN code, fiscal year start (April for India), invoice + credit-note + receipt prefixes (e.g. `NL`, `CN`, `RC`)
+  - **Invoicing** — payment terms (days), invoice footer text, auto-send-on-create toggle, attach-PDF toggle, expiry timeout for stuck checkout orders
+  - **Email Routing** — support / sales / billing / legal / privacy / abuse email addresses (used by the public site and outbound transactional emails)
+
+The invoiceNumber service caches these for 60 seconds, so changes take effect on the next invoice without a restart.
+
+### 6.7 Customer-uploaded ISOs
+
+Customers can upload up to **5 custom ISOs of 4 GB each** at `/dashboard/custom-isos`. They show up in the Deploy wizard "Custom ISO" picker. Files land in `data/iso/customer/<userId>-<timestamp>-<filename>` and are scoped to the uploader. Operator-side ISOs (rescue images, public distros) live separately at `/admin/iso` with an 8 GB limit.
+
 ---
 
 ## Phase 7 — Pre-Launch Checklist

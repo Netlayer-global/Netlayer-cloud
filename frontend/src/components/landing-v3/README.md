@@ -1,62 +1,77 @@
-# landing-v3 — public landing page sections
+# landing-v3 — modular public landing-page sections
 
-The marketing/landing page is currently authored in `frontend/src/pages/Landing.tsx`
-as a single file (~76 KB). This folder is the planned home for each section as
-its own component so UI/UX iteration is easier. To migrate a section without
-breaking imports, follow the recipe below.
+The marketing site is composed by `pages/Landing.tsx`, which now is a thin
+~30-line orchestrator. Each section lives here as its own file, so UI/UX
+iteration is fast and PR diffs stay small.
 
-## Recipe
+## Sections
 
-1. **Pick a section function from `pages/Landing.tsx`.** The current
-   sections in declaration order are:
-   - `LandingNav`
-   - `HeroSection`
-   - `StatsBar`
-   - `ProductsSection`
-   - `PerformanceSection`
-   - `GlobalNetworkSection`
-   - `PricingSection` (also rendered standalone on `/pricing`)
-   - `DeveloperSection`
-   - `MarketplaceSection`
-   - `TrustSection`
-   - `TestimonialsSection`
-   - `CTASection`
-   - `LandingFooter`
+| File | Purpose |
+|---|---|
+| `LandingNav.tsx` | Sticky top nav with Products dropdown + mobile menu |
+| `HeroSection.tsx` | Above-the-fold headline + CTAs + animated terminal |
+| `StatsBar.tsx` | 4-column animated counter strip (live API stats) |
+| `ProductsSection.tsx` | 6-tile grid of platform offerings |
+| `PerformanceSection.tsx` | Benchmark bars + 6 differentiator features |
+| `GlobalNetworkSection.tsx` | SVG world map + region pin pills |
+| `PricingSection.tsx` | 3-tier plan grid (also reused on `/pricing`) |
+| `DeveloperSection.tsx` | REST / CLI / Terraform code cards with copy |
+| `MarketplaceSection.tsx` | 12-app one-click install grid |
+| `TrustSection.tsx` | Compliance badges + live platform status |
+| `TestimonialsSection.tsx` | 3 customer quote cards |
+| `CTASection.tsx` | Pre-footer "create free account" |
+| `LandingFooter.tsx` | Brand mark + 3 link columns + social icons |
+| `SectionHeader.tsx` | Shared eyebrow / title / subtitle helper |
 
-2. **Create `frontend/src/components/landing-v3/<Section>.tsx`** and copy the
-   function plus any helper functions it depends on (e.g. `NavLink`, `DropCol`
-   for the nav, `SectionHeader` for the body sections, `CodeCard` for
-   `DeveloperSection`).
+## How `pages/Landing.tsx` works
 
-3. **Re-export it from `Landing.tsx`** so the public pages that import
-   `LandingNav`, `LandingFooter`, `PricingSection` from `../Landing` keep working:
-   ```tsx
-   export { LandingNav } from '../components/landing-v3/LandingNav'
-   ```
+```tsx
+import {
+  LandingNav, HeroSection, StatsBar, ProductsSection,
+  PerformanceSection, GlobalNetworkSection, PricingSection,
+  DeveloperSection, MarketplaceSection, TrustSection,
+  TestimonialsSection, CTASection, LandingFooter,
+} from '../components/landing-v3'
 
-4. **Run** `npm run build` from `frontend/` to confirm nothing was broken
-   by the move.
+export default function Landing() {
+  return (
+    <div className="nl-v3">
+      <LandingNav />
+      <HeroSection />
+      ...
+      <LandingFooter />
+    </div>
+  )
+}
+```
 
-## Why a recipe instead of doing all of it now
+## How to edit a section
 
-Each section relies on local helper functions and animation hooks that are
-co-located in `Landing.tsx`. Splitting all 12 sections requires careful
-plumbing of those helpers as well, which is best done one section per PR
-to keep diffs reviewable. This README + the existing function structure
-gives you a clear map for incremental work.
+1. Open the matching file (e.g. `HeroSection.tsx`).
+2. Make your change.
+3. Vite hot-reloads instantly. The other sections are untouched.
 
-## Public pages currently importing from `pages/Landing`
+## How to add a new section
 
-These will keep working as long as the re-exports stay in place:
+1. Create `MyNewSection.tsx` in this folder, exporting a named function.
+2. Add `export { MyNewSection } from './MyNewSection'` to `index.ts`.
+3. Import + render it in `pages/Landing.tsx` between two existing sections.
 
-- `pages/public/PricingPage.tsx`            — uses `PricingSection`, `LandingNav`, `LandingFooter`
-- `pages/public/AboutPage.tsx`              — uses `LandingNav`, `LandingFooter`
-- `pages/public/CareersPage.tsx`            — uses `LandingNav`, `LandingFooter`
-- `pages/public/DocsPage.tsx`               — uses `LandingNav`, `LandingFooter`
-- `pages/public/FeaturesPage.tsx`           — uses `LandingNav`, `LandingFooter`
-- `pages/public/KubernetesPage.tsx`         — uses `LandingNav`, `LandingFooter`
-- `pages/public/MarketplacePage.tsx`        — uses `LandingNav`, `LandingFooter`
-- `pages/public/NetworkPage.tsx`            — uses `LandingNav`, `LandingFooter`
-- `pages/public/PrivacyPage.tsx`            — uses `LandingNav`, `LandingFooter`
-- `pages/public/StatusPage.tsx`             — uses `LandingNav`, `LandingFooter`
-- `pages/public/TermsPage.tsx`              — uses `LandingNav`, `LandingFooter`
+## Public pages that depend on this folder
+
+These import directly from `components/landing-v3` (or via `pages/Landing.tsx`'s
+re-exports for backward compatibility):
+
+- `pages/public/PricingPage.tsx` → `LandingNav`, `LandingFooter`, `PricingSection`
+- `pages/public/AboutPage.tsx` → `LandingNav`, `LandingFooter`
+- `pages/public/CareersPage.tsx` → `LandingNav`, `LandingFooter`
+- `pages/public/DocsPage.tsx` → `LandingNav`, `LandingFooter`
+- `pages/public/FeaturesPage.tsx` → `LandingNav`, `LandingFooter`
+- `pages/public/KubernetesPage.tsx` → `LandingNav`, `LandingFooter`
+- `pages/public/MarketplacePage.tsx` → `LandingNav`, `LandingFooter`
+- `pages/public/NetworkPage.tsx` → `LandingNav`, `LandingFooter`
+- `pages/public/PrivacyPage.tsx` → `LandingNav`, `LandingFooter`
+- `pages/public/StatusPage.tsx` → `LandingNav`, `LandingFooter`
+- `pages/public/TermsPage.tsx` → `LandingNav`, `LandingFooter`
+
+If you rename or remove an exported component, update these consumers.
