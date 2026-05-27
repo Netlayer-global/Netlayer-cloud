@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Eye, EyeOff, RefreshCw, AlertTriangle } from 'lucide-react'
+import { Check, Eye, EyeOff, RefreshCw, AlertTriangle, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { catalogAPI, serverAPI, sshAPI, customerIsoAPI } from '../api/endpoints'
 import { Button } from '../components/ui/Button'
@@ -30,6 +30,7 @@ const generatePassword = () => {
 
 export default function DeployServer() {
   const navigate = useNavigate()
+  const qc = useQueryClient()
   const [stepIdx, setStepIdx] = useState(0)
   const [region, setRegion] = useState<Region | null>(null)
   const [plan, setPlan] = useState<Plan | null>(null)
@@ -119,7 +120,9 @@ export default function DeployServer() {
   const stepValid: Record<StepKey, boolean> = {
     Location: !!region,
     Plan: !!plan,
-    OS: !!os,
+    // Round 24: a custom ISO satisfies OS step too — backend still requires
+    // an OS template id (any one) so we keep `os` selected as fallback.
+    OS: !!os || !!customIsoId,
     Configure: !!hostname && !!rootPassword && rootPassword.length >= 8,
   }
 
@@ -128,7 +131,14 @@ export default function DeployServer() {
   }
 
   const handleDeploy = () => {
-    if (!stepValid.Configure || !plan || !region || !os) return
+    if (!stepValid.Configure || !plan || !region) return
+    // Round 24: if user picked a custom ISO without explicitly choosing an OS
+    // template, default to the first Linux template (server.service still
+    // requires a valid osTemplateId; the customIsoId actually drives boot).
+    if (!os && customIsoId && linuxOs.length > 0) {
+      setOs(linuxOs[0])
+    }
+    if (!os && (!customIsoId || linuxOs.length === 0)) return
     setProvisioning(true)
     create.mutate()
   }
@@ -249,7 +259,16 @@ export default function DeployServer() {
                 <Step2Plan plans={plans} selected={plan} onSelect={setPlan} />
               )}
               {STEPS[stepIdx] === 'OS' && (
-                <Step3OS linux={linuxOs} windows={windowsOs} selected={os} onSelect={setOs} />
+                <Step3OS
+                  linux={linuxOs}
+                  windows={windowsOs}
+                  selected={os}
+                  onSelect={setOs}
+                  customIsos={customIsos}
+                  customIsoId={customIsoId}
+                  setCustomIsoId={setCustomIsoId}
+                  onIsoUploaded={() => qc.invalidateQueries({ queryKey: ['customer', 'iso'] })}
+                />
               )}
               {STEPS[stepIdx] === 'Configure' && (
                 <Step4Configure
@@ -584,23 +603,31 @@ function Step3OS({
   windows,
   selected,
   onSelect,
+  customIsos,
+  customIsoId,
+  setCustomIsoId,
+  onIsoUploaded,
 }: {
   linux: OsTemplate[]
   windows: OsTemplate[]
   selected: OsTemplate | null
   onSelect: (o: OsTemplate) => void
+  customIsos: any[]
+  customIsoId: string
+  setCustomIsoId: (id: string) => void
+  onIsoUploaded: () => void
 }) {
   const renderGroup = (title: string, items: OsTemplate[]) => (
     <div>
       <div className="text-xs text-[#6a6a68] uppercase tracking-wide mb-2">{title}</div>
       <div className="grid sm:grid-cols-3 gap-2">
         {items.map((o) => {
-          const isSelected = selected?.id === o.id
+          const isSelected = selected?.id === o.id && !customIsoId
           return (
             <button
               key={o.id}
               type="button"
-              onClick={() => onSelect(o)}
+              onClick={() => { onSelect(o); setCustomIsoId('') }}
               className={cn(
                 'relative text-left p-3 rounded-md border cursor-pointer transition-colors',
                 isSelected
@@ -625,10 +652,149 @@ function Step3OS({
   return (
     <div>
       <h2 className="text-lg font-medium text-[#e8e8e6] mb-1">Select an OS</h2>
-      <p className="text-sm text-[#a0a09e] mb-5">Pick a base operating system image.</p>
+      <p className="text-sm text-[#a0a09e] mb-5">
+        Pick a base operating system image, or upload your own custom ISO below.
+      </p>
       <div className="space-y-5">
         {renderGroup('Linux', linux)}
         {windows.length > 0 && renderGroup('Windows', windows)}
+        <CustomIsoStep
+          customIsos={customIsos}
+          customIsoId={customIsoId}
+          setCustomIsoId={setCustomIsoId}
+          onUploaded={onIsoUploaded}
+        />
+      </div>
+    </div>
+  )
+}
+
+function CustomIsoStep({
+  customIsos,
+  customIsoId,
+  setCustomIsoId,
+  onUploaded,
+}: {
+  customIsos: any[]
+  customIsoId: string
+  setCustomIsoId: (id: string) => void
+  onUploaded: () => void
+}) {
+  const [file, setFile] = useState<File | null>(null)
+  const [uploadPct, setUploadPct] = useState(0)
+  const [uploading, setUploading] = useState(false)
+
+  const startUpload = async () => {
+    if (!file || uploading) return
+    setUploading(true)
+    setUploadPct(0)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('name', file.name.replace(/\.(iso|img|qcow2)$/i, ''))
+      const r: any = await customerIsoAPI.upload(fd, setUploadPct)
+      const newIso = r.data.data
+      toast.success(`${file.name} uploaded`)
+      setCustomIsoId(newIso.id)
+      setFile(null)
+      onUploaded()
+    } catch (e: any) {
+      toast.error(e.response?.data?.error || 'Upload failed')
+    } finally {
+      setUploading(false)
+      setUploadPct(0)
+    }
+  }
+
+  return (
+    <div>
+      <div className="text-xs text-[#6a6a68] uppercase tracking-wide mb-2 flex items-center justify-between">
+        <span>Custom ISO (optional)</span>
+        <span className="text-[10px] normal-case text-[#6a6a68]">.iso / .img / .qcow2 · max 4 GB · 5 per account</span>
+      </div>
+
+      <div className="space-y-2">
+        {/* Existing ISOs as selectable cards */}
+        {customIsos.length > 0 && (
+          <div className="grid sm:grid-cols-3 gap-2">
+            {customIsos.map((iso: any) => {
+              const isSelected = customIsoId === iso.id
+              return (
+                <button
+                  key={iso.id}
+                  type="button"
+                  onClick={() => setCustomIsoId(isSelected ? '' : iso.id)}
+                  className={cn(
+                    'relative text-left p-3 rounded-md border cursor-pointer transition-colors',
+                    isSelected
+                      ? 'border-[#e0fe56] bg-[#e0fe56]/5'
+                      : 'border-[#2a2b2a] bg-[#161716] hover:border-[#333433]'
+                  )}
+                >
+                  {isSelected && (
+                    <div className="absolute top-2 right-2 w-4 h-4 bg-[#e0fe56] rounded-full flex items-center justify-center">
+                      <Check size={10} className="text-[#0d0e0d]" />
+                    </div>
+                  )}
+                  <div className="text-sm font-medium text-[#e8e8e6] truncate">{iso.name}</div>
+                  <div className="text-[11px] text-[#6a6a68] mt-0.5 truncate">{iso.filename}</div>
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Inline uploader */}
+        {customIsos.length < 5 && (
+          <div className="border border-dashed border-[#333433] rounded-md p-3 hover:border-[#e0fe56]/40 transition-colors">
+            <input
+              id="deploy-custom-iso-file"
+              type="file"
+              accept=".iso,.img,.qcow2"
+              className="hidden"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              disabled={uploading}
+            />
+            <label htmlFor="deploy-custom-iso-file" className={cn('block', uploading ? 'cursor-not-allowed' : 'cursor-pointer')}>
+              <div className="flex items-center gap-3">
+                <Upload size={16} className={file ? 'text-[#e0fe56]' : 'text-[#6a6a68]'} />
+                <div className="flex-1 min-w-0">
+                  {file ? (
+                    <>
+                      <div className="text-xs text-[#e8e8e6] truncate">{file.name}</div>
+                      <div className="text-[10px] text-[#a0a09e]">{(file.size / (1024 ** 3)).toFixed(2)} GB · click again to change</div>
+                    </>
+                  ) : (
+                    <div className="text-xs text-[#a0a09e]">Upload a new ISO from your PC</div>
+                  )}
+                </div>
+                {file && !uploading && (
+                  <Button size="sm" type="button" onClick={(e) => { e.preventDefault(); startUpload() }}>
+                    Upload
+                  </Button>
+                )}
+              </div>
+            </label>
+
+            {uploading && (
+              <div className="mt-2">
+                <div className="flex items-center justify-between text-[10px] text-[#a0a09e] mb-1">
+                  <span>Uploading…</span>
+                  <span className="tabular-nums">{uploadPct}%</span>
+                </div>
+                <div className="h-1 rounded-full bg-[#252625] overflow-hidden">
+                  <div className="h-full bg-[#e0fe56] transition-[width]" style={{ width: `${uploadPct}%` }} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {customIsos.length === 0 && (
+          <p className="text-[11px] text-[#6a6a68]">
+            Don't need a custom ISO? Just pick from the list above. Custom ISOs are useful for niche distros or recovery installs.
+          </p>
+        )}
       </div>
     </div>
   )
@@ -775,20 +941,6 @@ function Step4Configure({
             <option value="">No RAID (single disk)</option>
             {raidOptions.map((r) => (
               <option key={r} value={r}>{r.toUpperCase()}</option>
-            ))}
-          </Select>
-        )}
-
-        {/* Custom ISO selector */}
-        {customIsos.length > 0 && (
-          <Select
-            label="Custom ISO (optional, replaces selected OS)"
-            value={customIsoId}
-            onChange={(e) => setCustomIsoId(e.target.value)}
-          >
-            <option value="">Use selected OS template</option>
-            {customIsos.map((iso: any) => (
-              <option key={iso.id} value={iso.id}>{iso.name}</option>
             ))}
           </Select>
         )}

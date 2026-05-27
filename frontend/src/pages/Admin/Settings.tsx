@@ -9,6 +9,7 @@ import { Select } from '../../components/ui/Select'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { cn } from '../../lib/utils'
 import { ModulesCard } from './ModulesCard'
+import { AdminModulesCard } from './AdminModulesCard'
 
 export default function AdminSettings() {
   const qc = useQueryClient()
@@ -64,6 +65,8 @@ export default function AdminSettings() {
       />
 
       <ModulesCard />
+
+      <AdminModulesCard />
 
       <SettingsCard
         title="Registration & limits"

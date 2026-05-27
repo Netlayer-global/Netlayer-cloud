@@ -39,51 +39,54 @@ import { useAuthStore } from '../../store/authStore'
 import { authAPI } from '../../api/endpoints'
 import { cn, initials } from '../../lib/utils'
 import { useSocket } from '../../hooks/useSocket'
+import { useAdminModules } from '../../hooks/useModules'
 
 interface NavItem {
   to: string
   icon: any
   label: string
   roles: string[]
+  /** Module key matching ADMIN_MODULE_DEFINITIONS — used to hide via Settings */
+  moduleKey?: string
 }
 
 const NAV: NavItem[] = [
-  { to: '/admin/dashboard',     icon: LayoutDashboard, label: 'Overview',      roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT', 'BILLING'] },
-  { to: '/admin/users',         icon: Users,           label: 'Users',         roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT', 'BILLING'] },
-  { to: '/admin/enterprise',    icon: Building2,       label: 'Enterprise',    roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/servers',       icon: ServerIcon,      label: 'Servers',       roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
-  { to: '/admin/nodes',         icon: HardDrive,       label: 'Nodes',         roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/ip-pools',      icon: Globe,           label: 'IP pools',      roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/iso',           icon: Disc3,           label: 'ISO library',   roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/capacity',      icon: BarChart,        label: 'Capacity',      roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/health',        icon: Activity,        label: 'Global health', roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/billing',       icon: CreditCard,      label: 'Billing',       roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
-  { to: '/admin/plans',         icon: Tag,             label: 'Plans',         roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/analytics',     icon: TrendingUp,      label: 'Analytics',     roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/kyc-review',    icon: IdCard,          label: 'KYC review',    roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
-  { to: '/admin/compliance',    icon: ShieldAlertIcon2, label: 'Compliance',   roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/org-settings',  icon: Building2,       label: 'Org settings',  roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/feature-flags', icon: Flag,            label: 'Feature flags', roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/in-app-messages', icon: MegaphoneIcon, label: 'In-app banners', roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/masquerade',    icon: Eye,             label: 'Masquerade log', roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/credit-notes',  icon: FileMinus,       label: 'Credit notes',  roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
-  { to: '/admin/gstr1',         icon: Receipt,         label: 'GSTR-1 export', roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
-  { to: '/admin/promos',        icon: Tag,             label: 'Promo codes',   roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
-  { to: '/admin/communications', icon: Mail,           label: 'Communications', roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/admin/dashboard',     icon: LayoutDashboard, label: 'Overview',      roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT', 'BILLING'], moduleKey: 'dashboard' },
+  { to: '/admin/users',         icon: Users,           label: 'Users',         roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT', 'BILLING'], moduleKey: 'users' },
+  { to: '/admin/enterprise',    icon: Building2,       label: 'Enterprise',    roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'enterprise' },
+  { to: '/admin/servers',       icon: ServerIcon,      label: 'Servers',       roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'], moduleKey: 'servers' },
+  { to: '/admin/nodes',         icon: HardDrive,       label: 'Nodes',         roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'nodes' },
+  { to: '/admin/ip-pools',      icon: Globe,           label: 'IP pools',      roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'ipPools' },
+  { to: '/admin/iso',           icon: Disc3,           label: 'ISO library',   roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'iso' },
+  { to: '/admin/capacity',      icon: BarChart,        label: 'Capacity',      roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'capacity' },
+  { to: '/admin/health',        icon: Activity,        label: 'Global health', roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'health' },
+  { to: '/admin/billing',       icon: CreditCard,      label: 'Billing',       roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'], moduleKey: 'billing' },
+  { to: '/admin/plans',         icon: Tag,             label: 'Plans',         roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'plans' },
+  { to: '/admin/analytics',     icon: TrendingUp,      label: 'Analytics',     roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'analytics' },
+  { to: '/admin/kyc-review',    icon: IdCard,          label: 'KYC review',    roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'], moduleKey: 'kycReview' },
+  { to: '/admin/compliance',    icon: ShieldAlertIcon2, label: 'Compliance',   roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'compliance' },
+  { to: '/admin/org-settings',  icon: Building2,       label: 'Org settings',  roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'orgSettings' },
+  { to: '/admin/feature-flags', icon: Flag,            label: 'Feature flags', roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'featureFlags' },
+  { to: '/admin/in-app-messages', icon: MegaphoneIcon, label: 'In-app banners', roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'inAppMessages' },
+  { to: '/admin/masquerade',    icon: Eye,             label: 'Masquerade log', roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'masquerade' },
+  { to: '/admin/credit-notes',  icon: FileMinus,       label: 'Credit notes',  roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'], moduleKey: 'creditNotes' },
+  { to: '/admin/gstr1',         icon: Receipt,         label: 'GSTR-1 export', roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'], moduleKey: 'gstr1' },
+  { to: '/admin/promos',        icon: Tag,             label: 'Promo codes',   roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'], moduleKey: 'promos' },
+  { to: '/admin/communications', icon: Mail,           label: 'Communications', roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'communications' },
   // Round 20: platform-wide views
-  { to: '/admin/networks',      icon: Network,         label: 'Networks',      roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/storage',       icon: DatabaseIcon,    label: 'Storage',       roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/dns',           icon: Globe,           label: 'DNS zones',     roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/marketplace',   icon: Boxes,           label: 'Marketplace',   roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/tickets',       icon: MessageSquare,   label: 'Tickets',       roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
-  { to: '/admin/abuse',         icon: ShieldAlert,     label: 'Abuse',         roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
-  { to: '/admin/workflows',     icon: GitBranch,       label: 'Workflows',     roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/status',        icon: Activity,        label: 'Status page',   roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/integrations',  icon: Plug,            label: 'Integrations',  roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/roles',         icon: Shield,          label: 'Roles',         roles: ['SUPER_ADMIN'] },
-  { to: '/admin/announcements', icon: Megaphone,       label: 'Announcements', roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/audit-logs',    icon: FileText,        label: 'Audit logs',    roles: ['SUPER_ADMIN', 'ADMIN'] },
-  { to: '/admin/settings',      icon: Settings,        label: 'Settings',      roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/admin/networks',      icon: Network,         label: 'Networks',      roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'networks' },
+  { to: '/admin/storage',       icon: DatabaseIcon,    label: 'Storage',       roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'storage' },
+  { to: '/admin/dns',           icon: Globe,           label: 'DNS zones',     roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'dns' },
+  { to: '/admin/marketplace',   icon: Boxes,           label: 'Marketplace',   roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'marketplace' },
+  { to: '/admin/tickets',       icon: MessageSquare,   label: 'Tickets',       roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'], moduleKey: 'tickets' },
+  { to: '/admin/abuse',         icon: ShieldAlert,     label: 'Abuse',         roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'], moduleKey: 'abuse' },
+  { to: '/admin/workflows',     icon: GitBranch,       label: 'Workflows',     roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'workflows' },
+  { to: '/admin/status',        icon: Activity,        label: 'Status page',   roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'status' },
+  { to: '/admin/integrations',  icon: Plug,            label: 'Integrations',  roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'integrations' },
+  { to: '/admin/roles',         icon: Shield,          label: 'Roles',         roles: ['SUPER_ADMIN'], moduleKey: 'roles' },
+  { to: '/admin/announcements', icon: Megaphone,       label: 'Announcements', roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'announcements' },
+  { to: '/admin/audit-logs',    icon: FileText,        label: 'Audit logs',    roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'auditLogs' },
+  { to: '/admin/settings',      icon: Settings,        label: 'Settings',      roles: ['SUPER_ADMIN', 'ADMIN'], moduleKey: 'settings' },
 ]
 
 const ROLE_BADGE: Record<string, string> = {
@@ -98,8 +101,13 @@ export default function AdminLayout() {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
   const role = user?.role || 'CLIENT'
+  const { isEnabled } = useAdminModules()
 
-  const visible = NAV.filter((n) => n.roles.includes(role))
+  const visible = NAV.filter((n) => {
+    if (!n.roles.includes(role)) return false
+    if (n.moduleKey && !isEnabled(n.moduleKey)) return false
+    return true
+  })
 
   const handleLogout = async () => {
     try {

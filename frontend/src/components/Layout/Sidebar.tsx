@@ -114,14 +114,17 @@ export function Sidebar() {
     isEnabled('servers') || isEnabled('vms') || isEnabled('gpu') ||
     isEnabled('kubernetes') || isEnabled('marketplace')
   const storageShown =
-    isEnabled('objectStorage') || isEnabled('blockStorage') || isEnabled('managedDb') || isEnabled('snapshots')
+    isEnabled('objectStorage') || isEnabled('blockStorage') || isEnabled('managedDb') ||
+    isEnabled('snapshots') || isEnabled('customIsos')
   const networkShown =
     isEnabled('loadBalancers') || isEnabled('dns') || isEnabled('vpc') || isEnabled('floatingIps')
   const monitoringShown =
     isEnabled('monitoring') || isEnabled('alerts') || isEnabled('logs')
   const accountShown =
     isEnabled('billing') || isEnabled('apiKeys') || isEnabled('sshKeys') ||
-    isEnabled('team') || isEnabled('referrals') || isEnabled('support')
+    isEnabled('team') || isEnabled('referrals') || isEnabled('support') ||
+    isEnabled('deployOrders') || isEnabled('organizations') ||
+    isEnabled('kyc') || isEnabled('phoneVerify')
 
   return (
     <aside className="w-[220px] shrink-0 bg-[#0d0e0d] border-r border-[#2a2b2a] flex flex-col h-screen sticky top-0">
@@ -203,7 +206,11 @@ export function Sidebar() {
             {isEnabled('snapshots') && (
               <NavItem to="/dashboard/snapshots" icon={Camera} label="Snapshots" />
             )}
-            <NavItem to="/dashboard/custom-isos" icon={Disc3} label="Custom ISOs" />
+            {/* Round 24: Custom ISOs no longer in sidebar — surfaced inside Deploy → OS step.
+                Operator can re-enable a sidebar shortcut by toggling the customIsos module. */}
+            {isEnabled('customIsos') && (
+              <NavItem to="/dashboard/custom-isos" icon={Disc3} label="Custom ISOs" />
+            )}
           </>
         )}
 
@@ -246,10 +253,18 @@ export function Sidebar() {
             {isEnabled('billing') && (
               <NavItem to="/dashboard/billing" icon={CreditCard} label="Usage & billing" />
             )}
-            <NavItem to="/dashboard/deploy-orders" icon={Receipt} label="Deploy orders" />
-            <NavItem to="/dashboard/organizations" icon={Building2} label="Organizations" />
-            <NavItem to="/dashboard/kyc"           icon={IdCard}    label="KYC verification" />
-            <NavItem to="/dashboard/phone-verify"  icon={Phone}     label="Phone verify" />
+            {isEnabled('deployOrders') && (
+              <NavItem to="/dashboard/deploy-orders" icon={Receipt} label="Deploy orders" />
+            )}
+            {isEnabled('organizations') && (
+              <NavItem to="/dashboard/organizations" icon={Building2} label="Organizations" />
+            )}
+            {isEnabled('kyc') && (
+              <NavItem to="/dashboard/kyc"           icon={IdCard}    label="KYC verification" />
+            )}
+            {isEnabled('phoneVerify') && (
+              <NavItem to="/dashboard/phone-verify"  icon={Phone}     label="Phone verify" />
+            )}
             {isEnabled('team') && (
               <NavItem to="/dashboard/team" icon={Users} label="Team settings" />
             )}

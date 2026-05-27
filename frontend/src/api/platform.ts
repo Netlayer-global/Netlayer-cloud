@@ -17,4 +17,7 @@ export interface PlatformModulesResponse {
 export const platformAPI = {
   getModules: () =>
     api.get<{ data: PlatformModulesResponse }>('/platform/modules').then((r) => r.data.data),
+  // Round 24+: admin sidebar visibility config (admin-auth required by route mount)
+  getAdminModules: () =>
+    api.get<{ data: PlatformModulesResponse }>('/platform/admin-modules').then((r) => r.data.data),
 }
