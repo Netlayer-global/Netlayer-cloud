@@ -13,6 +13,8 @@ import { runSlaBreach } from './handlers/slaBreach.handler'
 import { runWebhookDelivery } from './handlers/webhookDelivery.handler'
 import { runAlertEvaluator } from './handlers/alertEvaluator.handler'
 import { runFloatingIpBilling } from './handlers/floatingIpBilling.handler'
+import { runAnalyticsSnapshot } from './handlers/analyticsSnapshot.handler'
+import { runBackupRunner } from './handlers/backupRunner.handler'
 
 /**
  * Job system architecture:
@@ -38,6 +40,8 @@ const SCHEDULES = {
   webhookDelivery:{ queue: 'webhook-delivery', cron: '*/30 * * * * *', handler: runWebhookDelivery, description: 'every 30s — drain pending webhook deliveries' },
   alertEvaluator: { queue: 'alert-evaluator',  cron: '*/5 * * * *',     handler: runAlertEvaluator,  description: 'every 5 min — evaluate user alert rules' },
   floatingIpBill: { queue: 'floating-ip-bill', cron: '5 0 * * *',       handler: runFloatingIpBilling, description: '00:05 daily — bill floating IPs' },
+  analytics:      { queue: 'analytics',        cron: '30 0 * * *',      handler: runAnalyticsSnapshot, description: '00:30 daily — revenue/MRR snapshot' },
+  backups:        { queue: 'backups',          cron: '*/30 * * * *',    handler: runBackupRunner,      description: 'every 30 min — run due backup schedules' },
   cleanup:        { queue: 'cleanup',          cron: '0 */6 * * *', handler: runCleanup,         description: 'every 6 hours' },
 }
 

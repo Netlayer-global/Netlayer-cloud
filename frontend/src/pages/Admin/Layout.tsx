@@ -27,6 +27,12 @@ import {
   FileMinus,
   Receipt,
   Building2,
+  TrendingUp,
+  Flag,
+  ShieldAlert as ShieldAlertIcon2,
+  Eye,
+  Megaphone as MegaphoneIcon,
+  IdCard,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '../../store/authStore'
@@ -53,7 +59,13 @@ const NAV: NavItem[] = [
   { to: '/admin/health',        icon: Activity,        label: 'Global health', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/admin/billing',       icon: CreditCard,      label: 'Billing',       roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
   { to: '/admin/plans',         icon: Tag,             label: 'Plans',         roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/admin/analytics',     icon: TrendingUp,      label: 'Analytics',     roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/admin/kyc-review',    icon: IdCard,          label: 'KYC review',    roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
+  { to: '/admin/compliance',    icon: ShieldAlertIcon2, label: 'Compliance',   roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/admin/org-settings',  icon: Building2,       label: 'Org settings',  roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/admin/feature-flags', icon: Flag,            label: 'Feature flags', roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/admin/in-app-messages', icon: MegaphoneIcon, label: 'In-app banners', roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/admin/masquerade',    icon: Eye,             label: 'Masquerade log', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/admin/credit-notes',  icon: FileMinus,       label: 'Credit notes',  roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
   { to: '/admin/gstr1',         icon: Receipt,         label: 'GSTR-1 export', roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },
   { to: '/admin/promos',        icon: Tag,             label: 'Promo codes',   roles: ['SUPER_ADMIN', 'ADMIN', 'BILLING'] },

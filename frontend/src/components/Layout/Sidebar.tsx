@@ -33,6 +33,9 @@ import {
   Radio,
   Disc3,
   Receipt,
+  Building2,
+  Phone,
+  IdCard,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../store/authStore'
@@ -244,6 +247,9 @@ export function Sidebar() {
               <NavItem to="/dashboard/billing" icon={CreditCard} label="Usage & billing" />
             )}
             <NavItem to="/dashboard/deploy-orders" icon={Receipt} label="Deploy orders" />
+            <NavItem to="/dashboard/organizations" icon={Building2} label="Organizations" />
+            <NavItem to="/dashboard/kyc"           icon={IdCard}    label="KYC verification" />
+            <NavItem to="/dashboard/phone-verify"  icon={Phone}     label="Phone verify" />
             {isEnabled('team') && (
               <NavItem to="/dashboard/team" icon={Users} label="Team settings" />
             )}

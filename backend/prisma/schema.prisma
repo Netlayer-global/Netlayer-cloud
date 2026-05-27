@@ -95,6 +95,280 @@ model User {
   creditNotes        CreditNote[]    @relation("UserCreditNotes")
   // Round 22 additions
   deployOrders       DeployOrder[]   @relation("UserDeployOrders")
+  // Round 24 additions — KYC, OTP, org/team, SSO, masquerade
+  kycStatus          String          @default("none")    // none | pending | approved | rejected
+  kycPanNumber       String?
+  kycPanFile         String?                             // file path or URL
+  kycAadhaarFile     String?
+  kycAddressFile     String?
+  kycRejectReason    String?
+  kycSubmittedAt     DateTime?
+  kycReviewedAt      DateTime?
+  kycReviewedBy      String?
+  spendingLimit      Float           @default(0)         // 0 = unlimited; per-month cap
+  twoFactorBackupCodes String?       // JSON array of hashed one-time codes
+  ssoProvider        String?                             // google | github | microsoft
+  ssoSubject         String?                             // provider-issued user id
+  phoneOtpCode       String?
+  phoneOtpExpiresAt  DateTime?
+  phoneOtpAttempts   Int             @default(0)
+  // Round 24 — org membership
+  ownedOrgs          Organization[]  @relation("OrgOwner")
+  orgMemberships     OrgMember[]
+  // Round 24 — masquerade audit
+  masqueradesAsTarget Masquerade[]   @relation("MasqueradeTarget")
+  masqueradesAsAdmin  Masquerade[]   @relation("MasqueradeAdmin")
+  userTags           UserTag[]
+  // Round 24 — server templates
+  serverTemplates    ServerTemplate[]
+  // Round 24 — backup schedules
+  backupSchedules    BackupSchedule[]
+  // Round 24 — feature flag overrides
+  featureFlagOverrides FeatureFlagOverride[]
+}
+
+// ─── ORGANIZATIONS / TEAMS (Round 24) ─────────────────────
+// A user can own multiple organizations and be a member of others.
+// Servers, invoices, etc. can be tied to an org instead of a single user.
+model Organization {
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique
+  ownerId      String
+  owner        User          @relation("OrgOwner", fields: [ownerId], references: [id])
+  billingEmail String?
+  gstNumber    String?
+  panNumber    String?
+  address      String?       // JSON: { line1, line2, city, state, country, pin }
+  status       String        @default("active")  // active | suspended
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  members      OrgMember[]
+  invites      OrgInvite[]
+}
+
+model OrgMember {
+  id             String       @id @default(cuid())
+  orgId          String
+  org            Organization @relation(fields: [orgId], references: [id])
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  role           String       @default("member")  // owner | admin | member | billing | viewer
+  joinedAt       DateTime     @default(now())
+
+  @@unique([orgId, userId])
+  @@index([userId])
+}
+
+model OrgInvite {
+  id          String       @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  email       String
+  role        String       @default("member")
+  token       String       @unique
+  invitedBy   String
+  acceptedAt  DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime     @default(now())
+
+  @@index([orgId, email])
+}
+
+// ─── MASQUERADE / LOGIN-AS-USER (Round 24) ────────────────
+// Records every time an admin assumed another user's identity for support.
+model Masquerade {
+  id          String   @id @default(cuid())
+  adminId     String
+  admin       User     @relation("MasqueradeAdmin", fields: [adminId], references: [id])
+  targetId    String
+  target      User     @relation("MasqueradeTarget", fields: [targetId], references: [id])
+  reason      String
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  ipAddress   String?
+
+  @@index([adminId, startedAt])
+  @@index([targetId, startedAt])
+}
+
+// ─── USER TAGS / NOTES TIMELINE (Round 24) ────────────────
+model UserTag {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  tag       String                                  // e.g. "vip", "fraud-watch", "early-adopter"
+  authorId  String?                                  // null for system-generated
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([tag])
+}
+
+// ─── SERVER TAGS + TEMPLATES (Round 24) ───────────────────
+model ServerTag {
+  id        String   @id @default(cuid())
+  serverId  String
+  server    Server   @relation(fields: [serverId], references: [id])
+  tag       String
+  createdAt DateTime @default(now())
+
+  @@unique([serverId, tag])
+  @@index([tag])
+}
+
+// User-created template from an existing server (snapshot + metadata).
+// Used to deploy new servers from a known-good golden image.
+model ServerTemplate {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  name        String
+  description String?
+  sourceServerId String?                              // server it was built from
+  sizeGB      Float    @default(0)
+  proxmoxRef  String?                                  // proxmox snapshot reference
+  status      String   @default("ready")              // building | ready | error
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ─── AUTOMATED BACKUP SCHEDULES (Round 24) ────────────────
+model BackupSchedule {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  serverId     String                                  // which server to back up
+  frequency    String                                  // daily | weekly | monthly
+  retentionDays Int     @default(7)
+  hour         Int      @default(2)                    // 0-23 UTC
+  dayOfWeek    Int?                                     // 0-6 for weekly
+  dayOfMonth   Int?                                     // 1-28 for monthly
+  isActive     Boolean  @default(true)
+  lastRunAt    DateTime?
+  nextRunAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([nextRunAt, isActive])
+}
+
+// ─── FEATURE FLAGS (Round 24) ─────────────────────────────
+// Per-feature kill-switch + per-user overrides for canary rollouts.
+model FeatureFlag {
+  id            String   @id @default(cuid())
+  key           String   @unique                       // e.g. "deploy-wizard-v2"
+  description   String?
+  defaultEnabled Boolean @default(false)
+  rolloutPercent Int     @default(0)                   // 0-100; gradual rollout
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  overrides     FeatureFlagOverride[]
+}
+
+model FeatureFlagOverride {
+  id        String      @id @default(cuid())
+  flagId    String
+  flag      FeatureFlag @relation(fields: [flagId], references: [id])
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  enabled   Boolean
+  createdAt DateTime    @default(now())
+
+  @@unique([flagId, userId])
+}
+
+// ─── REVENUE / MRR / CHURN ANALYTICS SNAPSHOTS (Round 24) ─
+// Daily snapshots aggregated by the analytics cron job.
+model RevenueSnapshot {
+  id              String   @id @default(cuid())
+  date            DateTime @unique                     // midnight UTC of the day
+  totalRevenue    Float    @default(0)                 // gross revenue collected that day
+  totalRefunds    Float    @default(0)
+  netRevenue      Float    @default(0)
+  newCustomers    Int      @default(0)
+  churnedCustomers Int     @default(0)
+  activeCustomers Int      @default(0)
+  mrr             Float    @default(0)                 // monthly recurring revenue (snapshot)
+  arr             Float    @default(0)                 // annualised
+  serversActive   Int      @default(0)
+  serversNew      Int      @default(0)
+  serversTerminated Int    @default(0)
+  createdAt       DateTime @default(now())
+
+  @@index([date])
+}
+
+// ─── COMPLIANCE INCIDENTS (Round 24, India CERT-In) ───────
+// Mandatory 6-hour reporting for security incidents.
+model ComplianceIncident {
+  id           String   @id @default(cuid())
+  type         String                                  // breach | ddos | malware | unauthorized | data-loss
+  severity     String   @default("medium")             // low | medium | high | critical
+  description  String
+  detectedAt   DateTime
+  reportedAt   DateTime?                                // when CERT-In was notified
+  reportedBy   String?
+  certInRef    String?                                  // CERT-In reference number
+  status       String   @default("open")               // open | reported | resolved | closed
+  affectedUsers String  @default("[]")                  // JSON array of user ids
+  remediation  String?                                  // free-text actions taken
+  closedAt     DateTime?
+  createdBy    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status, detectedAt])
+}
+
+// ─── ANNOUNCEMENT / IN-APP MESSAGE (Round 24) ─────────────
+// Operator-pushed banner that appears on customer dashboard top-bar.
+model InAppMessage {
+  id           String   @id @default(cuid())
+  title        String
+  body         String
+  type         String   @default("info")               // info | warning | error | success
+  cta          String?                                  // optional button label
+  ctaUrl       String?
+  startsAt     DateTime
+  endsAt       DateTime?
+  targetRoles  String   @default("[]")                  // JSON array; empty = everyone
+  isActive     Boolean  @default(true)
+  createdBy    String
+  createdAt    DateTime @default(now())
+
+  @@index([isActive, startsAt])
+}
+
+// ─── NPS SURVEYS (Round 24) ───────────────────────────────
+model NpsSurvey {
+  id          String   @id @default(cuid())
+  userId      String
+  score       Int                                       // 0-10
+  comment     String?
+  category    String?                                   // detractor | passive | promoter (auto-derived)
+  surveyedAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([score])
+}
+
+// ─── PUSH NOTIFICATION TOKENS (Round 24, mobile/PWA) ──────
+model PushSubscription {
+  id          String   @id @default(cuid())
+  userId      String
+  endpoint    String   @unique
+  keys        String                                    // JSON: { p256dh, auth }
+  platform    String   @default("web")                  // web | ios | android
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([userId, isActive])
 }
 
 model UserSession {
@@ -307,6 +581,8 @@ model Server {
   floatingIps    FloatingIp[]   @relation("ServerFloatingIps")
   alertRules     AlertRule[]    @relation("ServerAlertRules")
   primaryIp      IpAddress[]    @relation("ServerPrimaryIp")
+  // Round 24 additions
+  serverTags     ServerTag[]
 }
 
 model ServerMetric {

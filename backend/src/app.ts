@@ -44,6 +44,22 @@ import enterpriseAdminRoutes from './routes/enterprise.routes'
 import plansAdminRoutes from './routes/plansAdmin.routes'
 import orgSettingsRoutes from './routes/orgSettings.routes'
 import customerIsoRoutes from './routes/customerIso.routes'
+// Round 24
+import phoneOtpRoutes from './routes/phoneOtp.routes'
+import kycRoutes from './routes/kyc.routes'
+import organizationsRoutes from './routes/organizations.routes'
+import masqueradeRoutes from './routes/masquerade.routes'
+import serverTagsRoutes from './routes/serverTags.routes'
+import serverTemplatesRoutes from './routes/serverTemplates.routes'
+import backupSchedulesRoutes from './routes/backupSchedules.routes'
+import analyticsRoutes from './routes/analytics.routes'
+import featureFlagsRoutes from './routes/featureFlags.routes'
+import complianceRoutes from './routes/compliance.routes'
+import inAppMessagesRoutes from './routes/inAppMessages.routes'
+import npsRoutes from './routes/nps.routes'
+import pushRoutes from './routes/push.routes'
+import ssoRoutes from './routes/sso.routes'
+import twoFactorBackupRoutes from './routes/twoFactorBackup.routes'
 import abuseRoutes from './routes/abuse.routes'
 import storageRoutes, { storagePublicRouter } from './routes/storage.routes'
 import platformRoutes from './routes/platform.routes'
@@ -197,6 +213,25 @@ app.use('/api/admin',                authMiddleware, adminOnly, enterpriseAdminR
 // Round 23 admin
 app.use('/api/admin/plans',          authMiddleware, adminOnly, idempotency(), plansAdminRoutes)
 app.use('/api/admin/org-settings',   authMiddleware, adminOnly, orgSettingsRoutes)
+
+// Round 24 — customer-protected routes
+app.use('/api/auth/sso',             ssoRoutes)
+app.use('/api/phone-otp',            authMiddleware, idempotency(), phoneOtpRoutes)
+app.use('/api/2fa/backup',           authMiddleware, idempotency(), twoFactorBackupRoutes)
+app.use('/api/kyc',                  authMiddleware, idempotency(), kycRoutes)
+app.use('/api/organizations',        authMiddleware, idempotency(), organizationsRoutes)
+app.use('/api/server-tags',          authMiddleware, idempotency(), serverTagsRoutes)
+app.use('/api/server-templates',     authMiddleware, idempotency(), serverTemplatesRoutes)
+app.use('/api/backup-schedules',     authMiddleware, idempotency(), backupSchedulesRoutes)
+app.use('/api/feature-flags',        authMiddleware, featureFlagsRoutes)
+app.use('/api/in-app-messages',      authMiddleware, inAppMessagesRoutes)
+app.use('/api/nps',                  authMiddleware, idempotency(), npsRoutes)
+app.use('/api/push',                 authMiddleware, idempotency(), pushRoutes)
+
+// Round 24 — admin-protected routes
+app.use('/api/admin/masquerade',     authMiddleware, adminOnly, masqueradeRoutes)
+app.use('/api/admin/analytics',      authMiddleware, adminOnly, analyticsRoutes)
+app.use('/api/admin/compliance',     authMiddleware, adminOnly, complianceRoutes)
 
 // ─── 404 + error handler ────────────────────────────────────────────
 app.use((req, res) => {

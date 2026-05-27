@@ -438,6 +438,214 @@ export const customerIsoAPI = {
   delete: (id: string) => api.delete(`/iso/custom/${id}`),
 }
 
+// ─── ROUND 24: Phone OTP, KYC, Orgs, Tags, Templates, Backups, Analytics, Flags, Compliance, Messages, NPS, Push, SSO, 2FA backup ───
+export const phoneOtpAPI = {
+  send: (phone: string) => api.post<{ data: { sent: boolean; expiresAt: string; devOnlyCode?: string } }>('/phone-otp/send', { phone }),
+  verify: (code: string) => api.post<{ data: { verified: boolean; phone: string } }>('/phone-otp/verify', { code }),
+}
+
+export interface KycStatus {
+  kycStatus: 'none' | 'pending' | 'approved' | 'rejected'
+  kycPanNumber: string | null
+  kycRejectReason: string | null
+  kycSubmittedAt: string | null
+  kycReviewedAt: string | null
+}
+export const kycAPI = {
+  status: () => api.get<{ data: KycStatus }>('/kyc/status'),
+  submit: (formData: FormData, onProgress?: (pct: number) => void) =>
+    api.post('/kyc/submit', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (e) => { if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100)) },
+      timeout: 5 * 60 * 1000,
+    }),
+  // admin
+  adminList: () => api.get('/kyc/admin/list'),
+  adminApprove: (userId: string) => api.post(`/kyc/admin/${userId}/approve`),
+  adminReject: (userId: string, reason: string) => api.post(`/kyc/admin/${userId}/reject`, { reason }),
+}
+
+export interface Organization {
+  id: string
+  name: string
+  slug: string
+  ownerId: string
+  billingEmail: string | null
+  gstNumber: string | null
+  panNumber: string | null
+  address: string | null
+  status: string
+  createdAt: string
+  role?: string
+  myRole?: string
+  members?: any[]
+  invites?: any[]
+}
+export const organizationsAPI = {
+  list: () => api.get<{ data: Organization[] }>('/organizations'),
+  get: (id: string) => api.get<{ data: Organization }>(`/organizations/${id}`),
+  create: (data: { name: string; billingEmail?: string; gstNumber?: string; panNumber?: string }) =>
+    api.post<{ data: Organization }>('/organizations', data),
+  update: (id: string, data: Partial<Organization>) =>
+    api.patch<{ data: Organization }>(`/organizations/${id}`, data),
+  delete: (id: string) => api.delete(`/organizations/${id}`),
+  invite: (id: string, email: string, role: 'admin' | 'member' | 'billing' | 'viewer') =>
+    api.post(`/organizations/${id}/invites`, { email, role }),
+  acceptInvite: (token: string) => api.post(`/organizations/invites/${token}/accept`),
+  removeMember: (orgId: string, memberId: string) =>
+    api.delete(`/organizations/${orgId}/members/${memberId}`),
+  updateMemberRole: (orgId: string, memberId: string, role: string) =>
+    api.patch(`/organizations/${orgId}/members/${memberId}`, { role }),
+}
+
+export const masqueradeAPI = {
+  start: (userId: string, reason: string, durationMinutes = 30) =>
+    api.post(`/admin/masquerade/start/${userId}`, { reason, durationMinutes }),
+  stop: (masqueradeId: string) => api.post(`/admin/masquerade/stop/${masqueradeId}`),
+  history: () => api.get('/admin/masquerade/history'),
+  myHistory: () => api.get('/admin/masquerade/my-history'),
+}
+
+export const serverTagsAPI = {
+  list: (serverId: string) => api.get(`/server-tags/server/${serverId}`),
+  add: (serverId: string, tag: string) => api.post(`/server-tags/server/${serverId}`, { tag }),
+  remove: (serverId: string, tag: string) => api.delete(`/server-tags/server/${serverId}/${tag}`),
+  bulkPower: (data: { action: 'start' | 'stop' | 'restart'; serverIds?: string[]; tag?: string }) =>
+    api.post('/server-tags/bulk-power', data),
+  bulkDestroy: (data: { serverIds?: string[]; tag?: string; confirm: 'DELETE' }) =>
+    api.post('/server-tags/bulk-destroy', data),
+}
+
+export interface ServerTemplate {
+  id: string
+  name: string
+  description: string | null
+  sourceServerId: string | null
+  status: string
+  isPublic: boolean
+  createdAt: string
+}
+export const serverTemplatesAPI = {
+  list: () => api.get<{ data: ServerTemplate[] }>('/server-templates'),
+  create: (data: { name: string; description?: string; sourceServerId?: string }) =>
+    api.post<{ data: ServerTemplate }>('/server-templates', data),
+  delete: (id: string) => api.delete(`/server-templates/${id}`),
+}
+
+export interface BackupSchedule {
+  id: string
+  serverId: string
+  frequency: 'daily' | 'weekly' | 'monthly'
+  retentionDays: number
+  hour: number
+  dayOfWeek: number | null
+  dayOfMonth: number | null
+  isActive: boolean
+  lastRunAt: string | null
+  nextRunAt: string
+  createdAt: string
+}
+export const backupSchedulesAPI = {
+  list: () => api.get<{ data: BackupSchedule[] }>('/backup-schedules'),
+  create: (data: any) => api.post<{ data: BackupSchedule }>('/backup-schedules', data),
+  update: (id: string, data: any) => api.patch<{ data: BackupSchedule }>(`/backup-schedules/${id}`, data),
+  delete: (id: string) => api.delete(`/backup-schedules/${id}`),
+}
+
+export const analyticsAPI = {
+  revenue: (params?: { from?: string; to?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.from) q.append('from', params.from)
+    if (params?.to) q.append('to', params.to)
+    return api.get(`/admin/analytics/revenue${q.toString() ? `?${q}` : ''}`)
+  },
+  customers: () => api.get('/admin/analytics/customers'),
+  cohorts: () => api.get('/admin/analytics/cohorts'),
+  profitability: () => api.get('/admin/analytics/profitability'),
+}
+
+export const featureFlagsAPI = {
+  list: () => api.get('/feature-flags'),
+  create: (data: { key: string; description?: string; defaultEnabled: boolean; rolloutPercent: number }) =>
+    api.post('/feature-flags', data),
+  update: (id: string, data: any) => api.patch(`/feature-flags/${id}`, data),
+  delete: (id: string) => api.delete(`/feature-flags/${id}`),
+  setOverride: (flagId: string, userId: string, enabled: boolean) =>
+    api.post(`/feature-flags/${flagId}/overrides`, { userId, enabled }),
+  removeOverride: (flagId: string, userId: string) =>
+    api.delete(`/feature-flags/${flagId}/overrides/${userId}`),
+  resolved: () => api.get<{ data: Record<string, boolean> }>('/feature-flags/resolved'),
+}
+
+export interface ComplianceIncident {
+  id: string
+  type: string
+  severity: string
+  description: string
+  detectedAt: string
+  reportedAt: string | null
+  certInRef: string | null
+  status: string
+  remediation: string | null
+  createdAt: string
+}
+export const complianceAPI = {
+  incidents: () => api.get<{ data: ComplianceIncident[] }>('/admin/compliance/incidents'),
+  getIncident: (id: string) => api.get(`/admin/compliance/incidents/${id}`),
+  createIncident: (data: any) => api.post<{ data: ComplianceIncident }>('/admin/compliance/incidents', data),
+  updateIncident: (id: string, data: any) => api.patch(`/admin/compliance/incidents/${id}`, data),
+  sla: () => api.get('/admin/compliance/sla'),
+}
+
+export interface InAppMessage {
+  id: string
+  title: string
+  body: string
+  type: 'info' | 'warning' | 'error' | 'success'
+  cta: string | null
+  ctaUrl: string | null
+  startsAt: string
+  endsAt: string | null
+  isActive: boolean
+  createdAt: string
+}
+export const inAppMessagesAPI = {
+  active: () => api.get<{ data: InAppMessage[] }>('/in-app-messages/active'),
+  list: () => api.get<{ data: InAppMessage[] }>('/in-app-messages'),
+  create: (data: any) => api.post<{ data: InAppMessage }>('/in-app-messages', data),
+  update: (id: string, data: any) => api.patch(`/in-app-messages/${id}`, data),
+  delete: (id: string) => api.delete(`/in-app-messages/${id}`),
+}
+
+export const npsAPI = {
+  eligibility: () => api.get<{ data: { eligible: boolean } }>('/nps/eligibility'),
+  submit: (score: number, comment?: string) => api.post('/nps/submit', { score, comment }),
+  adminSummary: () => api.get('/nps/admin/summary'),
+}
+
+export const pushAPI = {
+  vapidKey: () => api.get<{ data: { key: string } }>('/push/vapid-public-key'),
+  subscribe: (endpoint: string, keys: { p256dh: string; auth: string }, platform = 'web') =>
+    api.post('/push/subscribe', { endpoint, keys, platform }),
+  unsubscribe: (endpoint: string) => api.delete('/push/subscribe', { data: { endpoint } } as any),
+  list: () => api.get('/push/subscriptions'),
+}
+
+export const ssoAPI = {
+  google: (profile: { email: string; firstName?: string; lastName?: string; subject: string }) =>
+    api.post('/auth/sso/google', { profile }),
+  github: (profile: { email: string; firstName?: string; lastName?: string; subject: string }) =>
+    api.post('/auth/sso/github', { profile }),
+  microsoft: (profile: { email: string; firstName?: string; lastName?: string; subject: string }) =>
+    api.post('/auth/sso/microsoft', { profile }),
+}
+
+export const twoFactorBackupAPI = {
+  status: () => api.get<{ data: { twoFactorEnabled: boolean; backupCodesRemaining: number } }>('/2fa/backup/status'),
+  regenerate: () => api.post<{ data: { codes: string[] } }>('/2fa/backup/regenerate'),
+  consume: (code: string) => api.post<{ data: { ok: boolean; remaining: number } }>('/2fa/backup/consume', { code }),
+}
+
 // ─── BILLING ─────────────────────────────────────────────────
 export const billingAPI = {
   getInvoices: () => api.get<{ data: Invoice[] }>('/billing/invoices'),

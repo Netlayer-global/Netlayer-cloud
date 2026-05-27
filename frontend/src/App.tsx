@@ -89,6 +89,17 @@ import OrgSettings from './pages/Admin/OrgSettings'
 import CustomIsos from './pages/CustomIsos'
 // Round 23 — pay-per-deploy orders list
 import DeployOrders from './pages/DeployOrders'
+// Round 24 — auth/identity, teams, compliance pages
+import PhoneVerify from './pages/PhoneVerify'
+import Kyc from './pages/Kyc'
+import Organizations from './pages/Organizations'
+import OrganizationDetail from './pages/OrganizationDetail'
+import AnalyticsAdmin from './pages/Admin/Analytics'
+import FeatureFlagsAdmin from './pages/Admin/FeatureFlags'
+import ComplianceAdmin from './pages/Admin/Compliance'
+import KycReviewAdmin from './pages/Admin/KycReview'
+import MasqueradeAdmin from './pages/Admin/Masquerade'
+import InAppMessagesAdmin from './pages/Admin/InAppMessages'
 
 import Referrals from './pages/Referrals'
 import Support from './pages/Support'
@@ -195,6 +206,11 @@ export default function App() {
             <Route path="snapshots"      element={<ModuleGuard module="snapshots"><Snapshots /></ModuleGuard>} />
             <Route path="custom-isos"    element={<CustomIsos />} />
             <Route path="deploy-orders"  element={<DeployOrders />} />
+            {/* Round 24 customer routes */}
+            <Route path="phone-verify"           element={<PhoneVerify />} />
+            <Route path="kyc"                    element={<Kyc />} />
+            <Route path="organizations"          element={<Organizations />} />
+            <Route path="organizations/:id"      element={<OrganizationDetail />} />
             <Route path="network"   element={<Placeholder title="Network"         description="Private networks, floating IPs, firewalls." icon={<Network size={28} />} />} />
             <Route path="gpu"       element={<ModuleGuard module="gpu"><Placeholder title="GPU instances"   description="On-demand GPUs for AI / ML workloads."     icon={<Monitor size={28} />} /></ModuleGuard>} />
             <Route path="team"      element={<ModuleGuard module="team"><Placeholder title="Team settings"   description="Invite teammates and manage roles."        icon={<Users size={28} />} /></ModuleGuard>} />
@@ -244,6 +260,13 @@ export default function App() {
             {/* Round 23 admin */}
             <Route path="plans"          element={<PlansAdmin />} />
             <Route path="org-settings"   element={<OrgSettings />} />
+            {/* Round 24 admin */}
+            <Route path="analytics"        element={<AnalyticsAdmin />} />
+            <Route path="feature-flags"    element={<FeatureFlagsAdmin />} />
+            <Route path="compliance"       element={<ComplianceAdmin />} />
+            <Route path="kyc-review"       element={<KycReviewAdmin />} />
+            <Route path="masquerade"       element={<MasqueradeAdmin />} />
+            <Route path="in-app-messages"  element={<InAppMessagesAdmin /> } />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
