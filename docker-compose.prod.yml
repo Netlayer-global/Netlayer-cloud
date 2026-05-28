@@ -124,6 +124,19 @@ services:
     expose:
       - "80"
 
+  website:
+    build:
+      context: ./website
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+    container_name: netlayer-website
+    <<: *restart_policy
+    depends_on:
+      - backend
+    expose:
+      - "80"
+
   caddy:
     image: caddy:2-alpine
     container_name: netlayer-caddy
@@ -135,6 +148,7 @@ services:
       CADDY_DOMAIN: ${CADDY_DOMAIN:-netlayer.com}
     depends_on:
       - frontend
+      - website
       - backend
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro

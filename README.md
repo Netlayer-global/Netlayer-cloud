@@ -59,13 +59,19 @@ npx prisma migrate dev
 npx prisma db seed
 npm run dev
 
-# Frontend (new terminal)
+# Dashboard frontend (new terminal) — port 5173
 cd ../frontend
+npm install
+npm run dev
+
+# Public marketing website (new terminal) — port 5174
+cd ../website
 npm install
 npm run dev
 ```
 
-Open http://localhost:5173 — login with `admin@netlayer.com` / `Admin@123456`.
+Open http://localhost:5174 for the marketing site, http://localhost:5173/login to sign in.
+Default admin: `admin@netlayer.com` / `Admin@123456`.
 
 ## Production deployment
 
@@ -107,12 +113,15 @@ backend/                 — Express API + Prisma schema + jobs
   src/routes/            — REST endpoints (incl. plans CRUD, org settings, deploy orders)
   src/services/          — Business logic (deployOrder, invoiceNumber, server, ...)
   prisma/                — Schema + migrations + seed
-  tests/                 — Vitest suites (53 tests covering Round 23)
-frontend/                — React SPA + admin panel + landing
-  src/pages/             — Top-level routes (Landing, DeployServer, Admin/*)
-  src/pages/Admin/       — Operator UI (Plans, OrgSettings, Enterprise, ...)
-  src/components/landing-v3/ — Modular landing page sections
-  src/api/endpoints.ts   — Typed API client
+  tests/                 — Vitest suites (77 tests covering Round 23-24)
+frontend/                — React SPA: customer dashboard + admin panel + auth pages
+  src/pages/             — Authenticated routes (Home, Servers, Deploy, Settings)
+  src/pages/Admin/       — Operator UI (Plans, Analytics, Compliance, ...)
+  src/api/endpoints.ts   — Typed API client with JWT refresh
+website/                 — Public marketing site (separate Vite app)
+  src/pages/             — Landing + auth shell
+  src/pages/public/      — Pricing, docs, blog, status, legal pages
+  src/components/landing-v3/ — 14 modular landing-page sections
 agent/                   — Go agent that runs on each Proxmox host
 cli/                     — Node.js CLI (`nl ...`)
 terraform-provider-netlayer/ — Terraform provider
@@ -124,7 +133,7 @@ scripts/                 — deploy.sh, backup.sh, helpers
 docs/                    — DEPLOY.md + PRODUCTION.md + architecture docs
 docker-compose.yml       — local dev infra (Postgres + Redis + MinIO)
 docker-compose.prod.yml  — single-host production stack
-Caddyfile                — production reverse proxy config
+Caddyfile                — production reverse proxy config (splits website + dashboard)
 ```
 
 ## Documentation

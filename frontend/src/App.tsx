@@ -6,26 +6,10 @@ import { Cpu, Hexagon, Database, Network, Monitor, Users, Folder } from 'lucide-
 import { DashboardLayout } from './components/Layout'
 import { ProtectedRoute, AdminRoute, PublicOnly } from './components/ProtectedRoute'
 
-import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
-
-import PricingPage from './pages/public/PricingPage'
-import NetworkPage from './pages/public/NetworkPage'
-import StatusPage from './pages/public/StatusPage'
-import DocsPage from './pages/public/DocsPage'
-import FeaturesPage from './pages/public/FeaturesPage'
-import KubernetesPage from './pages/public/KubernetesPage'
-import AbuseReportPage from './pages/public/AbuseReportPage'
-import AboutPage from './pages/public/AboutPage'
-import CareersPage from './pages/public/CareersPage'
-import PrivacyPage from './pages/public/PrivacyPage'
-import TermsPage from './pages/public/TermsPage'
-import BlogPage from './pages/public/BlogPage'
-import BlogPostPage from './pages/public/BlogPostPage'
-import PublicMarketplacePage from './pages/public/MarketplacePage'
 
 import Home from './pages/Home'
 import Servers from './pages/Servers'
@@ -44,7 +28,6 @@ import Marketplace from './pages/Marketplace'
 import Monitoring from './pages/Monitoring'
 import Activity from './pages/Activity'
 import Placeholder from './pages/Placeholder'
-// Round 18 dashboard pages
 import FloatingIPs from './pages/FloatingIPs'
 import Alerts from './pages/Alerts'
 import Snapshots from './pages/Snapshots'
@@ -67,14 +50,12 @@ import AdminSettings from './pages/Admin/Settings'
 import AdminWorkflows from './pages/Admin/Workflows'
 import AdminStatusPage from './pages/Admin/StatusManagement'
 import AdminAbuse from './pages/Admin/Abuse'
-// Round 18 admin pages
 import IpPoolsAdmin from './pages/Admin/IpPools'
 import PromoAdmin from './pages/Admin/PromoAdmin'
 import CapacityPlanning from './pages/Admin/CapacityPlanning'
 import GlobalHealth from './pages/Admin/GlobalHealth'
 import Communications from './pages/Admin/Communications'
 import IsoLibrary from './pages/Admin/IsoLibrary'
-// Round 20 admin pages
 import NetworksAdmin from './pages/Admin/NetworksAdmin'
 import StorageAdmin from './pages/Admin/StorageAdmin'
 import DnsAdmin from './pages/Admin/DnsAdmin'
@@ -82,14 +63,10 @@ import MarketplaceAdmin from './pages/Admin/MarketplaceAdmin'
 import CreditNotesAdmin from './pages/Admin/CreditNotes'
 import Gstr1Export from './pages/Admin/Gstr1Export'
 import EnterpriseAdmin from './pages/Admin/Enterprise'
-// Round 23 admin pages
 import PlansAdmin from './pages/Admin/PlansAdmin'
 import OrgSettings from './pages/Admin/OrgSettings'
-// Round 23 customer page
 import CustomIsos from './pages/CustomIsos'
-// Round 23 — pay-per-deploy orders list
 import DeployOrders from './pages/DeployOrders'
-// Round 24 — auth/identity, teams, compliance pages
 import PhoneVerify from './pages/PhoneVerify'
 import Kyc from './pages/Kyc'
 import Organizations from './pages/Organizations'
@@ -107,11 +84,35 @@ import ApiKeys from './pages/ApiKeys'
 
 import { ModuleGuard } from './components/ModuleGuard'
 
+/**
+ * Dashboard SPA — auth + customer dashboard + admin panel.
+ *
+ * The public marketing site (landing, pricing, docs, blog, status,
+ * legal pages) lives in a separate Vite app at `website/`. In production
+ * Caddy splits paths between the two; in development run `npm run dev`
+ * in both folders (dashboard on 5173, website on 5174).
+ */
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 30_000 },
   },
 })
+
+// In development, hitting `/` on the dashboard is more useful as a redirect
+// to the running website than as a 404.
+const WEBSITE_URL =
+  import.meta.env.VITE_WEBSITE_URL || 'http://localhost:5174'
+
+function RootRedirect() {
+  // If a customer types the dashboard origin's root, send them to the
+  // marketing site. Returning users with a valid session land on /login
+  // which auto-forwards to /dashboard via PublicOnly + ProtectedRoute.
+  if (typeof window !== 'undefined') {
+    window.location.replace(WEBSITE_URL)
+  }
+  return null
+}
 
 export default function App() {
   return (
@@ -125,22 +126,9 @@ export default function App() {
           }}
         />
         <Routes>
-          {/* Public */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/network" element={<NetworkPage />} />
-          <Route path="/status" element={<StatusPage />} />
-          <Route path="/docs" element={<DocsPage />} />
-          <Route path="/features" element={<FeaturesPage />} />
-          <Route path="/kubernetes" element={<KubernetesPage />} />
-          <Route path="/abuse-report" element={<AbuseReportPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/careers" element={<CareersPage />} />
-          <Route path="/blog" element={<BlogPage />} />
-          <Route path="/blog/:slug" element={<BlogPostPage />} />
-          <Route path="/marketplace" element={<PublicMarketplacePage />} />
-          <Route path="/legal/privacy" element={<PrivacyPage />} />
-          <Route path="/legal/terms" element={<TermsPage />} />
+          {/* Public auth pages — kept on the dashboard origin so cookies
+              work seamlessly. The marketing site links here for sign-in. */}
+          <Route path="/" element={<RootRedirect />} />
           <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
           <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -200,13 +188,11 @@ export default function App() {
             <Route path="referrals"      element={<ModuleGuard module="referrals"><Referrals /></ModuleGuard>} />
             <Route path="support"        element={<ModuleGuard module="support"><Support /></ModuleGuard>} />
             <Route path="support/:id"    element={<ModuleGuard module="support"><Support /></ModuleGuard>} />
-            {/* Round 18 dashboard routes */}
             <Route path="floating-ips"   element={<ModuleGuard module="floatingIps"><FloatingIPs /></ModuleGuard>} />
             <Route path="alerts"         element={<ModuleGuard module="alerts"><Alerts /></ModuleGuard>} />
             <Route path="snapshots"      element={<ModuleGuard module="snapshots"><Snapshots /></ModuleGuard>} />
             <Route path="custom-isos"    element={<CustomIsos />} />
             <Route path="deploy-orders"  element={<DeployOrders />} />
-            {/* Round 24 customer routes */}
             <Route path="phone-verify"           element={<PhoneVerify />} />
             <Route path="kyc"                    element={<Kyc />} />
             <Route path="organizations"          element={<Organizations />} />
@@ -242,14 +228,12 @@ export default function App() {
             <Route path="status"        element={<AdminStatusPage />} />
             <Route path="abuse"         element={<AdminAbuse />} />
             <Route path="settings"      element={<AdminSettings />} />
-            {/* Round 18 admin pages */}
             <Route path="ip-pools"       element={<IpPoolsAdmin />} />
             <Route path="iso"            element={<IsoLibrary />} />
             <Route path="promos"         element={<PromoAdmin />} />
             <Route path="capacity"       element={<CapacityPlanning />} />
             <Route path="health"         element={<GlobalHealth />} />
             <Route path="communications" element={<Communications />} />
-            {/* Round 20 admin */}
             <Route path="networks"       element={<NetworksAdmin />} />
             <Route path="storage"        element={<StorageAdmin />} />
             <Route path="dns"            element={<DnsAdmin />} />
@@ -257,10 +241,8 @@ export default function App() {
             <Route path="credit-notes"   element={<CreditNotesAdmin />} />
             <Route path="gstr1"          element={<Gstr1Export />} />
             <Route path="enterprise"     element={<EnterpriseAdmin />} />
-            {/* Round 23 admin */}
             <Route path="plans"          element={<PlansAdmin />} />
             <Route path="org-settings"   element={<OrgSettings />} />
-            {/* Round 24 admin */}
             <Route path="analytics"        element={<AnalyticsAdmin />} />
             <Route path="feature-flags"    element={<FeatureFlagsAdmin />} />
             <Route path="compliance"       element={<ComplianceAdmin />} />
@@ -269,7 +251,8 @@ export default function App() {
             <Route path="in-app-messages"  element={<InAppMessagesAdmin /> } />
           </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Anything else — bounce to website */}
+          <Route path="*" element={<RootRedirect />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

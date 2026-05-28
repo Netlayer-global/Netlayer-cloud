@@ -69,9 +69,41 @@
     reverse_proxy backend:5000
   }
 
-  # Everything else → frontend (SPA)
-  handle {
+  # Customer + admin dashboard SPA — auth pages and authenticated app
+  handle /login {
     reverse_proxy frontend:80
+  }
+  handle /register {
+    reverse_proxy frontend:80
+  }
+  handle /forgot-password {
+    reverse_proxy frontend:80
+  }
+  handle /reset-password {
+    reverse_proxy frontend:80
+  }
+  handle /console {
+    reverse_proxy frontend:80
+  }
+  handle /console/* {
+    reverse_proxy frontend:80
+  }
+  handle /dashboard {
+    reverse_proxy frontend:80
+  }
+  handle /dashboard/* {
+    reverse_proxy frontend:80
+  }
+  handle /admin {
+    reverse_proxy frontend:80
+  }
+  handle /admin/* {
+    reverse_proxy frontend:80
+  }
+
+  # Public marketing site — landing, pricing, docs, blog, status, legal
+  handle {
+    reverse_proxy website:80
   }
 
   # Per-IP rate limit (basic abuse protection — replace with Cloudflare for
