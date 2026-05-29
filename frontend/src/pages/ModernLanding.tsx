@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiArrowRight, FiCheck, FiPhone, FiMail, FiMapPin } from 'react-icons/fi';
@@ -309,7 +311,7 @@ export default function ModernLanding() {
                       </div>
                     ))}
                   </div>
-                  </NeonCard>
+                    </NeonCard>
                 </motion.div>
               );
             })}
