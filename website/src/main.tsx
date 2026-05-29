@@ -6,6 +6,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './styles/tokens.css'
 import './styles/globals.css'
 
+import { applyInitialTheme } from './hooks/useTheme'
+import { ThemeToggle } from './components/ThemeToggle'
+
 import Landing from './pages/Landing'
 import PricingPage from './pages/public/PricingPage'
 import NetworkPage from './pages/public/NetworkPage'
@@ -37,6 +40,10 @@ import MarketplacePage from './pages/public/MarketplacePage'
  *   /admin/*     → dashboard
  */
 
+// Set the data-theme attribute before React mounts so first paint
+// already matches the user's theme — no flash.
+applyInitialTheme()
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 60_000 },
@@ -47,6 +54,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <ThemeToggle />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/pricing" element={<PricingPage />} />

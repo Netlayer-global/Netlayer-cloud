@@ -1,3 +1,9 @@
+/*
+ * Design tokens — dark is the default.
+ * A `[data-theme="light"]` block at the bottom overrides the same variable
+ * names so every component automatically supports both themes without any
+ * conditional CSS.
+ */
 :root {
   /* ── Backgrounds — layered depth system ── */
   --nl-0: #080909;
@@ -27,6 +33,8 @@
   --brand-h: #b3d82e;
   --brand-d: rgba(200, 241, 53, .08);
   --brand-b: rgba(200, 241, 53, .2);
+  /* Foreground that always sits on the lime fill, regardless of theme */
+  --brand-fg: #0d0e0d;
 
   /* ── Semantic ── */
   --c-blue:    #3d8bff;
@@ -58,19 +66,16 @@
   --shadow-brand: 0 0 24px rgba(200, 241, 53, .15);
   --shadow-blue:  0 0 24px rgba(61, 139, 255, .15);
 
+  /* ── Surface helpers used by hero/cta backgrounds.
+       In dark these are pure black, in light they switch to a soft
+       off-white so radial gradients keep their punch. ── */
+  --surface-canvas: #0d0e0d;
+  --surface-glass:  rgba(13, 14, 13, .8);
+
   /* ── Spacing ── */
-  --sp-1: 4px;
-  --sp-2: 8px;
-  --sp-3: 12px;
-  --sp-4: 16px;
-  --sp-5: 20px;
-  --sp-6: 24px;
-  --sp-8: 32px;
-  --sp-10:40px;
-  --sp-12:48px;
-  --sp-16:64px;
-  --sp-20:80px;
-  --sp-24:96px;
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px; --sp-5: 20px;
+  --sp-6: 24px; --sp-8: 32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+  --sp-20:80px; --sp-24:96px;
 
   /* ── Typography ── */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
@@ -83,8 +88,64 @@
   --ease-spring: 400ms cubic-bezier(.34, 1.56, .64, 1);
 }
 
-/* Global resets — landing v3 only. The dashboard uses its own existing
-   resets in globals.css and is unaffected. */
+/*
+ * Light theme — applied when <html data-theme="light"> is set.
+ *
+ * Mapping principles:
+ *   - --nl-0..8 walks light grey from white → soft cool grey
+ *   - --t-hi → near-black, --t-med → cool grey, --t-low → mid grey
+ *   - --brand stays lime (a touch deeper for AA contrast on white)
+ *   - --shadow-* are softer + warmer for light surfaces
+ */
+[data-theme='light'] {
+  --nl-0: #ffffff;
+  --nl-1: #fafbfa;
+  --nl-2: #f4f6f3;
+  --nl-3: #eef1ec;
+  --nl-4: #e6eae3;
+  --nl-5: #dde2da;
+  --nl-6: #d2d8cf;
+  --nl-7: #c5cdc1;
+  --nl-8: #b6c0b1;
+
+  --b-subtle:  #ecefe9;
+  --b-default: #dee3da;
+  --b-strong:  #c5cdc1;
+  --b-focus:   rgba(115, 168, 18, .55);
+
+  --t-hi:  #0c1109;
+  --t-med: #495247;
+  --t-low: #6b766a;
+  --t-off: #95a094;
+
+  --brand:   #84cc16;       /* deeper lime keeps AA on white */
+  --brand-h: #6fae12;
+  --brand-d: rgba(132, 204, 22, .10);
+  --brand-b: rgba(132, 204, 22, .35);
+  --brand-fg: #ffffff;
+
+  --c-blue:    #2563eb;     --c-blue-d:  rgba(37, 99, 235, .10);
+  --c-purple:  #6d4cf2;     --c-purple-d:rgba(109, 76, 242, .10);
+  --c-green:   #16a34a;     --c-green-d: rgba(22, 163, 74, .10);
+  --c-red:     #dc2626;     --c-red-d:   rgba(220, 38, 38, .10);
+  --c-amber:   #d97706;     --c-amber-d: rgba(217, 119, 6, .10);
+  --c-cyan:    #0891b2;     --c-cyan-d:  rgba(8, 145, 178, .10);
+
+  --shadow-sm:    0 1px 2px rgba(15, 23, 11, .06);
+  --shadow-md:    0 6px 20px rgba(15, 23, 11, .08);
+  --shadow-lg:    0 18px 40px -12px rgba(15, 23, 11, .15);
+  --shadow-brand: 0 0 0 1px rgba(132, 204, 22, .25), 0 8px 28px rgba(132, 204, 22, .15);
+  --shadow-blue:  0 0 0 1px rgba(37, 99, 235, .25), 0 8px 28px rgba(37, 99, 235, .15);
+
+  --surface-canvas: #ffffff;
+  --surface-glass:  rgba(255, 255, 255, .8);
+}
+
+/* Smooth crossfade when theme switches */
+html { transition: background-color var(--ease-med), color var(--ease-med); }
+html, body { background: var(--nl-0); color: var(--t-hi); }
+
+/* Global resets — landing v3 only. */
 .nl-v3, .nl-v3 *, .nl-v3 *::before, .nl-v3 *::after {
   box-sizing: border-box;
 }
@@ -98,6 +159,7 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
+  transition: background-color var(--ease-med), color var(--ease-med);
 }
 
 .nl-v3 ::selection { background: var(--brand-d); color: var(--brand); }
@@ -113,19 +175,16 @@
   background: var(--nl-2);
   border: 1px solid var(--b-default);
   border-radius: var(--r-lg);
+  transition: background var(--ease-med), border-color var(--ease-med);
 }
-.nl-card-hover {
-  transition: border-color var(--ease-med), background var(--ease-med);
-}
-.nl-card-hover:hover {
-  border-color: var(--b-strong);
-  background: var(--nl-3);
-}
+.nl-card-hover { transition: border-color var(--ease-med), background var(--ease-med); }
+.nl-card-hover:hover { border-color: var(--b-strong); background: var(--nl-3); }
 
 .nl-glass {
-  background: rgba(13, 14, 13, .8);
+  background: var(--surface-glass);
   backdrop-filter: blur(12px) saturate(150%);
   -webkit-backdrop-filter: blur(12px) saturate(150%);
+  transition: background var(--ease-med);
 }
 
 .noise-overlay::before {
@@ -137,11 +196,9 @@
   z-index: 0;
 }
 
-.gradient-brand {
-  background: linear-gradient(135deg, var(--brand) 0%, #a8e620 100%);
-}
+.gradient-brand { background: linear-gradient(135deg, var(--brand) 0%, var(--brand-h) 100%); }
 .gradient-text-brand {
-  background: linear-gradient(135deg, var(--brand), #a8e620);
+  background: linear-gradient(135deg, var(--brand), var(--brand-h));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -174,7 +231,7 @@
   font-size: 14px;
   font-weight: 600;
   letter-spacing: -.01em;
-  color: var(--nl-0);
+  color: var(--brand-fg);
   background: var(--brand);
   border: 1px solid var(--brand);
   box-shadow: var(--shadow-brand);
@@ -217,3 +274,33 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+ * Light-mode overrides for Tailwind utility classes that the rewritten
+ * landing sections (PR #21) hard-code against the dark theme. Without
+ * these, classes like `text-white` and `placeholder:text-white/40` would
+ * paint white-on-white in light mode.
+ *
+ * Scoped to `.nl-v3` so the dashboard's own white-on-dark utilities are
+ * untouched.
+ */
+[data-theme='light'] .nl-v3 .text-white                  { color: var(--t-hi) !important; }
+[data-theme='light'] .nl-v3 .text-white\/90              { color: var(--t-hi) !important; }
+[data-theme='light'] .nl-v3 .text-white\/80              { color: var(--t-hi) !important; }
+[data-theme='light'] .nl-v3 .text-white\/70              { color: var(--t-med) !important; }
+[data-theme='light'] .nl-v3 .text-white\/60              { color: var(--t-med) !important; }
+[data-theme='light'] .nl-v3 .text-white\/55              { color: var(--t-low) !important; }
+[data-theme='light'] .nl-v3 .text-white\/50              { color: var(--t-low) !important; }
+[data-theme='light'] .nl-v3 .text-white\/45              { color: var(--t-low) !important; }
+[data-theme='light'] .nl-v3 .text-white\/40              { color: var(--t-low) !important; }
+[data-theme='light'] .nl-v3 .text-white\/35              { color: var(--t-off) !important; }
+[data-theme='light'] .nl-v3 .text-white\/25              { color: var(--t-off) !important; }
+[data-theme='light'] .nl-v3 .text-white\/20              { color: var(--t-off) !important; }
+[data-theme='light'] .nl-v3 .placeholder\:text-white\/40::placeholder,
+[data-theme='light'] .nl-v3 .placeholder\:text-white\/35::placeholder,
+[data-theme='light'] .nl-v3 .placeholder\:text-white\/45::placeholder { color: var(--t-low) !important; }
+
+/* Dot-grid colors that flip with theme.
+ * Components reference `var(--grid-line)` instead of hard-coded white. */
+:root              { --grid-line: rgba(255, 255, 255, 0.7); --input-bg: rgba(255, 255, 255, 0.04); }
+[data-theme='light'] { --grid-line: rgba(15,  23, 11, 0.18); --input-bg: rgba(15, 23, 11, 0.03); }

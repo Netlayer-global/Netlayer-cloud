@@ -237,7 +237,7 @@ export function HeroSection() {
         className="pointer-events-none absolute inset-0 opacity-[0.05]"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px)',
+            'linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px)',
           backgroundSize: '46px 46px',
           maskImage: 'radial-gradient(ellipse 75% 60% at 50% 30%, black 0%, transparent 75%)',
           WebkitMaskImage: 'radial-gradient(ellipse 75% 60% at 50% 30%, black 0%, transparent 75%)',
@@ -295,14 +295,14 @@ export function HeroSection() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
                 className="h-12 flex-1 rounded-xl px-4 text-[14px] text-white outline-none transition-colors placeholder:text-white/40"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--b-strong)' }}
+                style={{ background: 'var(--input-bg)', border: '1px solid var(--b-strong)' }}
                 onFocus={(e) => (e.currentTarget.style.borderColor = BRAND)}
                 onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--b-strong)')}
               />
               <button
                 type="submit"
                 className="group inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-6 text-[14.5px] font-semibold transition-all hover:-translate-y-0.5"
-                style={{ background: BRAND, color: '#0d0e0d', boxShadow: 'var(--shadow-brand)' }}
+                style={{ background: BRAND, color: 'var(--brand-fg)', boxShadow: 'var(--shadow-brand)' }}
               >
                 Start free
                 <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />

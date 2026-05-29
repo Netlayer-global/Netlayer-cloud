@@ -44,7 +44,7 @@ export function CTASection() {
           className="pointer-events-none absolute inset-0 opacity-[0.06]"
           style={{
             backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)',
+              'linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px)',
             backgroundSize: '40px 40px',
             maskImage: 'radial-gradient(ellipse 60% 60% at 50% 0%, black, transparent 70%)',
             WebkitMaskImage: 'radial-gradient(ellipse 60% 60% at 50% 0%, black, transparent 70%)',
@@ -75,7 +75,7 @@ export function CTASection() {
             <a
               href={`${DASHBOARD_URL}/register`}
               className="group inline-flex h-12 items-center gap-2 rounded-xl px-7 text-[15px] font-semibold transition-all hover:-translate-y-0.5"
-              style={{ background: BRAND, color: '#0d0e0d', boxShadow: 'var(--shadow-brand)' }}
+              style={{ background: BRAND, color: 'var(--brand-fg)', boxShadow: 'var(--shadow-brand)' }}
             >
               Create free account
               <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
@@ -83,7 +83,7 @@ export function CTASection() {
             <a
               href="mailto:sales@netlayer.com"
               className="inline-flex h-12 items-center rounded-xl px-7 text-[15px] font-medium text-white transition-colors"
-              style={{ border: '1px solid var(--b-strong)', background: 'rgba(255,255,255,0.02)' }}
+              style={{ border: '1px solid var(--b-strong)', background: 'var(--input-bg)' }}
               onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-b)')}
               onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--b-strong)')}
             >

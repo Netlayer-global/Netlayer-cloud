@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Plus, ChevronRight } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { NotificationBell } from '../NotificationBell'
+import { ThemeToggle } from '../ThemeToggle'
 import { useAuthStore } from '../../store/authStore'
 
 const labels: Record<string, string> = {
@@ -57,6 +58,7 @@ export function Topbar() {
         )}
         <Button variant="secondary" size="sm">SSH key</Button>
         <Button variant="secondary" size="sm">Invite</Button>
+        <ThemeToggle />
         <NotificationBell />
         <Link to="/dashboard/deploy">
           <Button size="sm">

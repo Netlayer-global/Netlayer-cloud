@@ -129,7 +129,7 @@ function Newsletter() {
           <button
             type="submit"
             className="inline-flex h-11 w-11 items-center justify-center rounded-lg transition-transform hover:-translate-y-0.5"
-            style={{ background: BRAND, color: '#0d0e0d' }}
+            style={{ background: BRAND, color: 'var(--brand-fg)' }}
             aria-label="Subscribe"
           >
             <ArrowRight size={16} />

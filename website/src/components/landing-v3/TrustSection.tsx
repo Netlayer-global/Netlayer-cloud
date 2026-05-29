@@ -69,7 +69,7 @@ export function TrustSection() {
             <Link
               to="/legal/terms"
               className="inline-flex items-center gap-2 h-11 px-5 rounded-md text-[13.5px] font-medium transition-colors cursor-pointer"
-              style={{ background: 'var(--brand)', color: '#0d0e0d' }}
+              style={{ background: 'var(--brand)', color: 'var(--brand-fg)' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--brand-h)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--brand)')}
             >

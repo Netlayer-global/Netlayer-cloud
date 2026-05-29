@@ -161,7 +161,7 @@ export function LandingNav() {
           <a
             href={`${DASHBOARD_URL}/register`}
             className="group inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-[13px] font-semibold transition-all hover:-translate-y-0.5"
-            style={{ background: BRAND, color: '#0d0e0d', boxShadow: 'var(--shadow-brand)' }}
+            style={{ background: BRAND, color: 'var(--brand-fg)', boxShadow: 'var(--shadow-brand)' }}
           >
             Deploy now
             <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
@@ -202,7 +202,7 @@ export function LandingNav() {
             <a
               href={`${DASHBOARD_URL}/register`}
               className="inline-flex h-11 items-center justify-center gap-2 rounded-lg text-[14px] font-semibold"
-              style={{ background: BRAND, color: '#0d0e0d' }}
+              style={{ background: BRAND, color: 'var(--brand-fg)' }}
             >
               Deploy now <ArrowRight size={14} />
             </a>

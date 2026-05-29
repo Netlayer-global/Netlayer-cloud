@@ -40,6 +40,7 @@ import { authAPI } from '../../api/endpoints'
 import { cn, initials } from '../../lib/utils'
 import { useSocket } from '../../hooks/useSocket'
 import { useAdminModules } from '../../hooks/useModules'
+import { ThemeToggle } from '../../components/ThemeToggle'
 
 interface NavItem {
   to: string
@@ -200,6 +201,7 @@ export default function AdminLayout() {
             >
               {role.replace('_', ' ').toLowerCase()}
             </span>
+            <ThemeToggle />
           </div>
         </header>
         <main className="flex-1 p-6 overflow-x-hidden">

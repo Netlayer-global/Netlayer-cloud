@@ -1,3 +1,12 @@
+/*
+ * Dashboard design tokens — dark default + light theme via [data-theme='light'].
+ *
+ * Most dashboard pages use Tailwind arbitrary-value classes (bg-[#1e1f1e],
+ * text-[#e8e8e6]) which are fixed at compile time and won't auto-flip.
+ * The light-theme block at the bottom overrides Tailwind's specific
+ * arbitrary classes via attribute-scoped `!important` rules so existing
+ * code stays dark-themed in dark mode and gracefully shifts in light.
+ */
 :root {
   /* ── Backgrounds — layered depth system ── */
   --nl-0: #080909;
@@ -27,29 +36,19 @@
   --brand-h: #b3d82e;
   --brand-d: rgba(200, 241, 53, .08);
   --brand-b: rgba(200, 241, 53, .2);
+  --brand-fg: #0d0e0d;
 
   /* ── Semantic ── */
-  --c-blue:    #3d8bff;
-  --c-blue-d:  rgba(61, 139, 255, .08);
-  --c-purple:  #7c5cfc;
-  --c-purple-d:rgba(124, 92, 252, .08);
-  --c-green:   #2ecc71;
-  --c-green-d: rgba(46, 204, 113, .08);
-  --c-red:     #e74c3c;
-  --c-red-d:   rgba(231, 76, 60, .08);
-  --c-amber:   #f0a429;
-  --c-amber-d: rgba(240, 164, 41, .08);
-  --c-cyan:    #22d3ee;
-  --c-cyan-d:  rgba(34, 211, 238, .08);
+  --c-blue:    #3d8bff;     --c-blue-d:  rgba(61, 139, 255, .08);
+  --c-purple:  #7c5cfc;     --c-purple-d:rgba(124, 92, 252, .08);
+  --c-green:   #2ecc71;     --c-green-d: rgba(46, 204, 113, .08);
+  --c-red:     #e74c3c;     --c-red-d:   rgba(231, 76, 60, .08);
+  --c-amber:   #f0a429;     --c-amber-d: rgba(240, 164, 41, .08);
+  --c-cyan:    #22d3ee;     --c-cyan-d:  rgba(34, 211, 238, .08);
 
   /* ── Radius ── */
-  --r-xs:   3px;
-  --r-sm:   5px;
-  --r-md:   8px;
-  --r-lg:   12px;
-  --r-xl:   16px;
-  --r-2xl:  22px;
-  --r-full: 9999px;
+  --r-xs: 3px;  --r-sm: 5px;  --r-md: 8px;  --r-lg: 12px;
+  --r-xl: 16px; --r-2xl:22px; --r-full:9999px;
 
   /* ── Shadows ── */
   --shadow-sm:    0 1px 2px rgba(0, 0, 0, .4);
@@ -59,18 +58,9 @@
   --shadow-blue:  0 0 24px rgba(61, 139, 255, .15);
 
   /* ── Spacing ── */
-  --sp-1: 4px;
-  --sp-2: 8px;
-  --sp-3: 12px;
-  --sp-4: 16px;
-  --sp-5: 20px;
-  --sp-6: 24px;
-  --sp-8: 32px;
-  --sp-10:40px;
-  --sp-12:48px;
-  --sp-16:64px;
-  --sp-20:80px;
-  --sp-24:96px;
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px; --sp-5: 20px;
+  --sp-6: 24px; --sp-8: 32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+  --sp-20:80px; --sp-24:96px;
 
   /* ── Typography ── */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
@@ -81,6 +71,38 @@
   --ease-med:    200ms cubic-bezier(.4, 0, .2, 1);
   --ease-slow:   350ms cubic-bezier(.4, 0, .2, 1);
   --ease-spring: 400ms cubic-bezier(.34, 1.56, .64, 1);
+}
+
+[data-theme='light'] {
+  --nl-0: #ffffff;
+  --nl-1: #fafbfa;
+  --nl-2: #f4f6f3;
+  --nl-3: #eef1ec;
+  --nl-4: #e6eae3;
+  --nl-5: #dde2da;
+  --nl-6: #d2d8cf;
+  --nl-7: #c5cdc1;
+  --nl-8: #b6c0b1;
+
+  --b-subtle:  #ecefe9;
+  --b-default: #dee3da;
+  --b-strong:  #c5cdc1;
+  --b-focus:   rgba(115, 168, 18, .55);
+
+  --t-hi:  #0c1109;
+  --t-med: #495247;
+  --t-low: #6b766a;
+  --t-off: #95a094;
+
+  --brand:   #84cc16;
+  --brand-h: #6fae12;
+  --brand-d: rgba(132, 204, 22, .10);
+  --brand-b: rgba(132, 204, 22, .35);
+  --brand-fg: #ffffff;
+
+  --shadow-sm:    0 1px 2px rgba(15, 23, 11, .06);
+  --shadow-md:    0 6px 20px rgba(15, 23, 11, .08);
+  --shadow-lg:    0 18px 40px -12px rgba(15, 23, 11, .15);
 }
 
 /* Global resets — landing v3 only. The dashboard uses its own existing
@@ -114,13 +136,8 @@
   border: 1px solid var(--b-default);
   border-radius: var(--r-lg);
 }
-.nl-card-hover {
-  transition: border-color var(--ease-med), background var(--ease-med);
-}
-.nl-card-hover:hover {
-  border-color: var(--b-strong);
-  background: var(--nl-3);
-}
+.nl-card-hover { transition: border-color var(--ease-med), background var(--ease-med); }
+.nl-card-hover:hover { border-color: var(--b-strong); background: var(--nl-3); }
 
 .nl-glass {
   background: rgba(13, 14, 13, .8);
@@ -137,9 +154,7 @@
   z-index: 0;
 }
 
-.gradient-brand {
-  background: linear-gradient(135deg, var(--brand) 0%, #a8e620 100%);
-}
+.gradient-brand { background: linear-gradient(135deg, var(--brand) 0%, #a8e620 100%); }
 .gradient-text-brand {
   background: linear-gradient(135deg, var(--brand), #a8e620);
   -webkit-background-clip: text;
@@ -165,51 +180,28 @@
 
 /* Cinematic CTA buttons */
 .nl-btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 44px;
-  padding: 0 22px;
-  border-radius: var(--r-md);
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: -.01em;
-  color: var(--nl-0);
-  background: var(--brand);
-  border: 1px solid var(--brand);
-  box-shadow: var(--shadow-brand);
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 44px; padding: 0 22px; border-radius: var(--r-md);
+  font-size: 14px; font-weight: 600; letter-spacing: -.01em;
+  color: var(--brand-fg); background: var(--brand);
+  border: 1px solid var(--brand); box-shadow: var(--shadow-brand);
   transition: background var(--ease-fast), transform var(--ease-fast), box-shadow var(--ease-fast);
   cursor: pointer;
 }
-.nl-btn-primary:hover {
-  background: var(--brand-h);
-  transform: translateY(-1px);
-  box-shadow: 0 0 32px rgba(200, 241, 53, .3);
-}
+.nl-btn-primary:hover { background: var(--brand-h); transform: translateY(-1px); box-shadow: 0 0 32px rgba(200, 241, 53, .3); }
 .nl-btn-primary:active { transform: translateY(0); }
 
 .nl-btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 44px;
-  padding: 0 20px;
-  border-radius: var(--r-md);
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--t-med);
-  background: transparent;
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 44px; padding: 0 20px; border-radius: var(--r-md);
+  font-size: 14px; font-weight: 500;
+  color: var(--t-med); background: transparent;
   border: 1px solid var(--b-strong);
   transition: all var(--ease-fast);
   cursor: pointer;
 }
-.nl-btn-ghost:hover {
-  color: var(--t-hi);
-  background: var(--nl-2);
-  border-color: var(--b-strong);
-}
+.nl-btn-ghost:hover { color: var(--t-hi); background: var(--nl-2); border-color: var(--b-strong); }
 
-/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .nl-pulse-dot, .nl-pulse-ring { animation: none !important; }
   .nl-v3 *, .nl-v3 *::before, .nl-v3 *::after {
@@ -217,3 +209,47 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+ * Dashboard light-mode overrides.
+ *
+ * The dashboard heavily uses Tailwind arbitrary-value classes for surfaces
+ * (`bg-[#0d0e0d]`, `bg-[#1e1f1e]`, etc.). These map directly onto our
+ * dark palette. In light mode we re-target each one to its light-theme
+ * equivalent. Scoped under `[data-theme='light']` so the dark-mode
+ * default is unchanged.
+ *
+ * If you add a new shade to a page, also map it here.
+ */
+[data-theme='light'] body { background: #f4f6f3; color: #0c1109; }
+
+[data-theme='light'] .bg-\[\#080909\] { background-color: #ffffff !important; }
+[data-theme='light'] .bg-\[\#0d0e0d\] { background-color: #fafbfa !important; }
+[data-theme='light'] .bg-\[\#161716\] { background-color: #f4f6f3 !important; }
+[data-theme='light'] .bg-\[\#1e1f1e\] { background-color: #ffffff !important; }
+[data-theme='light'] .bg-\[\#252625\] { background-color: #f4f6f3 !important; }
+[data-theme='light'] .bg-\[\#2a2b2a\] { background-color: #eef1ec !important; }
+
+[data-theme='light'] .border-\[\#2a2b2a\] { border-color: #dee3da !important; }
+[data-theme='light'] .border-\[\#333433\] { border-color: #c5cdc1 !important; }
+[data-theme='light'] .border-\[\#252625\] { border-color: #dee3da !important; }
+
+[data-theme='light'] .text-\[\#e8e8e6\] { color: #0c1109 !important; }
+[data-theme='light'] .text-\[\#a0a09e\] { color: #495247 !important; }
+[data-theme='light'] .text-\[\#6a6a68\] { color: #6b766a !important; }
+
+/* Inputs and form fields adapt cleanly */
+[data-theme='light'] input.bg-\[\#1e1f1e\],
+[data-theme='light'] textarea.bg-\[\#1e1f1e\],
+[data-theme='light'] select.bg-\[\#1e1f1e\] {
+  background-color: #ffffff !important;
+  color: #0c1109 !important;
+}
+
+/* Lime accent stays — keep contrast on white */
+[data-theme='light'] .text-\[\#e0fe56\],
+[data-theme='light'] .text-\[\#c8f135\] { color: #6fae12 !important; }
+[data-theme='light'] .bg-\[\#e0fe56\] { background-color: #84cc16 !important; }
+
+/* Smooth crossfade on theme flip */
+html { transition: background-color var(--ease-med), color var(--ease-med); }

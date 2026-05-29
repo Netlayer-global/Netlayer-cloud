@@ -44,6 +44,30 @@
   --nl-section-y: clamp(80px, 10vw, 160px);
 }
 
+/*
+ * Light theme overrides — flips the dashboard's primary palette tokens
+ * (--bg, --text, --border, --lime) when <html data-theme="light"> is set.
+ * Combined with the rules in tokens.css, this gives every page a
+ * working light theme without per-component edits.
+ */
+[data-theme='light'] {
+  --bg:      #ffffff;
+  --bg2:     #fafbfa;
+  --bg3:     #ffffff;
+  --bg4:     #f4f6f3;
+  --border:  #dee3da;
+  --border2: #c5cdc1;
+  --text:    #0c1109;
+  --text2:   #495247;
+  --text3:   #6b766a;
+  --lime:    #84cc16;
+  --lime2:   #6fae12;
+  --purple:  #6d4cf2;
+  --green:   #16a34a;
+  --red:     #dc2626;
+  --amber:   #d97706;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
