@@ -1,7 +1,8 @@
 // Utility Functions
 // Central export point for all utility functions
 
-export { default as animations } from './animations';
+// Animations utilities
+// export { default as animations } from './animations';
 
 // Formatters - export from formatters/ folder
 // export { formatDate } from './formatters/date';
