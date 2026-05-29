@@ -7,6 +7,7 @@ import { DashboardLayout } from './components/Layout'
 import { ProtectedRoute, AdminRoute, PublicOnly } from './components/ProtectedRoute'
 
 import Landing from './pages/Landing'
+import NeonLanding from './pages/public/NeonLanding'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
@@ -108,7 +109,7 @@ export default function App() {
         />
         <Routes>
           {/* Public */}
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<NeonLanding />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/network" element={<NetworkPage />} />
           <Route path="/status" element={<StatusPage />} />
