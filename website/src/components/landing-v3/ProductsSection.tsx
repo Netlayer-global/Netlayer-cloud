@@ -1,93 +1,140 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Cpu, MonitorCog, Server } from 'lucide-react'
-import { cn } from '../../lib/utils'
+import { motion } from 'framer-motion'
+import {
+  ArrowRight, Cpu, Server, MonitorCog, Hexagon,
+  HardDrive, Database, Network, Boxes,
+} from 'lucide-react'
 
 /**
- * Tabbed product showcase — Cloud Compute / Bare Metal / GPU.
- * Three tabs, each shows three plan cards with NetLayer pricing.
- * Click any card to jump to /pricing#<slug>.
+ * ProductsSection — modern bento-grid product showcase.
+ *
+ * An asymmetric grid where the two flagship products (Cloud Compute and GPU
+ * Cloud) take wide feature tiles, and the rest of the platform fills smaller
+ * cards. Each tile links into the relevant pricing anchor. Cards lift and
+ * gain a lime border-glow on hover.
+ *
+ * Original copy throughout; the layout idea (a single grid spanning the whole
+ * product line) is a common SaaS pattern rendered here in the lime-on-dark
+ * NetLayer style.
  */
-type Card = {
-  family: 'Compute' | 'BareMetal' | 'GPU'
+
+const BRAND = '#c8f135'
+
+interface Tile {
+  icon: typeof Cpu
+  eyebrow: string
   title: string
-  description: string
+  desc: string
   price: string
-  href: string
+  to: string
+  span: string // grid column span classes
+  feature?: boolean
+  badge?: string
 }
 
-const TABS = [
-  { key: 'compute',  label: 'Cloud Compute' },
-  { key: 'bare',     label: 'Bare Metal' },
-  { key: 'gpu',      label: 'GPU Instances' },
-] as const
-
-type TabKey = typeof TABS[number]['key']
-
-const CARDS: Record<TabKey, Card[]> = {
-  compute: [
-    { family: 'Compute', title: 'c2.medium', description: '2 vCPU · 4 GB RAM · 80 GB NVMe. Burst-friendly for staging and side-projects.', price: '₹399/mo · ₹0.54/hr', href: '/pricing#compute' },
-    { family: 'Compute', title: 'c3.large',  description: '4 vCPU · 8 GB RAM · 160 GB NVMe. Sized right for production workloads.', price: '₹799/mo · ₹1.09/hr', href: '/pricing#compute' },
-    { family: 'Compute', title: 'c4.2xlarge', description: '16 vCPU · 32 GB RAM · 640 GB NVMe. Single-tenant CPU performance for big jobs.', price: '₹2,999/mo · ₹4.10/hr', href: '/pricing#compute' },
-  ],
-  bare: [
-    { family: 'BareMetal', title: 'bm.epyc-1', description: 'AMD EPYC 7402P · 16C/32T · 64 GB RAM · 2× NVMe. RAID-0/1.', price: '₹14,999/mo', href: '/pricing#bare' },
-    { family: 'BareMetal', title: 'bm.epyc-2', description: 'AMD EPYC 7543P · 32C/64T · 128 GB RAM · 4× NVMe. RAID-0/1/10.', price: '₹24,999/mo', href: '/pricing#bare' },
-    { family: 'BareMetal', title: 'bm.epyc-3', description: 'Dual EPYC 7763 · 128C/256T · 512 GB RAM · 8× NVMe. RAID-10.', price: '₹89,999/mo', href: '/pricing#bare' },
-  ],
-  gpu: [
-    { family: 'GPU', title: 'NVIDIA L40 (48 GB)', description: 'Single L40 with 48 GB VRAM. AI inference + 3D rendering.', price: '₹89,999/mo', href: '/pricing#gpu' },
-    { family: 'GPU', title: 'NVIDIA A100 (80 GB)', description: 'Single A100 80 GB SXM4 for training and large-context inference.', price: '₹129,999/mo', href: '/pricing#gpu' },
-    { family: 'GPU', title: 'NVIDIA H100 (80 GB)', description: 'H100 SXM5 for state-of-the-art models. NVLink ready.', price: 'Contact sales', href: '/pricing#gpu' },
-  ],
-}
+const TILES: Tile[] = [
+  {
+    icon: Cpu,
+    eyebrow: 'Cloud Compute',
+    title: 'Virtual servers, deployed in seconds',
+    desc: 'Real KVM virtualization on AMD EPYC and Intel Xeon with local NVMe. Pick a flavor, a region, and an OS — your server is online before your coffee.',
+    price: 'from ₹149/mo',
+    to: '/pricing#compute',
+    span: 'lg:col-span-2 lg:row-span-1',
+    feature: true,
+  },
+  {
+    icon: MonitorCog,
+    eyebrow: 'GPU Cloud',
+    title: 'Accelerated compute for AI',
+    desc: 'NVIDIA L40, A100, and H100 cards with NVLink. Train, fine-tune, and serve models without the capex.',
+    price: 'from ₹1,999/mo',
+    to: '/pricing#gpu',
+    span: 'lg:col-span-1 lg:row-span-2',
+    feature: true,
+    badge: 'Popular',
+  },
+  {
+    icon: Server,
+    eyebrow: 'Bare Metal',
+    title: 'Dedicated servers',
+    desc: 'Single-tenant hardware, full control, zero noisy neighbours.',
+    price: 'from ₹999/mo',
+    to: '/pricing#bare',
+    span: 'lg:col-span-1',
+  },
+  {
+    icon: Hexagon,
+    eyebrow: 'Kubernetes',
+    title: 'Managed clusters',
+    desc: 'Production-ready control plane, autoscaling node pools, one-click upgrades.',
+    price: 'Preview',
+    to: '/kubernetes',
+    span: 'lg:col-span-1',
+    badge: 'Preview',
+  },
+  {
+    icon: HardDrive,
+    eyebrow: 'Block Storage',
+    title: 'Expandable NVMe volumes',
+    desc: 'Attach fast, resizable storage to any server in seconds.',
+    price: 'from ₹40/GB',
+    to: '/pricing#block',
+    span: 'lg:col-span-1',
+  },
+  {
+    icon: Boxes,
+    eyebrow: 'Object Storage',
+    title: 'S3-compatible buckets',
+    desc: 'Durable, global object store with a familiar API.',
+    price: 'from ₹5/GB',
+    to: '/pricing#object',
+    span: 'lg:col-span-1',
+  },
+  {
+    icon: Database,
+    eyebrow: 'Managed Databases',
+    title: 'Postgres, MySQL & Redis',
+    desc: 'Automated backups, failover, and patching — you just connect.',
+    price: 'from ₹499/mo',
+    to: '/pricing#db',
+    span: 'lg:col-span-1',
+  },
+  {
+    icon: Network,
+    eyebrow: 'Load Balancers',
+    title: 'Highly available routing',
+    desc: 'Distribute traffic across servers with health checks and TLS.',
+    price: 'from ₹299/mo',
+    to: '/pricing#lb',
+    span: 'lg:col-span-1',
+  },
+]
 
 export function ProductsSection() {
-  const [tab, setTab] = useState<TabKey>('compute')
-
   return (
-    <section
-      id="products"
-      className="py-16 lg:py-24"
-      style={{ background: 'var(--nl-0)' }}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto">
-          <div className="text-[11px] uppercase tracking-[.22em] mb-3" style={{ color: 'var(--brand)' }}>
-            Platform
+    <section id="products" className="py-20 lg:py-28" style={{ background: 'var(--nl-0)' }}>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl">
+          <div className="text-[11px] uppercase tracking-[0.22em]" style={{ color: BRAND }}>
+            One platform
           </div>
           <h2
-            className="tracking-tight leading-[1.12]"
-            style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 500, color: 'var(--t-hi)' }}
+            className="mt-3 font-semibold tracking-tight text-white"
+            style={{ fontSize: 'clamp(28px, 4vw, 46px)', lineHeight: 1.08, letterSpacing: '-0.02em' }}
           >
-            Compute that fits the workload
+            Everything you need to ship,
+            <br className="hidden sm:block" /> nothing you don't.
           </h2>
-          <p className="mt-5 text-[15px]" style={{ color: 'var(--t-med)' }}>
-            From small VMs to dedicated bare-metal — same console, same API, same SLA.
+          <p className="mt-4 text-[15px]" style={{ color: 'var(--t-med)' }}>
+            Compute, storage, networking, and data services share one console, one
+            API, and one bill. Mix and match — scale each piece independently.
           </p>
         </div>
 
-        <div className="mt-10 lg:mt-14 flex justify-center gap-1 flex-wrap">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={cn(
-                'px-5 lg:px-6 h-11 text-[13.5px] lg:text-[14px] transition-colors cursor-pointer border-b-2'
-              )}
-              style={{
-                color: tab === t.key ? 'var(--brand)' : 'var(--t-med)',
-                borderColor: tab === t.key ? 'var(--brand)' : 'transparent',
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-8 grid md:grid-cols-3 gap-4 lg:gap-5">
-          {CARDS[tab].map((c) => (
-            <ProductCard key={c.title} card={c} />
+        <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:auto-rows-[minmax(220px,auto)]">
+          {TILES.map((tile, i) => (
+            <BentoTile key={tile.eyebrow} tile={tile} index={i} />
           ))}
         </div>
       </div>
@@ -95,52 +142,90 @@ export function ProductsSection() {
   )
 }
 
-function ProductCard({ card }: { card: Card }) {
+function BentoTile({ tile, index }: { tile: Tile; index: number }) {
+  const Icon = tile.icon
   return (
-    <Link
-      to={card.href}
-      className="group flex flex-col p-6 lg:p-7 rounded-lg transition-all cursor-pointer"
-      style={{
-        background: 'var(--nl-1)',
-        border: '1px solid var(--b-default)',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = 'var(--brand-b)'
-        e.currentTarget.style.background = 'var(--nl-2)'
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = 'var(--b-default)'
-        e.currentTarget.style.background = 'var(--nl-1)'
-      }}
+    <motion.div
+      className={tile.span}
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.5, delay: (index % 4) * 0.06, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="h-9 flex items-center" style={{ color: 'var(--t-low)' }}>
-        {card.family === 'Compute' && <Cpu size={18} />}
-        {card.family === 'BareMetal' && <Server size={18} />}
-        {card.family === 'GPU' && <MonitorCog size={18} />}
-        <span className="ml-2 text-[10.5px] uppercase tracking-[0.18em]">
-          {card.family === 'BareMetal' ? 'Bare metal' : card.family}
-        </span>
-      </div>
-      <h3
-        className="mt-3 text-[22px] leading-tight"
-        style={{ color: 'var(--t-hi)', fontWeight: 500, letterSpacing: '-0.01em' }}
+      <Link
+        to={tile.to}
+        className="group relative flex h-full flex-col overflow-hidden rounded-2xl p-6 transition-all duration-300"
+        style={{
+          background: tile.feature
+            ? 'linear-gradient(160deg, var(--nl-3), var(--nl-1) 70%)'
+            : 'var(--nl-1)',
+          border: '1px solid var(--b-default)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = 'var(--brand-b)'
+          e.currentTarget.style.transform = 'translateY(-3px)'
+          e.currentTarget.style.boxShadow = '0 0 32px rgba(200,241,53,0.12)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = 'var(--b-default)'
+          e.currentTarget.style.transform = 'translateY(0)'
+          e.currentTarget.style.boxShadow = 'none'
+        }}
       >
-        {card.title}
-      </h3>
-      <p className="mt-3 text-[14px] leading-[1.6] flex-1" style={{ color: 'var(--t-med)' }}>
-        {card.description}
-      </p>
-      <p className="mt-6 text-[13px]" style={{ color: 'var(--t-low)' }}>
-        Pricing starts at{' '}
-        <span style={{ color: 'var(--brand)', fontWeight: 500 }}>{card.price}</span>
-      </p>
-      <span
-        className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium transition-all"
-        style={{ color: 'var(--brand)' }}
-      >
-        Learn more
-        <ArrowRight size={13} className="transition-transform duration-200 group-hover:translate-x-1" />
-      </span>
-    </Link>
+        {/* glow accent for feature tiles */}
+        {tile.feature && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full opacity-50 transition-opacity duration-300 group-hover:opacity-80"
+            style={{ background: 'radial-gradient(circle, rgba(200,241,53,0.18), transparent 65%)', filter: 'blur(8px)' }}
+          />
+        )}
+
+        <div className="relative flex items-center justify-between">
+          <span
+            className="flex h-11 w-11 items-center justify-center rounded-xl"
+            style={{ background: 'var(--brand-d)', border: '1px solid var(--brand-b)', color: BRAND }}
+          >
+            <Icon size={20} />
+          </span>
+          {tile.badge && (
+            <span
+              className="rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider"
+              style={{ background: 'var(--brand-d)', color: BRAND, border: '1px solid var(--brand-b)' }}
+            >
+              {tile.badge}
+            </span>
+          )}
+        </div>
+
+        <div className="relative mt-5 flex-1">
+          <div className="text-[11px] uppercase tracking-[0.16em]" style={{ color: 'var(--t-low)' }}>
+            {tile.eyebrow}
+          </div>
+          <h3
+            className="mt-1.5 font-semibold text-white"
+            style={{ fontSize: tile.feature ? 'clamp(18px,2vw,24px)' : '17px', letterSpacing: '-0.01em', lineHeight: 1.2 }}
+          >
+            {tile.title}
+          </h3>
+          <p className="mt-2.5 text-[13.5px] leading-relaxed" style={{ color: 'var(--t-med)' }}>
+            {tile.desc}
+          </p>
+        </div>
+
+        <div className="relative mt-5 flex items-center justify-between">
+          <span className="text-[13px] font-medium" style={{ color: BRAND }}>
+            {tile.price}
+          </span>
+          <span
+            className="inline-flex items-center gap-1 text-[12.5px] transition-colors"
+            style={{ color: 'var(--t-low)' }}
+          >
+            Explore
+            <ArrowRight size={13} className="transition-transform duration-200 group-hover:translate-x-1" style={{ color: BRAND }} />
+          </span>
+        </div>
+      </Link>
+    </motion.div>
   )
 }
