@@ -45,6 +45,7 @@ import storageRoutes, { storagePublicRouter } from './routes/storage.routes'
 import platformRoutes from './routes/platform.routes'
 import platformStatsRoutes from './routes/platformStats.routes'
 import blogRoutes from './routes/blog.routes'
+import websiteRoutes from './routes/website.routes'
 // Round 18 routes
 import floatingIpRoutes from './routes/floatingIp.routes'
 import alertRulesRoutes from './routes/alertRules.routes'
@@ -132,6 +133,7 @@ app.use('/api/abuse', abuseRoutes)
 app.use('/api/platform', platformRoutes)
 app.use('/api/platform', platformStatsRoutes)
 app.use('/api/blog', blogRoutes)
+app.use('/api/website', websiteRoutes)
 app.use('/api/marketplace', marketplaceRoutes)
 app.use('/api/waitlist', waitlistRoutes)
 

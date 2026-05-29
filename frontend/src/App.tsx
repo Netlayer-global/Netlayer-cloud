@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Toaster } from 'sonner'
+import { Toaster } from 'react-hot-toast'
 import { Cpu, Hexagon, Database, Network, Monitor, Users, Folder } from 'lucide-react'
 
 import { DashboardLayout } from './components/Layout'
@@ -8,6 +8,7 @@ import { ProtectedRoute, AdminRoute, PublicOnly } from './components/ProtectedRo
 
 import Landing from './pages/Landing'
 import NeonLanding from './pages/public/NeonLanding'
+import ModernLanding from './pages/ModernLanding'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
@@ -101,15 +102,16 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Toaster
-          theme="dark"
           position="bottom-right"
           toastOptions={{
-            style: { background: '#161716', border: '1px solid #2a2b2a', color: '#e8e8e6' },
+            style: { background: '#161719', border: '1px solid #00ffff', color: '#ffffff' },
+            success: { style: { borderColor: '#00ffff' } },
+            error: { style: { borderColor: '#ff006e' } },
           }}
         />
         <Routes>
           {/* Public */}
-          <Route path="/" element={<NeonLanding />} />
+          <Route path="/" element={<ModernLanding />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/network" element={<NetworkPage />} />
           <Route path="/status" element={<StatusPage />} />
