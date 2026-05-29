@@ -1,29 +1,29 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Clock, Globe, Lock, Shield, Zap } from 'lucide-react'
+import { ArrowRight, Github, Mail } from 'lucide-react'
 
 /**
- * HeroSection — above-the-fold of the public marketing site.
+ * Hero — split layout.
  *
- * Two visual layers:
- *   1. WebGL shader background — animated low-frequency noise, very dark,
- *      with a faint lime-green tint. Pure GLSL, ~1KB, no external deps.
- *      Falls back to a solid colour if WebGL2 is unavailable.
- *   2. Animated server rack on the right — five rack units stacked with a
- *      perspective transform; each unit has a pulsing status LED + a
- *      bandwidth bar that fills on mount. Built with framer-motion so the
- *      entrance is staggered.
+ * Left column: large light-weight headline, supporting copy, CTA pair, plus
+ * a row of trust pills. Right column: a "Deploy in seconds" signup card —
+ * mirrors the in-product flow but lives on the public site so a visitor
+ * can complete signup without bouncing off to the dashboard origin.
  *
- * The hero also drives the marketing site's primary CTA (Deploy now) which
- * links across to the dashboard origin where the customer signs up.
+ * Background:
+ *   - Animated WebGL2 noise + lime tint (~1 KB GLSL)
+ *   - Dot grid texture overlay
+ *   - Soft top-down gradient for contrast under the copy
+ *
+ * Submitting the signup form posts to `${VITE_DASHBOARD_URL}/register` so
+ * the dashboard owns the auth cookie. Failure cases just push the user
+ * to the dashboard register page with the email pre-filled.
  */
 
 const DASHBOARD_URL =
   import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5173'
 
-// Tiny full-screen WebGL2 noise shader. Cleaned up + tuned for Tailwind v3
-// (no CSS variables — colours are hard-coded inside the fragment shader).
 const FRAGMENT_SHADER = /* glsl */ `#version 300 es
 precision highp float;
 out vec4 O;
@@ -31,8 +31,7 @@ uniform vec2 resolution;
 uniform float time;
 
 float noise(vec2 p) {
-  vec2 i = floor(p);
-  vec2 f = fract(p);
+  vec2 i = floor(p); vec2 f = fract(p);
   vec2 u = f * f * (3.0 - 2.0 * f);
   float a = fract(sin(dot(i, vec2(127.1, 311.7))) * 43758.5453);
   float b = fract(sin(dot(i + vec2(1.0, 0.0), vec2(127.1, 311.7))) * 43758.5453);
@@ -45,57 +44,50 @@ void main() {
   vec2 uv = gl_FragCoord.xy / resolution.xy;
   vec2 st = (uv - 0.5) * 2.0;
   st.x *= resolution.x / resolution.y;
+  float t = time * 0.20;
+  vec2 p = st * 1.6;
+  float n = noise(p + t) * 0.55
+          + noise(p * 2.0 - t * 0.5) * 0.30
+          + noise(p * 4.0 + t * 0.3) * 0.15;
 
-  float t = time * 0.25;
+  vec3 deep   = vec3(0.031, 0.035, 0.031);
+  vec3 mid    = vec3(0.060, 0.065, 0.060);
+  vec3 brand  = vec3(0.784, 0.945, 0.207);    // matches --brand #c8f135
 
-  vec2 p = st * 2.0;
-  float n1 = noise(p + t);
-  float n2 = noise(p * 2.0 - t * 0.5);
-  float n3 = noise(p * 4.0 + t * 0.3);
+  vec3 col = mix(deep, mid, n);
+  col += brand * n * 0.035;
 
-  float pattern = n1 * 0.55 + n2 * 0.30 + n3 * 0.15;
+  // top-right glow so the signup card sits in light
+  vec2 g = uv - vec2(0.78, 0.45);
+  g.x *= resolution.x / resolution.y;
+  float glow = 1.0 - smoothstep(0.0, 0.55, length(g));
+  col += brand * glow * 0.08;
 
-  vec3 deepBg   = vec3(0.043, 0.047, 0.043);   // ~#0b0c0b
-  vec3 midBg    = vec3(0.075, 0.082, 0.075);   // ~#131513
-  vec3 brand    = vec3(0.878, 0.996, 0.337);   // #e0fe56
-
-  vec3 col = mix(deepBg, midBg, pattern);
-  col += brand * pattern * 0.04;
-
-  // Vignette to darken the corners
-  float vignette = 1.0 - length(uv - 0.5) * 0.6;
-  col *= clamp(vignette, 0.55, 1.0);
-
+  // vignette
+  col *= clamp(1.0 - length(uv - 0.5) * 0.55, 0.55, 1.0);
   O = vec4(col, 1.0);
 }`
 
 const VERTEX_SHADER = /* glsl */ `#version 300 es
-precision highp float;
-in vec4 position;
+precision highp float; in vec4 position;
 void main() { gl_Position = position; }`
 
 function ShaderBackground() {
   const ref = useRef<HTMLCanvasElement>(null)
-
   useEffect(() => {
     const canvas = ref.current
     if (!canvas) return
     const gl = canvas.getContext('webgl2') as WebGL2RenderingContext | null
-    if (!gl) return // older browser — solid background fallback below
+    if (!gl) return
 
     const vs = gl.createShader(gl.VERTEX_SHADER)!
-    gl.shaderSource(vs, VERTEX_SHADER)
-    gl.compileShader(vs)
-
+    gl.shaderSource(vs, VERTEX_SHADER); gl.compileShader(vs)
     const fs = gl.createShader(gl.FRAGMENT_SHADER)!
-    gl.shaderSource(fs, FRAGMENT_SHADER)
-    gl.compileShader(fs)
+    gl.shaderSource(fs, FRAGMENT_SHADER); gl.compileShader(fs)
 
     const program = gl.createProgram()!
-    gl.attachShader(program, vs)
-    gl.attachShader(program, fs)
-    gl.linkProgram(program)
-    gl.useProgram(program)
+    gl.attachShader(program, vs); gl.attachShader(program, fs)
+    gl.linkProgram(program); gl.useProgram(program)
 
     const buffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
@@ -104,7 +96,7 @@ function ShaderBackground() {
     gl.enableVertexAttribArray(positionLoc)
     gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0)
 
-    const resolutionUniform = gl.getUniformLocation(program, 'resolution')
+    const resUniform = gl.getUniformLocation(program, 'resolution')
     const timeUniform = gl.getUniformLocation(program, 'time')
 
     const dpr = Math.max(1, Math.min(window.devicePixelRatio, 2))
@@ -113,15 +105,13 @@ function ShaderBackground() {
       canvas.height = canvas.clientHeight * dpr
       gl.viewport(0, 0, canvas.width, canvas.height)
     }
-    resize()
-    window.addEventListener('resize', resize)
+    resize(); window.addEventListener('resize', resize)
 
     let raf = 0
     const start = performance.now()
     const loop = () => {
-      const t = (performance.now() - start) * 0.001
-      gl.uniform2f(resolutionUniform, canvas.width, canvas.height)
-      gl.uniform1f(timeUniform, t)
+      gl.uniform2f(resUniform, canvas.width, canvas.height)
+      gl.uniform1f(timeUniform, (performance.now() - start) * 0.001)
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
       raf = requestAnimationFrame(loop)
     }
@@ -130,10 +120,7 @@ function ShaderBackground() {
     return () => {
       window.removeEventListener('resize', resize)
       cancelAnimationFrame(raf)
-      gl.deleteProgram(program)
-      gl.deleteShader(vs)
-      gl.deleteShader(fs)
-      gl.deleteBuffer(buffer)
+      gl.deleteProgram(program); gl.deleteShader(vs); gl.deleteShader(fs); gl.deleteBuffer(buffer)
     }
   }, [])
 
@@ -141,317 +128,287 @@ function ShaderBackground() {
     <canvas
       ref={ref}
       className="absolute inset-0 w-full h-full block"
-      style={{ background: '#0b0c0b' }}
+      style={{ background: '#0d0e0d' }}
       aria-hidden="true"
     />
   )
 }
 
-/**
- * 3D server rack visual. Built from regular divs with a perspective
- * wrapper — no Three.js, ~3 KB rendered. Each unit has a status light
- * and a load bar so the visual feels alive without a video file.
- */
-function ServerRack3D() {
-  const units = [
-    { name: 'BOM1 · web-1',  load: 64, status: 'green' },
-    { name: 'BOM1 · db-1',   load: 88, status: 'green' },
-    { name: 'BLR1 · cache',  load: 31, status: 'lime'  },
-    { name: 'DEL1 · build',  load: 47, status: 'green' },
-    { name: 'SIN1 · proxy',  load: 22, status: 'lime'  },
-  ]
+function SignupCard() {
+  const [email, setEmail] = useState('')
+  const [agreed, setAgreed] = useState(true)
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email || !agreed) return
+    const url = `${DASHBOARD_URL}/register?email=${encodeURIComponent(email)}`
+    window.location.assign(url)
+  }
 
   return (
-    <div className="relative w-full flex items-center justify-center select-none">
-      <motion.div
-        className="relative"
-        initial={{ opacity: 0, scale: 0.92, rotateY: -12 }}
-        animate={{ opacity: 1, scale: 1, rotateY: -8 }}
-        transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        style={{ perspective: 1400, transformStyle: 'preserve-3d' }}
-      >
-        {/* Outer rack frame */}
-        <div
-          className="relative rounded-lg p-3"
-          style={{
-            background: 'linear-gradient(180deg, rgba(34,36,34,.9) 0%, rgba(15,17,15,.95) 100%)',
-            border: '1px solid rgba(224,254,86,0.15)',
-            boxShadow:
-              '0 30px 70px -20px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.04)',
-            transformStyle: 'preserve-3d',
-            transform: 'rotateY(-6deg) rotateX(4deg)',
-          }}
+    <motion.div
+      className="rounded-lg p-6 lg:p-8"
+      style={{
+        background: 'rgba(255,255,255,0.96)',
+        boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(200,241,53,0.15)',
+      }}
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <h2 className="text-2xl text-[#0d0e0d]" style={{ fontWeight: 500, letterSpacing: '-0.01em' }}>
+        Deploy in seconds
+      </h2>
+      <p className="mt-1.5 text-[13px] text-[#525666]">
+        Free ₹3,500 credit · No card required
+      </p>
+
+      <form onSubmit={submit} className="mt-6 space-y-3">
+        <Field
+          label="Work email"
+          type="email"
+          required
+          value={email}
+          onChange={(v) => setEmail(v)}
+          placeholder="you@company.com"
+        />
+
+        <label className="flex items-start gap-2.5 text-[13px] text-[#525666] mt-1 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-0.5 cursor-pointer"
+            style={{ accentColor: 'var(--brand)' }}
+          />
+          <span>
+            I agree to the{' '}
+            <Link to="/legal/terms" className="underline" style={{ color: '#0d0e0d' }}>Terms of Service</Link>{' '}
+            and the{' '}
+            <Link to="/legal/privacy" className="underline" style={{ color: '#0d0e0d' }}>Privacy Policy</Link>.
+          </span>
+        </label>
+
+        <button
+          type="submit"
+          disabled={!email || !agreed}
+          className="w-full h-11 rounded-md text-[14px] font-semibold transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ background: 'var(--brand)', color: '#0d0e0d' }}
         >
-          <div className="flex items-center justify-between px-2 pb-2 mb-2 border-b border-white/5">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#e0fe56] shadow-[0_0_8px_rgba(224,254,86,0.6)]" />
-              <span className="text-[10px] uppercase tracking-[.18em] text-white/60">
-                rack-A1 · 99.99%
-              </span>
-            </div>
-            <span className="text-[10px] tabular-nums text-white/40 font-mono">5/24 U</span>
-          </div>
+          Create free account
+        </button>
 
-          <div className="space-y-1.5">
-            {units.map((u, i) => (
-              <motion.div
-                key={u.name}
-                className="relative w-72 sm:w-80 lg:w-[22rem] h-12 rounded-md overflow-hidden"
-                style={{
-                  background:
-                    'linear-gradient(180deg, #2a2c2a 0%, #1c1e1c 60%, #15171582 100%)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  transform: `translateZ(${(units.length - i) * 6}px)`,
-                }}
-                initial={{ x: -40, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.7 + i * 0.08, duration: 0.5 }}
-              >
-                <div className="absolute inset-0 flex items-center px-3 gap-3">
-                  {/* Status LED */}
-                  <motion.div
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{
-                      background:
-                        u.status === 'lime' ? '#e0fe56' : '#22c55e',
-                      boxShadow:
-                        u.status === 'lime'
-                          ? '0 0 10px rgba(224,254,86,0.8)'
-                          : '0 0 10px rgba(34,197,94,0.7)',
-                    }}
-                    animate={{ opacity: [0.45, 1, 0.45] }}
-                    transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
-                  />
-
-                  {/* Drive bay slots */}
-                  <div className="flex gap-0.5 shrink-0">
-                    {Array.from({ length: 6 }).map((_, j) => (
-                      <span
-                        key={j}
-                        className="w-1.5 h-7 rounded-sm"
-                        style={{
-                          background: 'rgba(255,255,255,0.05)',
-                          border: '1px solid rgba(255,255,255,0.06)',
-                        }}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Hostname + load bar */}
-                  <div className="flex-1 min-w-0 pr-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10.5px] font-mono text-white/70 truncate">
-                        {u.name}
-                      </span>
-                      <span className="text-[10px] font-mono text-white/40 tabular-nums">
-                        {u.load}%
-                      </span>
-                    </div>
-                    <div className="h-1 rounded-full bg-white/5 overflow-hidden">
-                      <motion.div
-                        className="h-full rounded-full"
-                        style={{
-                          background:
-                            'linear-gradient(90deg, #e0fe56 0%, #a3e635 100%)',
-                        }}
-                        initial={{ width: '0%' }}
-                        animate={{ width: `${u.load}%` }}
-                        transition={{ duration: 1.4, delay: 1 + i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between px-2 pt-2 mt-2 border-t border-white/5">
-            <span className="text-[10px] uppercase tracking-[.18em] text-white/40">
-              25 Gbps NIC
-            </span>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <motion.span
-                  key={i}
-                  className="w-0.5 rounded-sm bg-[#e0fe56]"
-                  initial={{ height: 4 }}
-                  animate={{ height: [4, 10 + Math.random() * 6, 4] }}
-                  transition={{ duration: 1.6, repeat: Infinity, delay: i * 0.12 }}
-                />
-              ))}
-            </div>
-          </div>
+        <div className="flex items-center gap-3 my-3">
+          <span className="flex-1 h-px bg-[#e1e3e8]" />
+          <span className="text-[10.5px] uppercase tracking-[.18em] text-[#a1a5b2]">or</span>
+          <span className="flex-1 h-px bg-[#e1e3e8]" />
         </div>
 
-        {/* Floor reflection */}
-        <div
-          aria-hidden="true"
-          className="absolute left-1/2 -translate-x-1/2 top-full w-[80%] h-12 rounded-full blur-2xl opacity-40"
+        <div className="grid grid-cols-2 gap-2.5">
+          <SocialButton href={`${DASHBOARD_URL}/register?provider=github`} icon={<Github size={14} />}>
+            GitHub
+          </SocialButton>
+          <SocialButton href={`${DASHBOARD_URL}/register?provider=google`} icon={<GoogleColor />}>
+            Google
+          </SocialButton>
+        </div>
+
+        <p className="text-[13px] text-center mt-3 text-[#525666]">
+          Already have an account?{' '}
+          <a href={`${DASHBOARD_URL}/login`} className="underline" style={{ color: '#0d0e0d' }}>
+            Log in
+          </a>
+        </p>
+      </form>
+    </motion.div>
+  )
+}
+
+function Field({
+  label, type, value, onChange, placeholder, required,
+}: {
+  label: string
+  type: string
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  required?: boolean
+}) {
+  return (
+    <label className="block">
+      <span className="block text-[12.5px] text-[#525666] mb-1.5 font-medium">{label}</span>
+      <div className="relative">
+        <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a1a5b2]" />
+        <input
+          type={type}
+          required={required}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full h-11 pl-9 pr-3 rounded-md text-[14px] text-[#0d0e0d] placeholder:text-[#a1a5b2] outline-none transition-colors"
           style={{
-            background:
-              'radial-gradient(ellipse at center, rgba(224,254,86,0.35), transparent 70%)',
+            background: '#fff',
+            border: '1px solid #d8dae0',
           }}
+          onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--brand)')}
+          onBlur={(e) => (e.currentTarget.style.borderColor = '#d8dae0')}
         />
-      </motion.div>
-    </div>
+      </div>
+    </label>
+  )
+}
+
+function SocialButton({
+  href,
+  icon,
+  children,
+}: {
+  href: string
+  icon: React.ReactNode
+  children: React.ReactNode
+}) {
+  return (
+    <a
+      href={href}
+      className="inline-flex items-center justify-center gap-2 h-11 rounded-md text-[13px] font-medium text-[#0d0e0d] transition-colors cursor-pointer"
+      style={{ background: '#fff', border: '1px solid #d8dae0' }}
+      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#a1a5b2')}
+      onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#d8dae0')}
+    >
+      {icon}
+      {children}
+    </a>
+  )
+}
+
+function GoogleColor() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 18 18" aria-hidden>
+      <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" />
+      <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.838.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" />
+      <path fill="#FBBC05" d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z" />
+      <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.428 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.167 6.656 3.58 9 3.58z" />
+    </svg>
   )
 }
 
 export function HeroSection() {
   return (
-    <section className="relative w-full min-h-screen overflow-hidden text-white">
-      {/* Layer 1 — animated shader background */}
+    <section className="relative w-full overflow-hidden text-white">
       <ShaderBackground />
 
-      {/* Layer 2 — soft gradient over shader to push contrast where text sits */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.65) 100%)',
+            'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.30) 60%, rgba(0,0,0,0.55) 100%)',
         }}
       />
 
-      {/* Layer 3 — subtle dot grid for texture */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 pointer-events-none opacity-[0.08]"
+        className="absolute inset-0 pointer-events-none opacity-[0.06]"
         style={{
-          background:
-            'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.7) 1px, transparent 1px) 0 0/24px 24px',
+          backgroundImage:
+            'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px),' +
+            ' linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)',
+          backgroundSize: '44px 44px',
         }}
       />
 
-      <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Foreground content area below the shared LandingNav (rendered by Landing.tsx) */}
-        <div className="flex-1 flex items-center px-4 sm:px-6 pt-28 sm:pt-32 pb-16">
-          <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center">
-            {/* Left — copy */}
-            <motion.div
-              initial={{ opacity: 0, x: -40 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-32 pb-16 lg:pb-28">
+        <div className="grid lg:grid-cols-[1.25fr_1fr] gap-12 lg:gap-16 items-start">
+          {/* Left — copy */}
+          <motion.div
+            initial={{ opacity: 0, x: -32 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <h1
+              className="leading-[1.05] tracking-tight"
+              style={{
+                fontSize: 'clamp(36px, 5.4vw, 60px)',
+                fontWeight: 500,
+                letterSpacing: '-0.025em',
+              }}
             >
-              <motion.div
-                className="inline-flex items-center gap-2 px-3 h-7 rounded-full mb-6"
+              The India-first
+              <br />
+              cloud platform for{' '}
+              <em
+                className="not-italic"
                 style={{
-                  background: 'rgba(224,254,86,0.08)',
-                  border: '1px solid rgba(224,254,86,0.25)',
+                  background: 'linear-gradient(120deg, #c8f135 0%, #a3e635 60%, #84cc16 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
                 }}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.5 }}
               >
-                <Zap size={11} style={{ color: '#e0fe56' }} />
-                <span className="text-[11.5px] font-medium text-white/85 tracking-wide">
-                  Trusted by 50,000+ developers
-                </span>
-              </motion.div>
+                shipping fast.
+              </em>
+            </h1>
 
-              <motion.h1
-                className="font-medium tracking-tight leading-[1.05]"
-                style={{ fontSize: 'clamp(2.4rem, 5vw, 3.6rem)' }}
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.18, duration: 0.7 }}
+            <p
+              className="mt-7 max-w-xl text-white/75 leading-[1.65]"
+              style={{ fontSize: 'clamp(15px, 1.3vw, 18px)' }}
+            >
+              Cloud VPS, bare metal, GPU instances, managed databases, and load
+              balancers across 15 regions. Built on real KVM with 30-second
+              deploys and per-second billing.
+            </p>
+
+            <div className="mt-9 flex flex-wrap items-center gap-3">
+              <a
+                href={`${DASHBOARD_URL}/register`}
+                className="group inline-flex items-center justify-between gap-4 rounded-md h-12 pl-6 pr-5 transition-colors cursor-pointer min-w-[210px]"
+                style={{ background: 'var(--brand)', color: '#0d0e0d' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--brand-h)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--brand)')}
               >
-                Infrastructure that{' '}
-                <span
-                  style={{
-                    background:
-                      'linear-gradient(135deg, #e0fe56 0%, #a3e635 80%, #84cc16 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  deploys in seconds.
-                </span>
-              </motion.h1>
-
-              <motion.p
-                className="mt-5 max-w-xl text-[15px] sm:text-[16px] text-white/70 leading-relaxed"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.28, duration: 0.6 }}
+                <span className="text-[14.5px] font-semibold">Get started</span>
+                <ArrowRight size={17} className="transition-transform duration-200 group-hover:translate-x-1" />
+              </a>
+              <a
+                href="mailto:sales@netlayer.com"
+                className="inline-flex items-center justify-center px-6 h-12 rounded-md text-[14.5px] text-white/90 transition-colors cursor-pointer"
+                style={{ border: '1px solid rgba(255,255,255,0.25)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.55)')}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)')}
               >
-                Bare metal servers, cloud VMs, and managed databases across{' '}
-                <span className="text-white/90 font-medium">15 global regions</span>.
-                Hardware-level isolation, 30-second provisioning, India-first pricing.
-              </motion.p>
-
-              <motion.div
-                className="mt-8 flex flex-wrap items-center gap-3"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.6 }}
-              >
-                <a
-                  href={`${DASHBOARD_URL}/register`}
-                  className="group inline-flex items-center gap-2 h-12 px-6 rounded-full text-[14px] font-semibold transition-all duration-200 cursor-pointer"
-                  style={{ background: '#e0fe56', color: '#0d0e0d' }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow = '0 0 30px rgba(224,254,86,0.5)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = ''
-                  }}
-                >
-                  Deploy now — Free ₹3,500 credit
-                  <ArrowRight
-                    size={15}
-                    className="transition-transform duration-200 group-hover:translate-x-0.5"
-                  />
-                </a>
-                <Link
-                  to="/pricing"
-                  className="inline-flex items-center gap-2 h-12 px-5 rounded-full text-[14px] font-medium text-white/90 transition-colors cursor-pointer"
-                  style={{ border: '1px solid rgba(255,255,255,0.15)' }}
-                >
-                  View pricing <ArrowRight size={14} className="opacity-70" />
-                </Link>
-              </motion.div>
-
-              <motion.p
-                className="mt-4 text-[11.5px] text-white/45"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.55, duration: 0.5 }}
-              >
-                No credit card required · Cancel anytime
-              </motion.p>
-
-              <motion.div
-                className="mt-9 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px]"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.7, duration: 0.5 }}
-              >
-                <span className="inline-flex items-center gap-1.5 text-white/65">
-                  <Clock size={12} style={{ color: '#e0fe56' }} /> 30-second deploy
-                </span>
-                <span className="text-white/20">·</span>
-                <span className="inline-flex items-center gap-1.5 text-white/65">
-                  <Globe size={12} style={{ color: '#e0fe56' }} /> 15 regions
-                </span>
-                <span className="text-white/20">·</span>
-                <span className="inline-flex items-center gap-1.5 text-white/65">
-                  <Shield size={12} style={{ color: '#e0fe56' }} /> 99.99% SLA
-                </span>
-                <span className="text-white/20">·</span>
-                <span className="inline-flex items-center gap-1.5 text-white/65">
-                  <Lock size={12} style={{ color: '#e0fe56' }} /> SOC2 ready
-                </span>
-              </motion.div>
-            </motion.div>
-
-            {/* Right — 3D server rack */}
-            <div className="hidden lg:flex items-center justify-end">
-              <ServerRack3D />
+                Talk to sales
+              </a>
             </div>
-          </div>
+
+            <div
+              className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-[12px]"
+              style={{ color: 'rgba(255,255,255,0.55)' }}
+            >
+              <Pill>30-sec deploys</Pill>
+              <Pill>Per-second billing</Pill>
+              <Pill>India-GST invoices</Pill>
+              <Pill>SOC2 Ready</Pill>
+            </div>
+          </motion.div>
+
+          {/* Right — signup card */}
+          <SignupCard />
         </div>
       </div>
     </section>
+  )
+}
+
+function Pill({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full"
+      style={{
+        background: 'rgba(255,255,255,0.04)',
+        border: '1px solid rgba(255,255,255,0.08)',
+      }}
+    >
+      <span className="w-1 h-1 rounded-full" style={{ background: 'var(--brand)' }} />
+      {children}
+    </span>
   )
 }

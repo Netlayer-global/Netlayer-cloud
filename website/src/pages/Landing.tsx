@@ -1,28 +1,43 @@
 /**
- * Landing — the public marketing page.
+ * Landing — public marketing page (Round 25 layout).
  *
- * All sections live in `components/landing-v3/`. This file is a thin
- * orchestrator that composes them in the correct order. To add or
- * reorder sections, edit only this file. To restyle a section, edit
- * the matching file under `components/landing-v3/`.
+ * Section order (top to bottom):
+ *   TopBanner       — promo strip
+ *   LandingNav      — sticky nav (rendered via fixed position)
+ *   HeroSection     — split hero with signup card
+ *   AnnouncementBar — 4-column stat strip
+ *   ProductsSection — Cloud / Bare Metal / GPU tabs
+ *   PerformanceSection — benchmark bars + features
+ *   GlobalNetworkSection — region grid
+ *   PartnersSection — wordmark strip
+ *   PricingSection  — 3-tier plan grid
+ *   DeveloperSection — REST/CLI/Terraform code cards
+ *   MarketplaceSection — 12 one-click apps
+ *   TrustSection    — compliance pills
+ *   TestimonialsSection — 3 customer quotes
+ *   ResourcesSection — Docs / API / Blog cards
+ *   CTASection      — final pre-footer push
+ *   LandingFooter   — sitemap + socials
  *
- * Other public pages (Pricing, About, Docs, etc.) import LandingNav /
- * LandingFooter / PricingSection from `components/landing-v3` directly
- * — Landing.tsx also re-exports them at the bottom so any older imports
- * `from '../Landing'` keep working.
+ * Other public pages (/pricing, /docs, etc.) reuse LandingNav/Footer +
+ * PricingSection from `components/landing-v3`. Re-exports below preserve
+ * older `from '../Landing'` imports.
  */
 import {
   LandingNav,
+  TopBanner,
   HeroSection,
-  StatsBar,
+  AnnouncementBar,
   ProductsSection,
   PerformanceSection,
   GlobalNetworkSection,
+  PartnersSection,
   PricingSection,
   DeveloperSection,
   MarketplaceSection,
   TrustSection,
   TestimonialsSection,
+  ResourcesSection,
   CTASection,
   LandingFooter,
 } from '../components/landing-v3'
@@ -30,17 +45,20 @@ import {
 export default function Landing() {
   return (
     <div className="nl-v3">
+      <TopBanner />
       <LandingNav />
       <HeroSection />
-      <StatsBar />
+      <AnnouncementBar />
       <ProductsSection />
       <PerformanceSection />
       <GlobalNetworkSection />
+      <PartnersSection />
       <PricingSection />
       <DeveloperSection />
       <MarketplaceSection />
       <TrustSection />
       <TestimonialsSection />
+      <ResourcesSection />
       <CTASection />
       <LandingFooter />
     </div>

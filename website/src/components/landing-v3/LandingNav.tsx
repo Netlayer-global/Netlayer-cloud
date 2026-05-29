@@ -16,7 +16,7 @@ export function LandingNav() {
 
   return (
     <header
-      className="nl-glass fixed top-0 inset-x-0 z-50"
+      className="nl-glass fixed top-9 inset-x-0 z-50"
       style={{ borderBottom: '1px solid var(--b-subtle)' }}
     >
       <div className="max-w-7xl mx-auto h-[52px] px-4 sm:px-6 flex items-center justify-between">

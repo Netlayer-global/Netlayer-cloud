@@ -1,121 +1,95 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Award, Award as Sla, BadgeCheck, Eye, Lock, Shield } from 'lucide-react'
+import { Award, BadgeCheck, Eye, Lock, Shield, Star } from 'lucide-react'
 
 /**
- * TrustSection — left column lists six compliance items (SOC 2, ISO,
- * GDPR, PCI, HIPAA, SLA). Right column polls /api/platform/stats every
- * 30s to show a live status card.
+ * Trust + compliance section. Two-column layout:
+ *   Left  — wrapping pill cluster of compliance badges (SOC 2, ISO 27001, …)
+ *   Right — large headline + paragraph + "Visit Trust Center" CTA
+ *
+ * No external badge SVGs — all glyphs come from lucide. Keeps the section
+ * brand-safe (no third-party logos = no clearance work).
  */
 
-const COMPLIANCE = [
-  { Icon: BadgeCheck, title: 'SOC 2 Type II',    sub: 'Annual third-party audit' },
-  { Icon: Shield,     title: 'ISO 27001',         sub: 'Information security' },
-  { Icon: Lock,       title: 'GDPR compliant',    sub: 'Full data subject rights' },
-  { Icon: Award,      title: 'PCI DSS Ready',     sub: 'Card-data tokenisation' },
-  { Icon: Eye,        title: 'HIPAA Ready',       sub: 'BAA available on request' },
-  { Icon: Sla,        title: '99.99% SLA',        sub: 'Backed by service credits' },
-]
+const BADGES = [
+  { icon: BadgeCheck, label: 'SOC 2 Type II' },
+  { icon: Shield,     label: 'ISO 27001:2022' },
+  { icon: Lock,       label: 'GDPR compliant' },
+  { icon: Award,      label: 'PCI-DSS ready' },
+  { icon: Eye,        label: 'HIPAA ready (BAA)' },
+  { icon: Star,       label: 'India DPDP 2023' },
+] as const
 
 export function TrustSection() {
   return (
-    <section className="py-20 px-4 sm:px-6" style={{ background: 'var(--nl-0)' }}>
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
+    <section
+      className="py-16 lg:py-24"
+      style={{
+        background: 'var(--nl-1)',
+        borderTop: '1px solid var(--b-subtle)',
+        borderBottom: '1px solid var(--b-subtle)',
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-[1fr_1.1fr] gap-12 lg:gap-20 items-center">
+        {/* Left badge cluster */}
+        <div className="flex flex-wrap gap-3">
+          {BADGES.map((b) => (
+            <span
+              key={b.label}
+              className="inline-flex items-center gap-2 px-4 h-10 rounded-md text-[13px]"
+              style={{
+                background: 'var(--nl-2)',
+                border: '1px solid var(--b-default)',
+                color: 'var(--t-hi)',
+              }}
+            >
+              <b.icon size={14} style={{ color: 'var(--brand)' }} />
+              {b.label}
+            </span>
+          ))}
+        </div>
+
+        {/* Right copy */}
         <div>
-          <h2 style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1.15 }}>
-            Enterprise-grade security &amp; compliance
+          <div className="text-[11px] uppercase tracking-[.22em] mb-3" style={{ color: 'var(--brand)' }}>
+            Trust &amp; compliance
+          </div>
+          <h2
+            className="leading-[1.15] tracking-tight"
+            style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 500, color: 'var(--t-hi)' }}
+          >
+            Audited cloud infrastructure for{' '}
+            <span style={{ color: 'var(--brand)' }}>regulated workloads.</span>
           </h2>
-          <p className="mt-4" style={{ fontSize: 14, color: 'var(--t-med)' }}>
-            Audited yearly. Encrypted everywhere. Designed for regulated workloads.
+          <p className="mt-6 text-[15px] leading-[1.65]" style={{ color: 'var(--t-med)' }}>
+            Encrypted at rest with AES-256. CGST/SGST/IGST split on every Indian
+            invoice. CERT-In 6-hour incident reporting integrated. Independent
+            yearly audits.
           </p>
-          <div className="mt-8 grid grid-cols-2 gap-3">
-            {COMPLIANCE.map((c) => (
-              <div key={c.title} className="nl-card p-4">
-                <div className="flex items-start gap-3">
-                  <div
-                    className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
-                    style={{ background: 'var(--brand-d)', border: '1px solid var(--brand-b)' }}
-                  >
-                    <c.Icon size={14} style={{ color: 'var(--brand)' }} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 500 }}>{c.title}</div>
-                    <div className="mt-0.5" style={{ fontSize: 11, color: 'var(--t-low)' }}>{c.sub}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link
+              to="/legal/terms"
+              className="inline-flex items-center gap-2 h-11 px-5 rounded-md text-[13.5px] font-medium transition-colors cursor-pointer"
+              style={{ background: 'var(--brand)', color: '#0d0e0d' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--brand-h)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--brand)')}
+            >
+              Visit Trust Center
+            </Link>
+            <Link
+              to="/abuse-report"
+              className="inline-flex items-center gap-2 h-11 px-5 rounded-md text-[13.5px] transition-colors cursor-pointer"
+              style={{
+                color: 'var(--t-hi)',
+                border: '1px solid var(--b-strong)',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-b)')}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--b-strong)')}
+            >
+              Report abuse
+            </Link>
           </div>
         </div>
-
-        <PlatformLiveStats />
       </div>
     </section>
-  )
-}
-
-interface PlatformStats {
-  serversDeployedToday: number
-  activeServers: number
-  regionsOnline: number
-  lastDeploySeconds: number | null
-  totalUsers: number
-  uptimePercent: number
-}
-
-function PlatformLiveStats() {
-  const [stats, setStats] = useState<PlatformStats | null>(null)
-  useEffect(() => {
-    const fetchStats = () => {
-      const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/$/, '')
-      fetch(`${apiUrl}/platform/stats`)
-        .then((r) => (r.ok ? r.json() : null))
-        .then((j) => j?.data && setStats(j.data))
-        .catch(() => undefined)
-    }
-    fetchStats()
-    const t = window.setInterval(fetchStats, 30_000)
-    return () => clearInterval(t)
-  }, [])
-
-  return (
-    <div className="nl-card p-6">
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full nl-pulse-dot" style={{ background: 'var(--c-green)' }} />
-          <span style={{ fontSize: 14, fontWeight: 500 }}>Platform status</span>
-        </div>
-        <Link to="/status" style={{ fontSize: 12, color: 'var(--brand)' }}>View status →</Link>
-      </div>
-
-      <div className="space-y-3">
-        <StatRow label="Servers deployed today" value={stats ? stats.serversDeployedToday.toLocaleString('en-IN') : '—'} />
-        <StatRow label="Active servers"          value={stats ? stats.activeServers.toLocaleString('en-IN')        : '—'} />
-        <StatRow label="Regions online"          value={stats ? `${stats.regionsOnline}/15`                         : '—'} />
-        <StatRow label="Last deploy"             value={stats?.lastDeploySeconds ? `${stats.lastDeploySeconds}s` : '—'} />
-        <StatRow label="Uptime (30 days)"        value={stats ? `${stats.uptimePercent.toFixed(2)}%`                : '—'} />
-      </div>
-    </div>
-  )
-}
-
-function StatRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      className="flex items-center justify-between"
-      style={{ padding: '10px 0', borderBottom: '1px solid var(--b-subtle)' }}
-    >
-      <span style={{ fontSize: 12, color: 'var(--t-low)' }}>{label}</span>
-      <span
-        style={{
-          fontSize: 13,
-          color: 'var(--t-hi)',
-          fontFamily: 'var(--font-mono)',
-          fontWeight: 500,
-        }}
-      >
-        {value}
-      </span>
-    </div>
   )
 }
