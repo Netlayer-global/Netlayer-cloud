@@ -1,231 +1,95 @@
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import {
-  ArrowRight, Cpu, Server, MonitorCog, Hexagon,
-  HardDrive, Database, Network, Boxes,
-} from 'lucide-react'
 
 /**
- * ProductsSection — modern bento-grid product showcase.
+ * "What we deliver" — numbered hairline feature cards (Fireblox layout),
+ * lime top-border on hover, tag chips, VPS product copy.
  *
- * An asymmetric grid where the two flagship products (Cloud Compute and GPU
- * Cloud) take wide feature tiles, and the rest of the platform fills smaller
- * cards. Each tile links into the relevant pricing anchor. Cards lift and
- * gain a lime border-glow on hover.
- *
- * Original copy throughout; the layout idea (a single grid spanning the whole
- * product line) is a common SaaS pattern rendered here in the lime-on-dark
- * NetLayer style.
+ * Differs from Fireblox: lime hover accent (not red), VPS products, and a
+ * left-aligned intro heading block above the grid.
  */
-
-const BRAND = '#c8f135'
-
-interface Tile {
-  icon: typeof Cpu
-  eyebrow: string
+type Card = {
+  num: string
+  tags: string[]
   title: string
   desc: string
-  price: string
-  to: string
-  span: string // grid column span classes
-  feature?: boolean
-  badge?: string
+  href: string
 }
 
-const TILES: Tile[] = [
-  {
-    icon: Cpu,
-    eyebrow: 'Cloud Compute',
-    title: 'Virtual servers, deployed in seconds',
-    desc: 'Real KVM virtualization on AMD EPYC and Intel Xeon with local NVMe. Pick a flavor, a region, and an OS — your server is online before your coffee.',
-    price: 'from ₹149/mo',
-    to: '/pricing#compute',
-    span: 'lg:col-span-2 lg:row-span-1',
-    feature: true,
-  },
-  {
-    icon: MonitorCog,
-    eyebrow: 'GPU Cloud',
-    title: 'Accelerated compute for AI',
-    desc: 'NVIDIA L40, A100, and H100 cards with NVLink. Train, fine-tune, and serve models without the capex.',
-    price: 'from ₹1,999/mo',
-    to: '/pricing#gpu',
-    span: 'lg:col-span-1 lg:row-span-2',
-    feature: true,
-    badge: 'Popular',
-  },
-  {
-    icon: Server,
-    eyebrow: 'Bare Metal',
-    title: 'Dedicated servers',
-    desc: 'Single-tenant hardware, full control, zero noisy neighbours.',
-    price: 'from ₹999/mo',
-    to: '/pricing#bare',
-    span: 'lg:col-span-1',
-  },
-  {
-    icon: Hexagon,
-    eyebrow: 'Kubernetes',
-    title: 'Managed clusters',
-    desc: 'Production-ready control plane, autoscaling node pools, one-click upgrades.',
-    price: 'Preview',
-    to: '/kubernetes',
-    span: 'lg:col-span-1',
-    badge: 'Preview',
-  },
-  {
-    icon: HardDrive,
-    eyebrow: 'Block Storage',
-    title: 'Expandable NVMe volumes',
-    desc: 'Attach fast, resizable storage to any server in seconds.',
-    price: 'from ₹40/GB',
-    to: '/pricing#block',
-    span: 'lg:col-span-1',
-  },
-  {
-    icon: Boxes,
-    eyebrow: 'Object Storage',
-    title: 'S3-compatible buckets',
-    desc: 'Durable, global object store with a familiar API.',
-    price: 'from ₹5/GB',
-    to: '/pricing#object',
-    span: 'lg:col-span-1',
-  },
-  {
-    icon: Database,
-    eyebrow: 'Managed Databases',
-    title: 'Postgres, MySQL & Redis',
-    desc: 'Automated backups, failover, and patching — you just connect.',
-    price: 'from ₹499/mo',
-    to: '/pricing#db',
-    span: 'lg:col-span-1',
-  },
-  {
-    icon: Network,
-    eyebrow: 'Load Balancers',
-    title: 'Highly available routing',
-    desc: 'Distribute traffic across servers with health checks and TLS.',
-    price: 'from ₹299/mo',
-    to: '/pricing#lb',
-    span: 'lg:col-span-1',
-  },
+const CARDS: Card[] = [
+  { num: '01', tags: ['KVM', 'NVMe', 'Per-second'], title: 'Cloud VPS',
+    desc: 'Dedicated vCPU and NVMe SSD virtual machines that boot in ~30 seconds. Resize live, snapshot anytime, pay by the second.', href: '/pricing#compute' },
+  { num: '02', tags: ['EPYC', 'RAID', 'IPMI'], title: 'Bare Metal',
+    desc: 'Single-tenant AMD EPYC servers with zero virtualization overhead, custom RAID, and full out-of-band IPMI access.', href: '/pricing#bare' },
+  { num: '03', tags: ['L40', 'A100', 'H100'], title: 'GPU Instances',
+    desc: 'NVIDIA L40 / A100 / H100 instances for AI training, inference, and rendering — provisioned on demand, billed hourly.', href: '/pricing#gpu' },
+  { num: '04', tags: ['S3', 'Block', 'Backups'], title: 'Storage',
+    desc: 'S3-compatible object storage and NVMe block volumes with snapshots, cross-region replication, and automated backups.', href: '/pricing#storage' },
+  { num: '05', tags: ['Anycast', 'DDoS', 'VLAN'], title: 'Networking',
+    desc: 'Floating IPs, private VLANs, load balancers, and hardware DDoS protection across a 25 Gbps backbone.', href: '/network' },
+  { num: '06', tags: ['EVM', 'GSTR-1', 'API'], title: 'Managed DB & More',
+    desc: 'PostgreSQL, MySQL, and Redis with automated failover — plus DNS, Kubernetes (preview), and a full REST API.', href: '/pricing#db' },
 ]
 
 export function ProductsSection() {
   return (
-    <section id="products" className="py-20 lg:py-28" style={{ background: 'var(--nl-0)' }}>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl">
-          <div className="text-[11px] uppercase tracking-[0.22em]" style={{ color: BRAND }}>
-            One platform
-          </div>
-          <h2
-            className="mt-3 font-semibold tracking-tight text-white"
-            style={{ fontSize: 'clamp(28px, 4vw, 46px)', lineHeight: 1.08, letterSpacing: '-0.02em' }}
-          >
-            Everything you need to ship,
-            <br className="hidden sm:block" /> nothing you don't.
-          </h2>
-          <p className="mt-4 text-[15px]" style={{ color: 'var(--t-med)' }}>
-            Compute, storage, networking, and data services share one console, one
-            API, and one bill. Mix and match — scale each piece independently.
-          </p>
-        </div>
+    <section id="products" style={{ background: 'var(--nl-0)' }}>
+      {/* intro */}
+      <div style={{ padding: 'clamp(60px,9vw,100px) clamp(20px,5vw,52px) 0', borderTop: '1px solid var(--b-subtle)' }}>
+        <div className="nl-eyebrow" style={{ marginBottom: 20 }}>What we run</div>
+        <h2
+          className="nl-head"
+          style={{ fontSize: 'clamp(28px,4vw,52px)', color: 'var(--t-hi)', maxWidth: 560 }}
+        >
+          Infrastructure built for teams that don't compromise.
+        </h2>
+      </div>
 
-        <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:auto-rows-[minmax(220px,auto)]">
-          {TILES.map((tile, i) => (
-            <BentoTile key={tile.eyebrow} tile={tile} index={i} />
-          ))}
-        </div>
+      {/* grid */}
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 nl-grid-surface"
+        style={{ marginTop: 'clamp(40px,6vw,64px)', borderTop: '1px solid var(--b-subtle)' }}
+      >
+        {CARDS.map((c) => (
+          <Link
+            key={c.num}
+            to={c.href}
+            className="nl-cell group relative overflow-hidden cursor-pointer"
+            style={{ padding: 'clamp(40px,5vw,52px) clamp(32px,4vw,46px)', transition: 'background .3s' }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--nl-1)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--nl-0)')}
+          >
+            {/* lime top border on hover */}
+            <span
+              aria-hidden
+              className="absolute top-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{ height: 2, background: 'linear-gradient(90deg, var(--brand), transparent)' }}
+            />
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.2em', color: 'var(--t-off)', marginBottom: 28 }}>
+              {c.num}
+            </div>
+            <div className="flex gap-2 flex-wrap" style={{ marginBottom: 20 }}>
+              {c.tags.map((t) => (
+                <span
+                  key={t}
+                  style={{
+                    fontSize: 9.5, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase',
+                    padding: '4px 10px', border: '1px solid var(--b-strong)', color: 'var(--t-med)',
+                  }}
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+            <div
+              className="nl-head"
+              style={{ fontSize: 20, fontWeight: 700, color: 'var(--t-hi)', marginBottom: 13, letterSpacing: '.06em' }}
+            >
+              {c.title}
+            </div>
+            <p style={{ fontSize: 13.5, color: 'var(--t-med)', lineHeight: 1.75 }}>{c.desc}</p>
+          </Link>
+        ))}
       </div>
     </section>
-  )
-}
-
-function BentoTile({ tile, index }: { tile: Tile; index: number }) {
-  const Icon = tile.icon
-  return (
-    <motion.div
-      className={tile.span}
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.5, delay: (index % 4) * 0.06, ease: [0.16, 1, 0.3, 1] }}
-    >
-      <Link
-        to={tile.to}
-        className="group relative flex h-full flex-col overflow-hidden rounded-2xl p-6 transition-all duration-300"
-        style={{
-          background: tile.feature
-            ? 'linear-gradient(160deg, var(--nl-3), var(--nl-1) 70%)'
-            : 'var(--nl-1)',
-          border: '1px solid var(--b-default)',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = 'var(--brand-b)'
-          e.currentTarget.style.transform = 'translateY(-3px)'
-          e.currentTarget.style.boxShadow = '0 0 32px rgba(200,241,53,0.12)'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = 'var(--b-default)'
-          e.currentTarget.style.transform = 'translateY(0)'
-          e.currentTarget.style.boxShadow = 'none'
-        }}
-      >
-        {/* glow accent for feature tiles */}
-        {tile.feature && (
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full opacity-50 transition-opacity duration-300 group-hover:opacity-80"
-            style={{ background: 'radial-gradient(circle, rgba(200,241,53,0.18), transparent 65%)', filter: 'blur(8px)' }}
-          />
-        )}
-
-        <div className="relative flex items-center justify-between">
-          <span
-            className="flex h-11 w-11 items-center justify-center rounded-xl"
-            style={{ background: 'var(--brand-d)', border: '1px solid var(--brand-b)', color: BRAND }}
-          >
-            <Icon size={20} />
-          </span>
-          {tile.badge && (
-            <span
-              className="rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider"
-              style={{ background: 'var(--brand-d)', color: BRAND, border: '1px solid var(--brand-b)' }}
-            >
-              {tile.badge}
-            </span>
-          )}
-        </div>
-
-        <div className="relative mt-5 flex-1">
-          <div className="text-[11px] uppercase tracking-[0.16em]" style={{ color: 'var(--t-low)' }}>
-            {tile.eyebrow}
-          </div>
-          <h3
-            className="mt-1.5 font-semibold text-white"
-            style={{ fontSize: tile.feature ? 'clamp(18px,2vw,24px)' : '17px', letterSpacing: '-0.01em', lineHeight: 1.2 }}
-          >
-            {tile.title}
-          </h3>
-          <p className="mt-2.5 text-[13.5px] leading-relaxed" style={{ color: 'var(--t-med)' }}>
-            {tile.desc}
-          </p>
-        </div>
-
-        <div className="relative mt-5 flex items-center justify-between">
-          <span className="text-[13px] font-medium" style={{ color: BRAND }}>
-            {tile.price}
-          </span>
-          <span
-            className="inline-flex items-center gap-1 text-[12.5px] transition-colors"
-            style={{ color: 'var(--t-low)' }}
-          >
-            Explore
-            <ArrowRight size={13} className="transition-transform duration-200 group-hover:translate-x-1" style={{ color: BRAND }} />
-          </span>
-        </div>
-      </Link>
-    </motion.div>
   )
 }

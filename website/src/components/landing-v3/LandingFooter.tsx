@@ -33,7 +33,7 @@ export function LandingFooter() {
                 <polygon points="16,8 23,12 23,20 16,24 9,20 9,12" fill="var(--brand-d)" stroke={BRAND} strokeWidth="1" />
                 <circle cx="16" cy="16" r="2.5" fill={BRAND} />
               </svg>
-              <span className="text-[15px] font-semibold text-white">NetLayer Cloud</span>
+              <span className="text-[15px] font-semibold" style={{ color: 'var(--t-hi)' }}>NetLayer Cloud</span>
             </Link>
             <p className="mt-4 text-[13px] leading-relaxed" style={{ color: 'var(--t-low)' }}>
               High-performance cloud infrastructure for developers and teams.
@@ -102,7 +102,7 @@ function Newsletter() {
 
   return (
     <div className="w-full max-w-sm">
-      <div className="text-[13px] font-medium text-white">Stay in the loop</div>
+      <div className="text-[13px] font-medium" style={{ color: 'var(--t-hi)' }}>Stay in the loop</div>
       <p className="mt-1 text-[12px]" style={{ color: 'var(--t-low)' }}>
         Product updates and engineering notes. No spam.
       </p>
@@ -121,7 +121,7 @@ function Newsletter() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@company.com"
-            className="h-11 flex-1 rounded-lg px-3.5 text-[13px] text-white outline-none transition-colors placeholder:text-white/35"
+            className="h-11 flex-1 rounded-lg px-3.5 text-[13px] outline-none transition-colors"
             style={{ background: 'var(--nl-2)', border: '1px solid var(--b-strong)' }}
             onFocus={(e) => (e.currentTarget.style.borderColor = BRAND)}
             onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--b-strong)')}

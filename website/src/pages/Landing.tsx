@@ -1,43 +1,35 @@
 /**
- * Landing — public marketing page (Round 25 layout).
+ * Landing — editorial home page (Fireblox-inspired, NetLayer lime theme).
  *
- * Section order (top to bottom):
- *   TopBanner       — promo strip
- *   LandingNav      — sticky nav (rendered via fixed position)
- *   HeroSection     — split hero with signup card
- *   AnnouncementBar — 4-column stat strip
- *   ProductsSection — Cloud / Bare Metal / GPU tabs
- *   PerformanceSection — benchmark bars + features
- *   GlobalNetworkSection — region grid
- *   PartnersSection — wordmark strip
- *   PricingSection  — 3-tier plan grid
- *   DeveloperSection — REST/CLI/Terraform code cards
- *   MarketplaceSection — 12 one-click apps
- *   TrustSection    — compliance pills
- *   TestimonialsSection — 3 customer quotes
- *   ResourcesSection — Docs / API / Blog cards
- *   CTASection      — final pre-footer push
- *   LandingFooter   — sitemap + socials
+ * Flow:
+ *   TopBanner        — promo strip
+ *   LandingNav       — flat sticky nav
+ *   HeroSection      — giant display word + glowing lime sphere
+ *   PartnersSection  — integration wordmark bar
+ *   AnnouncementBar  — 3 big-number stats
+ *   StatsBar         — keyword marquee
+ *   ProductsSection  — "what we run" numbered hairline cards
+ *   PerformanceSection — platform intro + orbit orb + advantage list
+ *   MarketplaceSection — live console mockup
+ *   GlobalNetworkSection — region node grid
+ *   TrustSection     — compliance badges
+ *   CTASection       — pre-footer push
+ *   LandingFooter    — sitemap + newsletter
  *
- * Other public pages (/pricing, /docs, etc.) reuse LandingNav/Footer +
- * PricingSection from `components/landing-v3`. Re-exports below preserve
- * older `from '../Landing'` imports.
+ * Other public pages reuse LandingNav / LandingFooter / PricingSection.
  */
 import {
-  LandingNav,
   TopBanner,
+  LandingNav,
   HeroSection,
+  PartnersSection,
   AnnouncementBar,
+  StatsBar,
   ProductsSection,
   PerformanceSection,
-  GlobalNetworkSection,
-  PartnersSection,
-  PricingSection,
-  DeveloperSection,
   MarketplaceSection,
+  GlobalNetworkSection,
   TrustSection,
-  TestimonialsSection,
-  ResourcesSection,
   CTASection,
   LandingFooter,
 } from '../components/landing-v3'
@@ -48,23 +40,20 @@ export default function Landing() {
       <TopBanner />
       <LandingNav />
       <HeroSection />
+      <PartnersSection />
       <AnnouncementBar />
+      <StatsBar />
       <ProductsSection />
       <PerformanceSection />
-      <GlobalNetworkSection />
-      <PartnersSection />
-      <PricingSection />
-      <DeveloperSection />
       <MarketplaceSection />
+      <GlobalNetworkSection />
       <TrustSection />
-      <TestimonialsSection />
-      <ResourcesSection />
       <CTASection />
       <LandingFooter />
     </div>
   )
 }
 
-// Re-exports for backward compatibility with public pages that still
-// import these names from `../Landing`.
-export { LandingNav, LandingFooter, PricingSection }
+// Re-exports for the supporting public pages.
+export { LandingNav, LandingFooter } from '../components/landing-v3'
+export { PricingSection } from '../components/landing-v3'

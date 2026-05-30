@@ -1,139 +1,98 @@
-import { useState } from 'react'
-import {
-  Clock, Globe, HardDrive, Network, Shield, Zap,
-} from 'lucide-react'
-import { useInView } from '../../utils/animations'
+import { Link } from 'react-router-dom'
 
 /**
- * PerformanceSection — split layout. Left side animates benchmark bars
- * with a toggle to overlay industry-average. Right side lists 6 platform
- * differentiators (EPYC Gen4, all-NVMe, 25 Gbps, DDoS, fast deploy, KVM).
+ * Two-col intro with an orbiting lime orb visual (right), then a 6-item
+ * "advantage" hairline list. Fireblox structure, lime palette, VPS copy.
  */
-
-const BENCHMARKS = [
-  { label: 'NVMe Sequential Read',  value: '14.2 GB/s',   pct: 92, vs: 38 },
-  { label: 'NVMe Sequential Write', value: '8.7 GB/s',    pct: 71, vs: 30 },
-  { label: 'Network Throughput',    value: '25 Gbps',     pct: 98, vs: 22 },
-  { label: 'CPU Single-Thread',     value: '5.8 GHz',     pct: 82, vs: 50 },
-  { label: 'Deploy Time',           value: '15 seconds',  pct: 96, vs: 18 },
-]
-
-const FEATURES = [
-  { Icon: Zap,        title: 'AMD EPYC Gen4 processors', desc: 'Latest generation with up to 192 cores per node' },
-  { Icon: HardDrive,  title: 'All-NVMe storage',         desc: 'Every plan includes NVMe SSD, not SATA or spinning disk' },
-  { Icon: Network,    title: '25 Gbps+ network',         desc: 'Private VLAN, BGP anycast, anti-spoofing included' },
-  { Icon: Shield,     title: 'Hardware DDoS protection', desc: 'Layer 3/4/7 filtering at network edge, always on' },
-  { Icon: Clock,      title: '30-second provisioning',   desc: 'Linked clone pipeline, pre-cached images, instant boot' },
-  { Icon: Globe,      title: 'KVM hypervisor',           desc: 'No containers pretending to be VMs. Real hardware isolation' },
+const ADV = [
+  { title: 'Live metrics', desc: 'CPU, RAM, disk, bandwidth — per server, in real time. Not in a monthly PDF that lands three weeks late.' },
+  { title: 'Auto-incident detection', desc: 'A node hiccup or runaway VM is flagged instantly with full diagnostic context — before you notice.' },
+  { title: 'Self-service billing', desc: 'Download GST invoices, manage subscriptions, top up wallet — your finance team never chases anyone.' },
+  { title: '30-second deploys', desc: 'Linked-clone pipeline with pre-cached golden images means servers boot before your coffee cools.' },
+  { title: 'India-GST native', desc: 'Sequential invoice numbering, CGST/SGST/IGST split, and GSTR-1 export built in from day one.' },
+  { title: 'Developer API', desc: 'Pull server status, metrics, and billing into your own tooling via a clean REST API + Terraform provider.' },
 ]
 
 export function PerformanceSection() {
-  const { ref, inView } = useInView<HTMLDivElement>(0.3)
-  const [showVs, setShowVs] = useState(false)
-
   return (
-    <section
-      ref={ref}
-      className="py-20 px-4 sm:px-6"
-      style={{
-        background: 'var(--nl-1)',
-        borderTop: '1px solid var(--b-subtle)',
-        borderBottom: '1px solid var(--b-subtle)',
-      }}
-    >
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
-        <div>
-          <div className="text-[10px] uppercase tracking-[.2em] mb-3" style={{ color: 'var(--brand)' }}>
-            PERFORMANCE
+    <>
+      {/* intro two-col with orb */}
+      <section
+        style={{ padding: 'clamp(64px,9vw,100px) clamp(20px,5vw,52px)', borderTop: '1px solid var(--b-subtle)', background: 'var(--nl-0)' }}
+      >
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+          <div>
+            <div className="nl-eyebrow" style={{ marginBottom: 20 }}>The platform</div>
+            <h2 className="nl-head" style={{ fontSize: 'clamp(34px,5vw,68px)', color: 'var(--t-hi)', marginBottom: 24 }}>
+              The control plane behind your servers.
+            </h2>
+            <p style={{ fontSize: 15, color: 'var(--t-med)', lineHeight: 1.8, maxWidth: 560 }}>
+              Most hosts hand you a panel and disappear. NetLayer gives you real-time
+              visibility into every server, every invoice, every SLA — through a
+              console your team actually wants to open.
+            </p>
+            <Link to="/features" className="nl-btn-ghost" style={{ marginTop: 32 }}>
+              Explore the platform
+            </Link>
           </div>
-          <h2 style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1.15 }}>
-            Built on bare metal performance
-          </h2>
-          <p className="mt-4" style={{ fontSize: 14, color: 'var(--t-med)' }}>
-            Every plan runs on AMD EPYC Gen4 or Intel Xeon processors with all-NVMe storage.
-          </p>
 
-          <div className="mt-6 mb-8 flex items-center gap-2">
-            <button
-              onClick={() => setShowVs(!showVs)}
-              className="text-[11px] inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full transition-colors cursor-pointer"
+          {/* orbiting orb */}
+          <div className="relative flex items-center justify-center" style={{ height: 340 }}>
+            <div
+              className="absolute rounded-full"
               style={{
-                background: showVs ? 'var(--brand-d)' : 'var(--nl-2)',
-                border: `1px solid ${showVs ? 'var(--brand-b)' : 'var(--b-default)'}`,
-                color: showVs ? 'var(--brand)' : 'var(--t-med)',
+                width: 320, height: 320, border: '1px solid var(--b-default)',
+                animation: 'nl-orbit-spin 18s linear infinite',
               }}
             >
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: showVs ? 'var(--brand)' : 'var(--t-low)' }}
-              />
-              vs. industry average
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            {BENCHMARKS.map((b, idx) => (
-              <div key={b.label}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span style={{ fontSize: 12, color: 'var(--t-med)' }}>{b.label}</span>
-                  <span style={{ fontSize: 12, color: 'var(--brand)', fontFamily: 'var(--font-mono)' }}>{b.value}</span>
-                </div>
-                <div
-                  className="relative rounded-full overflow-hidden"
-                  style={{ background: 'var(--b-default)', height: 6 }}
-                >
-                  {showVs && (
-                    <div
-                      className="absolute inset-y-0 left-0 rounded-full"
-                      style={{
-                        background: 'var(--t-off)',
-                        width: inView ? `${b.vs}%` : '0%',
-                        transition: `width 1.2s cubic-bezier(.16,1,.3,1) ${idx * 80}ms`,
-                      }}
-                    />
-                  )}
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-full"
-                    style={{
-                      background: 'linear-gradient(90deg, var(--brand), #a8e620)',
-                      width: inView ? `${b.pct}%` : '0%',
-                      transition: `width 1.4s cubic-bezier(.16,1,.3,1) ${idx * 80 + 100}ms`,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
+              <span className="absolute rounded-full" style={{ top: -3.5, left: '50%', transform: 'translateX(-50%)', width: 6, height: 6, background: 'var(--brand)', boxShadow: '0 0 10px var(--brand)' }} />
+            </div>
+            <div
+              className="absolute rounded-full"
+              style={{
+                width: 400, height: 400, border: '1px solid var(--b-default)',
+                animation: 'nl-orbit-spin 27s linear infinite reverse',
+              }}
+            >
+              <span className="absolute rounded-full" style={{ top: -3.5, left: '50%', transform: 'translateX(-50%)', width: 6, height: 6, background: 'var(--c-cyan)', boxShadow: '0 0 10px var(--c-cyan)' }} />
+            </div>
+            <div
+              className="rounded-full"
+              style={{
+                width: 230, height: 230,
+                background: 'radial-gradient(circle at 38% 33%, rgba(200,241,53,.5) 0%, rgba(40,70,0,.85) 58%, #000 100%)',
+                boxShadow: '0 0 90px rgba(132,204,22,.25)',
+              }}
+            />
           </div>
         </div>
+      </section>
 
-        <div>
-          <div className="text-[10px] uppercase tracking-[.2em] mb-3" style={{ color: 'var(--brand)' }}>
-            WHY NETLAYER
+      {/* advantage hairline list */}
+      <section style={{ padding: 'clamp(50px,7vw,70px) clamp(20px,5vw,52px) 0', background: 'var(--nl-0)', borderTop: '1px solid var(--b-subtle)' }}>
+        <div className="nl-eyebrow" style={{ marginBottom: 20 }}>The advantage</div>
+        <h2 className="nl-head" style={{ fontSize: 'clamp(28px,4vw,52px)', color: 'var(--t-hi)' }}>
+          Everything visible. Everything controlled.
+        </h2>
+      </section>
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 nl-grid-surface"
+        style={{ marginTop: 'clamp(32px,5vw,52px)', borderTop: '1px solid var(--b-subtle)' }}
+      >
+        {ADV.map((a) => (
+          <div
+            key={a.title}
+            className="nl-cell"
+            style={{ padding: 'clamp(34px,4vw,42px) clamp(28px,4vw,40px)' }}
+          >
+            <span className="block" style={{ width: 28, height: 2, background: 'var(--brand)', marginBottom: 22 }} />
+            <div className="nl-head" style={{ fontSize: 17, fontWeight: 700, color: 'var(--t-hi)', marginBottom: 10, letterSpacing: '.05em' }}>
+              {a.title}
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--t-med)', lineHeight: 1.7 }}>{a.desc}</p>
           </div>
-          <h2 style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1.15 }}>
-            The infrastructure difference
-          </h2>
-
-          <div className="mt-8 space-y-5">
-            {FEATURES.map((f) => (
-              <div key={f.title} className="flex items-start gap-3">
-                <div
-                  className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 mt-0.5"
-                  style={{ background: 'var(--brand-d)', border: '1px solid var(--brand-b)' }}
-                >
-                  <f.Icon size={14} style={{ color: 'var(--brand)' }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>{f.title}</div>
-                  <div style={{ fontSize: 12, color: 'var(--t-low)', lineHeight: 1.55 }}>
-                    {f.desc}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        ))}
       </div>
-    </section>
+    </>
   )
 }

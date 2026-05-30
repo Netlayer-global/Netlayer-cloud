@@ -304,3 +304,63 @@ html, body { background: var(--nl-0); color: var(--t-hi); }
  * Components reference `var(--grid-line)` instead of hard-coded white. */
 :root              { --grid-line: rgba(255, 255, 255, 0.7); --input-bg: rgba(255, 255, 255, 0.04); }
 [data-theme='light'] { --grid-line: rgba(15,  23, 11, 0.18); --input-bg: rgba(15, 23, 11, 0.03); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   EDITORIAL TYPE SYSTEM (Fireblox-inspired, lime-themed)
+   Used by the landing-v3 sections. Display = Bebas Neue, headings =
+   Barlow Condensed, body = Barlow. Scoped under .nl-v3 so the dashboard
+   font stack is untouched.
+   ═══════════════════════════════════════════════════════════════════ */
+.nl-v3 {
+  --font-display: 'Bebas Neue', 'Barlow Condensed', sans-serif;
+  --font-head:    'Barlow Condensed', 'Barlow', sans-serif;
+  --font-body:    'Barlow', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-body);
+}
+
+.nl-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+  line-height: 0.92;
+}
+.nl-head {
+  font-family: var(--font-head);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 0.96;
+}
+.nl-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--t-low);
+}
+
+/* Hairline grid surfaces (1px gaps showing the border colour through) */
+.nl-grid-surface {
+  background: var(--b-subtle);
+  gap: 1px;
+}
+.nl-cell { background: var(--nl-0); }
+
+/* Marquee for the keyword + logo strips */
+@keyframes nl-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.nl-marquee-track { display: flex; white-space: nowrap; animation: nl-marquee 28s linear infinite; }
+.nl-marquee-track:hover { animation-play-state: paused; }
+
+/* Status pulse dot (green operational) */
+@keyframes nl-status-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(46, 204, 113, .4); }
+  50%      { opacity: .8; box-shadow: 0 0 0 6px rgba(46, 204, 113, 0); }
+}
+.nl-status-dot { animation: nl-status-pulse 2s ease infinite; }
+
+/* Orbit spin for the visual orb */
+@keyframes nl-orbit-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+/* Hero display text — top-lit gradient fade (lime tint at top) */
+@keyframes nl-text-reveal { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes nl-sphere-in   { from { opacity: 0; transform: translate(-50%, -50%) translateY(60px); } to { opacity: 1; transform: translate(-50%, -50%) translateY(0); } }
+@keyframes nl-bottom-reveal { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }

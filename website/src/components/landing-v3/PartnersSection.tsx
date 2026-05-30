@@ -1,54 +1,40 @@
 /**
- * Tech-stack / partner logos strip. Plain wordmarks (no copyrighted logos)
- * arranged in a single row that wraps gracefully. Clarifies "what we
- * integrate with" without infringing on any vendor's trademark.
+ * Partner / integration wordmark bar — sits directly under the hero like
+ * Fireblox's logo row. Plain wordmarks (no copyrighted logos). Lime hover.
  */
 const PARTNERS = [
-  'AMD EPYC',
-  'NVIDIA',
-  'Cloudflare',
   'Razorpay',
   'Stripe',
-  'MinIO',
-  'Prometheus',
-  'Grafana',
-  'Loki',
-  'Jaeger',
-  'Terraform',
-  'Kubernetes',
+  'Cloudflare',
+  'AMD EPYC',
+  'NVIDIA',
+  'Proxmox',
 ] as const
 
 export function PartnersSection() {
   return (
-    <section
-      className="py-12 lg:py-16"
+    <div
+      className="flex items-center justify-between flex-wrap gap-y-4"
       style={{
-        background: 'var(--nl-1)',
+        padding: '26px clamp(20px,5vw,52px)',
         borderTop: '1px solid var(--b-subtle)',
-        borderBottom: '1px solid var(--b-subtle)',
+        background: 'var(--nl-0)',
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <p
-          className="text-center text-[10.5px] uppercase tracking-[0.22em] mb-6"
-          style={{ color: 'var(--t-low)' }}
+      {PARTNERS.map((p) => (
+        <span
+          key={p}
+          className="cursor-default whitespace-nowrap transition-colors"
+          style={{
+            fontSize: 14, fontWeight: 700, letterSpacing: '.03em',
+            color: 'var(--t-low)',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--t-hi)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--t-low)')}
         >
-          Built on hardware + software you trust
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
-          {PARTNERS.map((p) => (
-            <span
-              key={p}
-              className="text-[13px] tracking-[0.05em] transition-opacity"
-              style={{ color: 'var(--t-low)', fontWeight: 500 }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--t-med)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--t-low)')}
-            >
-              {p}
-            </span>
-          ))}
-        </div>
-      </div>
-    </section>
+          {p}
+        </span>
+      ))}
+    </div>
   )
 }
