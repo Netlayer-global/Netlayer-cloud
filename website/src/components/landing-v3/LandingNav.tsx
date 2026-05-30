@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Menu, X as XIcon } from 'lucide-react'
+import { ThemeToggle } from '../ThemeToggle'
 
 /**
  * LandingNav — flat editorial top bar (Fireblox style, theme-aware).
@@ -70,7 +71,8 @@ export function LandingNav() {
         </nav>
 
         {/* right cluster */}
-        <div className="flex items-center" style={{ gap: 16 }}>
+        <div className="flex items-center" style={{ gap: 14 }}>
+          <ThemeToggle inline size="sm" />
           <a
             href={`${DASHBOARD_URL}/login`}
             className="hidden md:inline-flex transition-colors"

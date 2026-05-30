@@ -23,14 +23,14 @@ export function CTASection() {
         }}
       />
       <div className="relative">
-        <div className="nl-head" style={{ fontSize: 'clamp(38px,6vw,82px)', color: 'var(--t-hi)' }}>
+        <div className="nl-display" style={{ fontSize: 'clamp(40px,6vw,88px)', color: 'var(--t-hi)' }}>
           Ready to deploy?
           <br />
-          <span style={{ color: 'color-mix(in srgb, var(--t-hi) 25%, transparent)' }}>
+          <span className="nl-stroke-brand" style={{ fontStyle: 'italic' }}>
             Spin up your first server free.
           </span>
         </div>
-        <p style={{ fontSize: 13, color: 'var(--t-med)', marginTop: 14, letterSpacing: '.04em' }}>
+        <p className="nl-mono" style={{ fontSize: 12.5, color: 'var(--t-med)', marginTop: 18, letterSpacing: '.02em' }}>
           ₹3,500 in credit · No card required · Live in under a minute.
         </p>
       </div>
@@ -38,7 +38,7 @@ export function CTASection() {
         <a href={`${DASHBOARD_URL}/register`} className="nl-btn-primary" style={{ height: 52, padding: '0 38px', fontSize: 13 }}>
           Create free account
         </a>
-        <Link to="/pricing" style={{ fontSize: 11, color: 'var(--t-low)', letterSpacing: '.08em', textTransform: 'uppercase' }}>
+        <Link to="/pricing" className="nl-mono" style={{ fontSize: 11, color: 'var(--t-low)', letterSpacing: '.06em', textTransform: 'uppercase' }}>
           or compare plans →
         </Link>
       </div>

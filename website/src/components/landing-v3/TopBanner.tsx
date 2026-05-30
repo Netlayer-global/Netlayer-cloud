@@ -20,7 +20,7 @@ export function TopBanner() {
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-9 flex items-center justify-center gap-2 flex-wrap">
-        <span className="px-1.5 h-4 inline-flex items-center rounded text-[9px] uppercase font-semibold tracking-wider"
+        <span className="px-1.5 h-4 inline-flex items-center rounded nl-mono text-[9px] uppercase tracking-wider"
               style={{ background: 'var(--brand)', color: 'var(--brand-fg)' }}>
           NEW
         </span>

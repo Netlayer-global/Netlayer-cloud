@@ -1,169 +1,166 @@
 import { Link } from 'react-router-dom'
+import { ArrowUpRight, Server } from 'lucide-react'
 
 /**
- * Editorial hero (Fireblox-inspired, lime-themed, VPS content).
+ * Premium editorial hero (VAULTEX-inspired, lime-themed, VPS content).
  *
  * Layers:
- *   - giant Bebas display word "NETLAYER" with a top-lit fade
- *   - a lime/emerald glowing sphere peeking from the bottom edge
- *   - corner vignettes + ambient glow blobs
- *   - bottom row: condensed tagline (left) + uppercase descriptor (right)
+ *   - faint dot/line grid background + two radial lime/cyan glows
+ *   - floating glass KPI pills: status (top-left) + metric stack (top-right)
+ *   - a huge Playfair serif title where the middle line is an outlined
+ *     `.nl-stroke` variant (VAULTEX signature)
+ *   - hero-bottom: description + actions (left) and a hero-numbers row (right)
  *
- * Differs from Fireblox: lime/green palette instead of red, single-word
- * mark, VPS copy, and a softer green sphere rather than molten-red.
+ * Differs from VAULTEX: lime/cyan palette instead of gold, VPS copy (servers,
+ * regions, deploy time), a server glyph in the status pill, and original
+ * numerals. Theme-aware via CSS tokens.
  */
 const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5173'
+
+const HERO_NUMBERS = [
+  { num: '50K+', label: 'Servers deployed' },
+  { num: '15',   label: 'Global regions' },
+  { num: '<30s', label: 'Time to boot' },
+] as const
+
+const KPI_STACK = [
+  { val: '99.99%', label: 'Uptime SLA', tone: 'green' },
+  { val: '24.8ms', label: 'Avg latency', tone: 'brand' },
+  { val: '248',    label: 'Live nodes', tone: '' },
+] as const
 
 export function HeroSection() {
   return (
     <section
       className="relative w-full overflow-hidden"
-      style={{ height: '100vh', minHeight: 700, background: 'var(--nl-0)' }}
+      style={{ minHeight: '100vh', background: 'var(--surface-canvas)', paddingTop: 96 }}
     >
-      {/* corner vignettes */}
+      {/* grid background */}
+      <div aria-hidden className="absolute inset-0 nl-grid-bg" style={{ zIndex: 0 }} />
+
+      {/* radial glows */}
       <div
         aria-hidden
-        className="absolute inset-0 z-[3] pointer-events-none"
+        className="absolute pointer-events-none"
         style={{
-          background:
-            'radial-gradient(ellipse 55% 70% at 0% 0%, rgba(0,0,0,.7) 0%, transparent 55%),' +
-            ' radial-gradient(ellipse 30% 45% at 100% 0%, rgba(0,0,0,.4) 0%, transparent 55%)',
+          top: '-10%', left: '-6%', width: '46%', height: '60%', zIndex: 0,
+          background: 'radial-gradient(ellipse at 40% 40%, rgba(200,241,53,.16) 0%, transparent 66%)',
+          filter: 'blur(60px)',
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute pointer-events-none"
+        style={{
+          bottom: '-12%', right: '-6%', width: '42%', height: '58%', zIndex: 0,
+          background: 'radial-gradient(ellipse at 60% 60%, rgba(34,211,238,.13) 0%, transparent 66%)',
+          filter: 'blur(60px)',
         }}
       />
 
-      {/* ambient glow blobs (lime + teal) */}
+      {/* ── floating KPI pills ── */}
+      {/* top-left status pill */}
       <div
-        aria-hidden
-        className="absolute z-[1] pointer-events-none"
-        style={{
-          top: '-8%', right: '-4%', width: '42%', height: '62%',
-          background: 'radial-gradient(ellipse at 55% 28%, rgba(200,241,53,.22) 0%, transparent 65%)',
-          filter: 'blur(65px)',
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute z-[1] pointer-events-none"
-        style={{
-          bottom: 0, left: 0, width: '32%', height: '52%',
-          background: 'radial-gradient(ellipse at 0% 100%, rgba(34,211,238,.18) 0%, transparent 65%)',
-          filter: 'blur(45px)',
-        }}
-      />
-
-      {/* GIANT DISPLAY WORD */}
-      <div
-        className="absolute top-0 left-0 right-0 z-[5] text-center nl-display"
-        style={{
-          paddingTop: 'clamp(96px, 13vh, 150px)',
-          fontFamily: 'var(--font-display)',
-          fontSize: 'clamp(86px, 18vw, 280px)',
-          lineHeight: 1,
-          background:
-            'linear-gradient(to bottom, var(--t-hi) 0%, var(--t-hi) 24%,' +
-            ' color-mix(in srgb, var(--t-hi) 70%, transparent) 46%,' +
-            ' color-mix(in srgb, var(--t-hi) 22%, transparent) 64%,' +
-            ' transparent 82%)',
-          WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          animation: 'nl-text-reveal 1.2s cubic-bezier(.16,1,.3,1) .1s both',
-        }}
+        className="absolute hidden md:flex items-center gap-3 nl-pill nl-float"
+        style={{ top: 140, left: 'clamp(20px,5vw,72px)', padding: '14px 18px', zIndex: 4 }}
       >
-        NETLAYER
-      </div>
-
-      {/* GLOWING SPHERE peeking from bottom */}
-      <div
-        className="absolute z-[2]"
-        style={{
-          top: '96%', left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 'clamp(720px, 115vw, 1560px)',
-          aspectRatio: '1 / 1',
-          animation: 'nl-sphere-in 1.6s cubic-bezier(.16,1,.3,1) .2s both',
-        }}
-      >
-        {/* halo */}
-        <div
-          aria-hidden
-          className="absolute rounded-full"
-          style={{
-            inset: '-10%',
-            background: 'radial-gradient(ellipse at 50% 44%, rgba(132,204,22,.22) 0%, transparent 65%)',
-            filter: 'blur(35px)', zIndex: -1,
-          }}
-        />
-        {/* core */}
-        <div className="relative w-full h-full rounded-full">
-          <div
-            aria-hidden
-            className="absolute inset-0 rounded-full"
-            style={{
-              background:
-                'radial-gradient(ellipse at 35% 24%, rgba(200,241,53,.85) 0%, transparent 35%),' +
-                ' radial-gradient(ellipse at 60% 19%, rgba(132,204,22,.7) 0%, transparent 35%),' +
-                ' radial-gradient(ellipse at 50% 50%, #5a8a0a 0%, #234600 42%, #0a1500 78%, #000 100%)',
-            }}
-          />
-          <div
-            aria-hidden
-            className="absolute inset-0 rounded-full"
-            style={{
-              background:
-                'radial-gradient(ellipse at 78% 13%, rgba(34,211,238,.45) 0%, transparent 38%),' +
-                ' radial-gradient(ellipse at 18% 72%, rgba(80,140,30,.4) 0%, transparent 34%)',
-            }}
-          />
-          {/* specular shine */}
-          <div
-            aria-hidden
-            className="absolute inset-0 rounded-full"
-            style={{
-              background:
-                'radial-gradient(ellipse at 37% 11%, rgba(235,255,190,.3) 0%, transparent 30%),' +
-                ' radial-gradient(ellipse at 70% 8%, rgba(180,235,255,.22) 0%, transparent 28%)',
-            }}
-          />
+        <span className="relative inline-flex">
+          <span className="nl-status-dot block rounded-full" style={{ width: 9, height: 9, background: 'var(--c-green)' }} />
+        </span>
+        <div>
+          <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--t-hi)' }}>All systems operational</div>
+          <div className="nl-mono" style={{ fontSize: 10, color: 'var(--t-low)', marginTop: 2 }}>15 / 15 regions online</div>
         </div>
       </div>
 
-      {/* BOTTOM ROW */}
+      {/* top-right KPI stack */}
       <div
-        className="absolute bottom-0 left-0 right-0 z-[6] flex items-end justify-between gap-8"
-        style={{
-          padding: '0 clamp(20px,5vw,52px) clamp(40px,7vh,64px)',
-          animation: 'nl-bottom-reveal 1.3s cubic-bezier(.16,1,.3,1) .5s both',
-        }}
+        className="absolute hidden lg:block nl-pill nl-float-slow"
+        style={{ top: 150, right: 'clamp(20px,5vw,72px)', padding: '18px 22px', zIndex: 4, minWidth: 188 }}
       >
-        <div>
-          <h1
-            className="nl-head"
-            style={{ fontSize: 'clamp(30px, 4.6vw, 58px)', color: 'var(--t-hi)' }}
-          >
-            Deploy-Ready Cloud
-            <span className="block" style={{ color: 'color-mix(in srgb, var(--t-hi) 28%, transparent)' }}>
-              Infrastructure
-            </span>
-          </h1>
+        <div className="flex items-center gap-2" style={{ marginBottom: 14 }}>
+          <Server size={13} style={{ color: 'var(--brand)' }} />
+          <span className="nl-mono" style={{ fontSize: 10, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--t-low)' }}>
+            Fleet live
+          </span>
+        </div>
+        <div className="flex flex-col gap-3">
+          {KPI_STACK.map((k) => (
+            <div key={k.label} className="flex items-baseline justify-between gap-6">
+              <span
+                className="nl-mono"
+                style={{
+                  fontSize: 17, fontWeight: 500,
+                  color: k.tone === 'green' ? 'var(--c-green)' : k.tone === 'brand' ? 'var(--brand)' : 'var(--t-hi)',
+                }}
+              >
+                {k.val}
+              </span>
+              <span style={{ fontSize: 11, color: 'var(--t-low)' }}>{k.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
+      {/* ── center title ── */}
+      <div
+        className="relative flex flex-col items-center text-center"
+        style={{ zIndex: 3, padding: '0 clamp(20px,5vw,52px)', paddingTop: 'clamp(80px,12vh,150px)' }}
+      >
+        <div
+          className="inline-flex items-center gap-2 nl-mono"
+          style={{
+            fontSize: 11, letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--t-med)',
+            padding: '7px 16px', border: '1px solid var(--b-default)', borderRadius: 'var(--r-full)',
+            background: 'var(--brand-d)', marginBottom: 'clamp(28px,4vw,40px)',
+          }}
+        >
+          <span className="rounded-full" style={{ width: 6, height: 6, background: 'var(--brand)' }} />
+          Cloud infrastructure, reimagined
+        </div>
+
+        <h1
+          className="nl-display"
+          style={{ fontSize: 'clamp(48px,8.5vw,132px)', color: 'var(--t-hi)', maxWidth: 1100 }}
+        >
+          <span className="block">Servers that</span>
+          <span className="block nl-stroke-brand" style={{ fontStyle: 'italic' }}>deploy in</span>
+          <span className="block">seconds.</span>
+        </h1>
+      </div>
+
+      {/* ── hero bottom row ── */}
+      <div
+        className="relative grid lg:grid-cols-2 gap-10 lg:items-end"
+        style={{ zIndex: 3, padding: 'clamp(48px,7vw,90px) clamp(20px,5vw,52px) clamp(48px,7vh,72px)' }}
+      >
+        {/* left — description + actions */}
+        <div style={{ maxWidth: 460 }}>
+          <p style={{ fontSize: 16, color: 'var(--t-med)', lineHeight: 1.7 }}>
+            Cloud VPS, bare metal, and GPU servers on a global KVM platform.
+            Per-second billing, a developer-first API, and flat pricing across
+            fifteen regions.
+          </p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <a href={`${DASHBOARD_URL}/register`} className="nl-btn-primary">
-              Deploy a server
+              Deploy a server <ArrowUpRight size={16} />
             </a>
             <Link to="/pricing" className="nl-btn-ghost">View pricing</Link>
           </div>
         </div>
 
-        <div
-          className="hidden sm:block text-right"
-          style={{
-            maxWidth: 260,
-            fontSize: 10.5, fontWeight: 600, letterSpacing: '.09em',
-            textTransform: 'uppercase', color: 'var(--t-low)', lineHeight: 1.85,
-          }}
-        >
-          Cloud VPS, bare metal &amp; GPU servers built for scale, billed by the second, trusted for uptime.
+        {/* right — hero numbers */}
+        <div className="grid grid-cols-3 gap-px" style={{ background: 'var(--b-subtle)', border: '1px solid var(--b-subtle)' }}>
+          {HERO_NUMBERS.map((n) => (
+            <div key={n.label} style={{ background: 'var(--surface-canvas)', padding: 'clamp(20px,3vw,30px) clamp(14px,2vw,22px)' }}>
+              <div className="nl-display" style={{ fontSize: 'clamp(32px,4.5vw,56px)', color: 'var(--t-hi)', marginBottom: 8 }}>
+                {n.num}
+              </div>
+              <div className="nl-mono" style={{ fontSize: 10.5, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--t-low)' }}>
+                {n.label}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

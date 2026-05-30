@@ -306,37 +306,106 @@ html, body { background: var(--nl-0); color: var(--t-hi); }
 [data-theme='light'] { --grid-line: rgba(15,  23, 11, 0.18); --input-bg: rgba(15, 23, 11, 0.03); }
 
 /* ═══════════════════════════════════════════════════════════════════
-   EDITORIAL TYPE SYSTEM (Fireblox-inspired, lime-themed)
-   Used by the landing-v3 sections. Display = Bebas Neue, headings =
-   Barlow Condensed, body = Barlow. Scoped under .nl-v3 so the dashboard
-   font stack is untouched.
+   EDITORIAL TYPE SYSTEM (VAULTEX-inspired premium, lime-themed)
+   Used by the landing-v3 sections. Display = Playfair Display (serif),
+   headings/body = Bricolage Grotesque, mono = JetBrains Mono. Scoped
+   under .nl-v3 so the dashboard font stack is untouched.
    ═══════════════════════════════════════════════════════════════════ */
 .nl-v3 {
-  --font-display: 'Bebas Neue', 'Barlow Condensed', sans-serif;
-  --font-head:    'Barlow Condensed', 'Barlow', sans-serif;
-  --font-body:    'Barlow', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-head:    'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body:    'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-code:    'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
   font-family: var(--font-body);
 }
 
+/* Serif display — Playfair, tight leading, supports italic via inline style */
 .nl-display {
   font-family: var(--font-display);
-  letter-spacing: -0.01em;
-  line-height: 0.92;
-}
-.nl-head {
-  font-family: var(--font-head);
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.02em;
   line-height: 0.96;
 }
-.nl-eyebrow {
-  font-size: 11px;
+/* Grotesque heading — used for section titles / card titles */
+.nl-head {
+  font-family: var(--font-head);
   font-weight: 700;
-  letter-spacing: 0.22em;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+/* Mono label — uppercase tracked monospace tags (VAULTEX signature) */
+.nl-mono {
+  font-family: var(--font-code);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+.nl-eyebrow {
+  font-family: var(--font-code);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--t-low);
 }
+
+/* Outlined "stroke" display text — transparent fill + text outline.
+   The VAULTEX hero alternates a solid serif line with a stroked one. */
+.nl-stroke {
+  color: transparent;
+  -webkit-text-stroke: 1.4px var(--t-hi);
+  text-stroke: 1.4px var(--t-hi);
+  -webkit-text-fill-color: transparent;
+}
+.nl-stroke-brand {
+  color: transparent;
+  -webkit-text-stroke: 1.4px var(--brand);
+  text-stroke: 1.4px var(--brand);
+  -webkit-text-fill-color: transparent;
+}
+
+/* Subtle dot/line grid background used behind the hero + CTA bands.
+   Uses --grid-line so it flips automatically between themes. */
+.nl-grid-bg {
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 56px 56px;
+  opacity: 0.12;
+}
+
+/* Ticker strip (adapted from VAULTEX crypto ticker → live server metrics) */
+@keyframes nl-ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.nl-ticker-track { display: inline-flex; white-space: nowrap; animation: nl-ticker 40s linear infinite; }
+.nl-ticker-track:hover { animation-play-state: paused; }
+
+/* Animated lime underline that grows on hover (stats band + links) */
+.nl-underline {
+  position: relative;
+}
+.nl-underline::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: -6px;
+  height: 2px; width: 0;
+  background: var(--brand);
+  transition: width var(--ease-slow);
+}
+.nl-underline:hover::after { width: 100%; }
+
+/* Floating KPI pill (hero) — soft glass card with hairline border */
+.nl-pill {
+  background: var(--surface-glass);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid var(--b-default);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+/* gentle float for the hero pills */
+@keyframes nl-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.nl-float      { animation: nl-float 7s ease-in-out infinite; }
+.nl-float-slow { animation: nl-float 9s ease-in-out infinite; }
 
 /* Hairline grid surfaces (1px gaps showing the border colour through) */
 .nl-grid-surface {

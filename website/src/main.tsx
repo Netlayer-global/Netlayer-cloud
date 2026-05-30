@@ -7,7 +7,6 @@ import './styles/tokens.css'
 import './styles/globals.css'
 
 import { applyInitialTheme } from './hooks/useTheme'
-import { ThemeToggle } from './components/ThemeToggle'
 
 import Landing from './pages/Landing'
 import PricingPage from './pages/public/PricingPage'
@@ -54,7 +53,6 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <ThemeToggle />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/pricing" element={<PricingPage />} />

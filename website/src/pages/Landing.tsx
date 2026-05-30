@@ -1,19 +1,20 @@
 /**
- * Landing — editorial home page (Fireblox-inspired, NetLayer lime theme).
+ * Landing — premium editorial home page (VAULTEX-inspired, NetLayer lime theme).
  *
  * Flow:
  *   TopBanner        — promo strip
- *   LandingNav       — flat sticky nav
- *   HeroSection      — giant display word + glowing lime sphere
+ *   LandingNav       — flat sticky nav (with inline theme toggle)
+ *   HeroSection      — grid bg + floating KPI pills + serif stroke title
+ *   TickerStrip      — live region latency/uptime ticker
  *   PartnersSection  — integration wordmark bar
- *   AnnouncementBar  — 3 big-number stats
- *   StatsBar         — keyword marquee
- *   ProductsSection  — "what we run" numbered hairline cards
- *   PerformanceSection — platform intro + orbit orb + advantage list
- *   MarketplaceSection — live console mockup
+ *   AnnouncementBar  — 3-cell stats band (hover lime underline)
+ *   StatsBar         — keyword serif marquee
+ *   ProductsSection  — numbered cards (01/06) with hover ↗ arrows
+ *   PerformanceSection — split intro + feature list + advantage grid
+ *   MarketplaceSection — refined console mockup
  *   GlobalNetworkSection — region node grid
  *   TrustSection     — compliance badges
- *   CTASection       — pre-footer push
+ *   CTASection       — pre-footer push (radial glow)
  *   LandingFooter    — sitemap + newsletter
  *
  * Other public pages reuse LandingNav / LandingFooter / PricingSection.
@@ -22,6 +23,7 @@ import {
   TopBanner,
   LandingNav,
   HeroSection,
+  TickerStrip,
   PartnersSection,
   AnnouncementBar,
   StatsBar,
@@ -40,6 +42,7 @@ export default function Landing() {
       <TopBanner />
       <LandingNav />
       <HeroSection />
+      <TickerStrip />
       <PartnersSection />
       <AnnouncementBar />
       <StatsBar />

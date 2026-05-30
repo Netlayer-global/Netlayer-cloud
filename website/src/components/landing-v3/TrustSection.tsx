@@ -50,15 +50,15 @@ export function TrustSection() {
 
         {/* Right copy */}
         <div>
-          <div className="text-[11px] uppercase tracking-[.22em] mb-3" style={{ color: 'var(--brand)' }}>
+          <div className="nl-eyebrow" style={{ marginBottom: 16 }}>
             Trust &amp; compliance
           </div>
           <h2
-            className="leading-[1.15] tracking-tight"
-            style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 500, color: 'var(--t-hi)' }}
+            className="nl-display"
+            style={{ fontSize: 'clamp(30px, 4.5vw, 52px)', color: 'var(--t-hi)', lineHeight: 1.05 }}
           >
             Audited cloud infrastructure for{' '}
-            <span style={{ color: 'var(--brand)' }}>regulated workloads.</span>
+            <span className="nl-stroke-brand" style={{ fontStyle: 'italic' }}>regulated workloads.</span>
           </h2>
           <p className="mt-6 text-[15px] leading-[1.65]" style={{ color: 'var(--t-med)' }}>
             Encrypted at rest with AES-256. CGST/SGST/IGST split on every Indian
