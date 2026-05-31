@@ -1,21 +1,23 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, Check } from 'lucide-react'
+import { platformAPI } from '../../api/endpoints'
 
 /**
  * Hero — DigitalOcean-style clean two-column layout (lime-themed, VPS).
  *
- * Left:  eyebrow, big Plus Jakarta headline with a lime accent word, a
- *        readable Inter subtext, two CTAs (solid + ghost), and a short
- *        trust microcopy row with check marks.
- * Right: a clean product visual — a rounded "console" panel floating over
- *        a soft lime radial glow + faint dot grid, with a live region pill.
+ * Left:  eyebrow (LIVE platform stats), big Plus Jakarta headline with a
+ *        lime→cyan gradient accent, readable subtext, two CTAs, trust row.
+ * Right: a live-feeling "console" panel — the boot progress bar animates
+ *        and the highlighted region cycles, so the hero never looks frozen.
  *
- * Airy, lots of whitespace, rounded cards — DO aesthetic, but lime-on-dark
- * and theme-aware. No crypto/AI-hype; straight VPS infrastructure copy.
+ * Stats come from `GET /platform/stats` with a graceful hardcoded fallback
+ * so the page is great even before the API responds (or in mock mode).
  */
 const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5173'
 
-const TRUST = ['Free $200 credit', 'No card to start', 'Live in under a minute']
+const TRUST = ['₹3,500 free credit', 'No card to start', 'Live in under a minute']
 
 const PANEL_REGIONS = [
   { city: 'Mumbai', ping: '12 ms' },
@@ -25,6 +27,30 @@ const PANEL_REGIONS = [
 ]
 
 export function HeroSection() {
+  const { data: stats } = useQuery({
+    queryKey: ['platform', 'stats'],
+    queryFn: () => platformAPI.getStats().then((r) => r.data.data),
+    staleTime: 60_000,
+    retry: 0,
+  })
+
+  const regions = stats?.regionsOnline || 15
+  const uptime = stats?.uptimePercent ? `${stats.uptimePercent.toFixed(2)}%` : '99.99%'
+
+  // animate the console: cycle the highlighted region + sweep the boot bar
+  const [activeRegion, setActiveRegion] = useState(0)
+  const [boot, setBoot] = useState(28)
+
+  useEffect(() => {
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (reduce) { setBoot(72); return }
+    const r = setInterval(() => setActiveRegion((i) => (i + 1) % PANEL_REGIONS.length), 2200)
+    const b = setInterval(() => setBoot((v) => (v >= 96 ? 24 : v + 4)), 700)
+    return () => { clearInterval(r); clearInterval(b) }
+  }, [])
+
+  const booting = boot < 96
+
   return (
     <section className="relative w-full overflow-hidden" style={{ background: 'var(--surface-canvas)' }}>
       {/* faint dot grid + multi-colour radial glows */}
@@ -72,7 +98,7 @@ export function HeroSection() {
             }}
           >
             <span className="nl-status-dot rounded-full" style={{ width: 6, height: 6, background: 'var(--brand)' }} />
-            15 regions · 99.99% uptime
+            {regions} regions · {uptime} uptime
           </div>
 
           <h1
@@ -150,38 +176,49 @@ export function HeroSection() {
                 </div>
                 <span
                   className="nl-mono inline-flex items-center gap-1.5"
-                  style={{ fontSize: 10.5, padding: '5px 11px', borderRadius: 'var(--r-full)', background: 'var(--c-green-d)', border: '1px solid color-mix(in srgb, var(--c-green) 30%, transparent)', color: 'var(--c-green)' }}
+                  style={{
+                    fontSize: 10.5, padding: '5px 11px', borderRadius: 'var(--r-full)',
+                    background: booting ? 'var(--c-green-d)' : 'var(--brand-d)',
+                    border: `1px solid ${booting ? 'color-mix(in srgb, var(--c-green) 30%, transparent)' : 'var(--brand-b)'}`,
+                    color: booting ? 'var(--c-green)' : 'var(--brand)',
+                    transition: 'all .3s',
+                  }}
                 >
-                  <span className="nl-status-dot rounded-full" style={{ width: 6, height: 6, background: 'var(--c-green)' }} /> Provisioning
+                  <span className="nl-status-dot rounded-full" style={{ width: 6, height: 6, background: booting ? 'var(--c-green)' : 'var(--brand)' }} />
+                  {booting ? 'Provisioning' : 'Running'}
                 </span>
               </div>
 
-              {/* region picker */}
+              {/* region picker — highlight cycles */}
               <div className="grid grid-cols-2 gap-2.5">
-                {PANEL_REGIONS.map((r, i) => (
-                  <div
-                    key={r.city}
-                    className="flex items-center justify-between"
-                    style={{
-                      padding: '12px 14px', borderRadius: 'var(--r-md)',
-                      border: `1px solid ${i === 0 ? 'var(--brand-b)' : 'var(--b-default)'}`,
-                      background: i === 0 ? 'var(--brand-d)' : 'var(--nl-1)',
-                    }}
-                  >
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t-hi)' }}>{r.city}</span>
-                    <span className="nl-mono" style={{ fontSize: 11, color: i === 0 ? 'var(--brand)' : 'var(--t-low)' }}>{r.ping}</span>
-                  </div>
-                ))}
+                {PANEL_REGIONS.map((r, i) => {
+                  const on = i === activeRegion
+                  return (
+                    <div
+                      key={r.city}
+                      className="flex items-center justify-between"
+                      style={{
+                        padding: '12px 14px', borderRadius: 'var(--r-md)',
+                        border: `1px solid ${on ? 'var(--brand-b)' : 'var(--b-default)'}`,
+                        background: on ? 'var(--brand-d)' : 'var(--nl-1)',
+                        transition: 'background .4s, border-color .4s',
+                      }}
+                    >
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t-hi)' }}>{r.city}</span>
+                      <span className="nl-mono" style={{ fontSize: 11, color: on ? 'var(--brand)' : 'var(--t-low)', transition: 'color .4s' }}>{r.ping}</span>
+                    </div>
+                  )
+                })}
               </div>
 
-              {/* progress */}
+              {/* progress — animated */}
               <div style={{ marginTop: 18 }}>
                 <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
                   <span className="nl-mono" style={{ fontSize: 10.5, color: 'var(--t-low)' }}>BOOT</span>
-                  <span className="nl-mono" style={{ fontSize: 10.5, color: 'var(--brand)' }}>72%</span>
+                  <span className="nl-mono" style={{ fontSize: 10.5, color: 'var(--brand)' }}>{boot}%</span>
                 </div>
                 <div style={{ height: 6, borderRadius: 'var(--r-full)', background: 'var(--nl-4)', overflow: 'hidden' }}>
-                  <div style={{ width: '72%', height: '100%', background: 'var(--brand)', borderRadius: 'var(--r-full)' }} />
+                  <div style={{ width: `${boot}%`, height: '100%', background: 'linear-gradient(90deg, var(--a-lime), var(--a-cyan))', borderRadius: 'var(--r-full)', transition: 'width .6s cubic-bezier(.16,1,.3,1)' }} />
                 </div>
               </div>
             </div>

@@ -30,6 +30,7 @@ import {
   TrustSection,
   CTASection,
   LandingFooter,
+  Reveal,
 } from '../components/landing-v3'
 
 export default function Landing() {
@@ -38,14 +39,14 @@ export default function Landing() {
       <TopBanner />
       <LandingNav />
       <HeroSection />
-      <PartnersSection />
-      <AnnouncementBar />
-      <ProductsSection />
-      <PerformanceSection />
-      <MarketplaceSection />
-      <GlobalNetworkSection />
-      <TrustSection />
-      <CTASection />
+      <Reveal><PartnersSection /></Reveal>
+      <Reveal><AnnouncementBar /></Reveal>
+      <Reveal><ProductsSection /></Reveal>
+      <Reveal><PerformanceSection /></Reveal>
+      <Reveal><MarketplaceSection /></Reveal>
+      <Reveal><GlobalNetworkSection /></Reveal>
+      <Reveal><TrustSection /></Reveal>
+      <Reveal><CTASection /></Reveal>
       <LandingFooter />
     </div>
   )
