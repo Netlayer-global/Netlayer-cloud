@@ -102,10 +102,12 @@ services:
       # bind mount onto the cluster's shared NFS / Ceph storage so every
       # Proxmox node can read uploaded ISOs.
       ISO_UPLOAD_DIR: /app/data/iso
+      KYC_UPLOAD_DIR: /app/data/kyc
     expose:
       - "5000"
     volumes:
       - ./data/iso:/app/data/iso
+      - ./data/kyc:/app/data/kyc
     # Schema is synced to Postgres with `db push` (the repo's migration files
     # are SQLite-only and can't be replayed on Postgres). db push is idempotent
     # and safe on re-deploy when the schema is unchanged. Seed runs separately
