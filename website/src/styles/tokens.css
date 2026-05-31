@@ -36,14 +36,16 @@
   /* Foreground that always sits on the lime fill, regardless of theme */
   --brand-fg: #0d0e0d;
 
-  /* ── Multi-colour accent set (category theming across the landing —
-       each product / feature card can adopt one accent). ── */
-  --a-lime:   #c8f135;  --a-lime-d:   rgba(200, 241, 53, .12);  --a-lime-b:   rgba(200, 241, 53, .30);
-  --a-cyan:   #3ad6ff;  --a-cyan-d:   rgba(58, 214, 255, .12);  --a-cyan-b:   rgba(58, 214, 255, .30);
-  --a-violet: #9b8cff;  --a-violet-d: rgba(155, 140, 255, .14); --a-violet-b: rgba(155, 140, 255, .32);
-  --a-pink:   #ff7ac3;  --a-pink-d:   rgba(255, 122, 195, .12); --a-pink-b:   rgba(255, 122, 195, .30);
-  --a-amber:  #ffb340;  --a-amber-d:  rgba(255, 179, 64, .12);  --a-amber-b:  rgba(255, 179, 64, .30);
-  --a-blue:   #5b9bff;  --a-blue-d:   rgba(91, 155, 255, .12);  --a-blue-b:   rgba(91, 155, 255, .30);
+  /* ── Multi-colour accent set — a cohesive family that harmonises with
+       lime (similar lightness + saturation, no clashing hues). Used for
+       gentle category theming across the landing. ── */
+  --a-lime:   #c8f135;  --a-lime-d:   rgba(200, 241, 53, .10);  --a-lime-b:   rgba(200, 241, 53, .26);
+  --a-cyan:   #5fe3c0;  --a-cyan-d:   rgba(95, 227, 192, .10);  --a-cyan-b:   rgba(95, 227, 192, .26);
+  --a-violet: #a59cff;  --a-violet-d: rgba(165, 156, 255, .12); --a-violet-b: rgba(165, 156, 255, .28);
+  --a-blue:   #6fb4ff;  --a-blue-d:   rgba(111, 180, 255, .11); --a-blue-b:   rgba(111, 180, 255, .26);
+  /* kept for occasional warmth — muted, not neon */
+  --a-amber:  #e8cf6b;  --a-amber-d:  rgba(232, 207, 107, .11); --a-amber-b:  rgba(232, 207, 107, .26);
+  --a-pink:   #e79ccf;  --a-pink-d:   rgba(231, 156, 207, .11); --a-pink-b:   rgba(231, 156, 207, .26);
 
   /* ── Semantic ── */
   --c-blue:    #3d8bff;
@@ -133,13 +135,13 @@
   --brand-b: rgba(132, 204, 22, .35);
   --brand-fg: #ffffff;
 
-  /* Multi-colour accents — deepened for AA contrast on light surfaces */
-  --a-lime:   #5f9e0a;  --a-lime-d:   rgba(95, 158, 10, .12);   --a-lime-b:   rgba(95, 158, 10, .34);
-  --a-cyan:   #0a9bc4;  --a-cyan-d:   rgba(10, 155, 196, .12);  --a-cyan-b:   rgba(10, 155, 196, .34);
-  --a-violet: #6d4cf2;  --a-violet-d: rgba(109, 76, 242, .12);  --a-violet-b: rgba(109, 76, 242, .34);
-  --a-pink:   #d6398f;  --a-pink-d:   rgba(214, 57, 143, .12);  --a-pink-b:   rgba(214, 57, 143, .34);
-  --a-amber:  #c77800;  --a-amber-d:  rgba(199, 120, 0, .12);   --a-amber-b:  rgba(199, 120, 0, .34);
-  --a-blue:   #2563eb;  --a-blue-d:   rgba(37, 99, 235, .12);   --a-blue-b:   rgba(37, 99, 235, .34);
+  /* Multi-colour accents — softened + deepened for AA on light surfaces */
+  --a-lime:   #5f9e0a;  --a-lime-d:   rgba(95, 158, 10, .10);   --a-lime-b:   rgba(95, 158, 10, .30);
+  --a-cyan:   #0d9488;  --a-cyan-d:   rgba(13, 148, 136, .10);  --a-cyan-b:   rgba(13, 148, 136, .30);
+  --a-violet: #6d5bd6;  --a-violet-d: rgba(109, 91, 214, .10);  --a-violet-b: rgba(109, 91, 214, .30);
+  --a-blue:   #2f74d0;  --a-blue-d:   rgba(47, 116, 208, .10);  --a-blue-b:   rgba(47, 116, 208, .30);
+  --a-amber:  #a87b1e;  --a-amber-d:  rgba(168, 123, 30, .10);  --a-amber-b:  rgba(168, 123, 30, .30);
+  --a-pink:   #b65a93;  --a-pink-d:   rgba(182, 90, 147, .10);  --a-pink-b:   rgba(182, 90, 147, .30);
 
   --c-blue:    #2563eb;     --c-blue-d:  rgba(37, 99, 235, .10);
   --c-purple:  #6d4cf2;     --c-purple-d:rgba(109, 76, 242, .10);

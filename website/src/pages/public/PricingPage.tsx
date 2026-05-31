@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { Check, X, ChevronDown } from 'lucide-react'
-import { LandingNav, LandingFooter, PricingSection } from '../../components/landing-v3'
+import { LandingNav, LandingFooter, PricingSection, PageHero } from '../../components/landing-v3'
 import { cn } from '../../lib/utils'
+import { useSeo } from '../../hooks/useSeo'
+
+const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5173'
 
 /**
  * Public pricing page. Reuses the same `<PricingSection />` rendered on the
@@ -52,138 +54,110 @@ const FAQ = [
 ]
 
 export default function PricingPage() {
+  useSeo({
+    title: 'Pricing',
+    description: 'Simple, transparent VPS pricing. All plans include NVMe SSD, IPv6, DDoS protection, and 24/7 support. Start free with ₹3,500 in credits.',
+    path: '/pricing',
+  })
+
   return (
     <div className="nl-v3 min-h-screen">
       <LandingNav />
 
-      <section className="pt-28 pb-12 px-4 sm:px-6 max-w-5xl mx-auto text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <span
-            className="inline-block px-3 h-7 leading-7 rounded-full text-xs"
-            style={{
-              border: '1px solid var(--brand-b)',
-              background: 'var(--brand-d)',
-              color: 'var(--brand)',
-            }}
-          >
-            Pricing
-          </span>
-          <h1
-            className="mt-6 font-semibold tracking-tight"
-            style={{ fontSize: 'clamp(36px, 5vw, 56px)', lineHeight: 1.05 }}
-          >
-            Simple, transparent pricing
-          </h1>
-          <p className="mt-5 text-lg max-w-2xl mx-auto" style={{ color: 'var(--t-med)' }}>
-            All plans include NVMe SSD, IPv6, DDoS protection, and 24/7 support.
-            Start free with ₹3,500 in credits.
-          </p>
-        </motion.div>
-      </section>
+      <PageHero
+        eyebrow="Pricing"
+        title="Simple, transparent"
+        accent="pricing."
+        subtitle="All plans include NVMe SSD, IPv6, DDoS protection, and 24/7 support. Start free with ₹3,500 in credits."
+      />
 
       <PricingSection standalone />
 
       {/* Comparison table */}
-      <section className="py-20 px-4 sm:px-6 max-w-6xl mx-auto">
-        <div className="text-center mb-10">
-          <span
-            className="text-[10px] uppercase tracking-wider"
-            style={{ color: 'var(--brand)' }}
-          >
-            How we compare
-          </span>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-            NetLayer vs. the rest
-          </h2>
-          <p className="mt-3 text-sm" style={{ color: 'var(--t-med)' }}>
-            Where it matters: speed, transparency, and global reach.
+      <section style={{ background: 'var(--nl-0)', borderTop: '1px solid var(--b-subtle)' }}>
+        <div className="nl-container" style={{ padding: 'clamp(56px,8vw,96px) clamp(20px,4vw,72px)' }}>
+          <div className="text-center max-w-2xl mx-auto" style={{ marginBottom: 'clamp(32px,4vw,48px)' }}>
+            <div className="nl-eyebrow" style={{ marginBottom: 16, color: 'var(--brand)' }}>How we compare</div>
+            <h2 className="nl-display" style={{ fontSize: 'clamp(28px,4vw,48px)', color: 'var(--t-hi)', marginBottom: 14 }}>
+              NetLayer vs. the rest
+            </h2>
+            <p style={{ fontSize: 15, color: 'var(--t-med)' }}>
+              Where it matters: speed, transparency, and global reach.
+            </p>
+          </div>
+
+          <div style={{ borderRadius: 'var(--r-xl)', overflow: 'hidden', border: '1px solid var(--b-default)', background: 'var(--nl-2)' }}>
+            <table className="w-full" style={{ fontSize: 14 }}>
+              <thead>
+                <tr style={{ background: 'var(--nl-3)' }}>
+                  <th className="text-left px-4 py-3 nl-mono" style={{ fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--t-low)' }}>
+                    Feature
+                  </th>
+                  <th className="px-4 py-3" style={{ fontSize: 13, fontWeight: 700, background: 'var(--brand-d)', color: 'var(--brand)' }}>
+                    NetLayer
+                  </th>
+                  <th className="px-4 py-3" style={{ fontSize: 13, color: 'var(--t-med)' }}>DigitalOcean</th>
+                  <th className="px-4 py-3" style={{ fontSize: 13, color: 'var(--t-med)' }}>Vultr</th>
+                  <th className="px-4 py-3" style={{ fontSize: 13, color: 'var(--t-med)' }}>Hetzner</th>
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARISON_ROWS.map((row, i) => (
+                  <tr key={row.feature} style={{ borderTop: i === 0 ? 'none' : '1px solid var(--b-subtle)' }}>
+                    <td className="px-4 py-3" style={{ color: 'var(--t-hi)' }}>{row.feature}</td>
+                    <td className="px-4 py-3 text-center" style={{ background: 'var(--brand-d)' }}>
+                      {row.us ? <Check size={15} style={{ color: 'var(--brand)' }} className="inline" /> : <X size={15} style={{ color: 'var(--c-red)' }} className="inline" />}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {row.others.do ? <Check size={15} style={{ color: 'var(--c-green)' }} className="inline" /> : <X size={15} style={{ color: 'var(--t-low)' }} className="inline" />}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {row.others.vultr ? <Check size={15} style={{ color: 'var(--c-green)' }} className="inline" /> : <X size={15} style={{ color: 'var(--t-low)' }} className="inline" />}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {row.others.hetzner ? <Check size={15} style={{ color: 'var(--c-green)' }} className="inline" /> : <X size={15} style={{ color: 'var(--t-low)' }} className="inline" />}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-center" style={{ marginTop: 14, fontSize: 11.5, color: 'var(--t-low)' }}>
+            Comparison based on publicly listed features as of 2026. Provider features change frequently — always verify with their docs.
           </p>
         </div>
-
-        <div className="rounded-xl overflow-hidden nl-card">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ background: 'var(--nl-2)' }}>
-                <th className="text-left px-4 py-3 text-[11px] uppercase tracking-wider" style={{ color: 'var(--t-low)' }}>
-                  Feature
-                </th>
-                <th className="px-4 py-3 text-xs font-semibold" style={{ background: 'var(--brand-d)', color: 'var(--brand)' }}>
-                  NetLayer
-                </th>
-                <th className="px-4 py-3 text-xs" style={{ color: 'var(--t-med)' }}>DigitalOcean</th>
-                <th className="px-4 py-3 text-xs" style={{ color: 'var(--t-med)' }}>Vultr</th>
-                <th className="px-4 py-3 text-xs" style={{ color: 'var(--t-med)' }}>Hetzner</th>
-              </tr>
-            </thead>
-            <tbody>
-              {COMPARISON_ROWS.map((row, i) => (
-                <tr
-                  key={row.feature}
-                  style={{ borderTop: i === 0 ? 'none' : '1px solid var(--b-subtle)' }}
-                >
-                  <td className="px-4 py-3" style={{ color: 'var(--t-hi)' }}>{row.feature}</td>
-                  <td className="px-4 py-3 text-center" style={{ background: 'var(--brand-d)' }}>
-                    {row.us ? <Check size={14} style={{ color: 'var(--brand)' }} className="inline" /> : <X size={14} style={{ color: 'var(--c-red)' }} className="inline" />}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {row.others.do ? <Check size={14} style={{ color: 'var(--c-green)' }} className="inline" /> : <X size={14} style={{ color: 'var(--t-low)' }} className="inline" />}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {row.others.vultr ? <Check size={14} style={{ color: 'var(--c-green)' }} className="inline" /> : <X size={14} style={{ color: 'var(--t-low)' }} className="inline" />}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {row.others.hetzner ? <Check size={14} style={{ color: 'var(--c-green)' }} className="inline" /> : <X size={14} style={{ color: 'var(--t-low)' }} className="inline" />}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="mt-3 text-[11px] text-center" style={{ color: 'var(--t-low)' }}>
-          Comparison based on publicly listed features as of 2026. Provider features change frequently — always verify with their docs.
-        </p>
       </section>
 
       {/* FAQ */}
-      <section className="py-20 px-4 sm:px-6 max-w-3xl mx-auto">
-        <div className="text-center mb-10">
-          <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--brand)' }}>FAQ</span>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight">Frequently asked</h2>
-        </div>
-        <div className="space-y-2">
-          {FAQ.map((item) => <FaqItem key={item.q} {...item} />)}
+      <section style={{ background: 'var(--nl-1)', borderTop: '1px solid var(--b-subtle)' }}>
+        <div className="nl-container" style={{ padding: 'clamp(56px,8vw,96px) clamp(20px,4vw,72px)' }}>
+          <div className="text-center max-w-2xl mx-auto" style={{ marginBottom: 'clamp(32px,4vw,48px)' }}>
+            <div className="nl-eyebrow" style={{ marginBottom: 16, color: 'var(--brand)' }}>FAQ</div>
+            <h2 className="nl-display" style={{ fontSize: 'clamp(28px,4vw,48px)', color: 'var(--t-hi)' }}>Frequently asked</h2>
+          </div>
+          <div className="flex flex-col gap-2.5" style={{ maxWidth: 760, margin: '0 auto' }}>
+            {FAQ.map((item) => <FaqItem key={item.q} {...item} />)}
+          </div>
         </div>
       </section>
 
       {/* Enterprise CTA */}
-      <section className="py-16 px-4 sm:px-6">
-        <div
-          className="max-w-4xl mx-auto rounded-2xl p-10 text-center relative overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, var(--nl-2), var(--nl-1))',
-            border: '1px solid var(--brand-b)',
-          }}
-        >
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-            Running 100+ servers?
-          </h2>
-          <p className="mt-3 text-sm max-w-xl mx-auto" style={{ color: 'var(--t-med)' }}>
-            Get committed-use discounts up to 30%, dedicated capacity, and a named account engineer.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <a
-              href="mailto:sales@netlayer.com"
-              className="nl-btn-primary"
-            >
-              Talk to sales
-            </a>
-            <Link to="/register" className="nl-btn-ghost">
-              Or start free →
-            </Link>
+      <section style={{ background: 'var(--nl-0)', borderTop: '1px solid var(--b-subtle)' }}>
+        <div className="nl-container" style={{ padding: 'clamp(48px,7vw,80px) clamp(20px,4vw,72px)' }}>
+          <div
+            className="relative overflow-hidden text-center"
+            style={{ maxWidth: 760, margin: '0 auto', borderRadius: 'var(--r-2xl)', padding: 'clamp(40px,5vw,60px)', background: 'var(--nl-2)', border: '1px solid var(--brand-b)' }}
+          >
+            <h2 className="nl-display" style={{ fontSize: 'clamp(26px,3.4vw,40px)', color: 'var(--t-hi)', marginBottom: 14 }}>
+              Running 100+ servers?
+            </h2>
+            <p style={{ fontSize: 15, color: 'var(--t-med)', maxWidth: 460, margin: '0 auto 26px' }}>
+              Get committed-use discounts up to 30%, dedicated capacity, and a named account engineer.
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link to="/contact" className="nl-btn-primary">Talk to sales</Link>
+              <a href={`${DASHBOARD_URL}/register`} className="nl-btn-ghost">Or start free →</a>
+            </div>
           </div>
         </div>
       </section>

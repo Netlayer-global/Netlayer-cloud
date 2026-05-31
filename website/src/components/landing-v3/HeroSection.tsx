@@ -43,7 +43,7 @@ export function HeroSection() {
         className="absolute pointer-events-none"
         style={{
           top: '0%', left: '-12%', width: '46%', height: '70%', zIndex: 0,
-          background: 'radial-gradient(ellipse at 40% 50%, rgba(58,214,255,.12) 0%, transparent 66%)',
+          background: 'radial-gradient(ellipse at 40% 50%, rgba(95,227,192,.10) 0%, transparent 66%)',
           filter: 'blur(70px)',
         }}
       />
@@ -52,7 +52,7 @@ export function HeroSection() {
         className="absolute pointer-events-none"
         style={{
           bottom: '-18%', left: '32%', width: '42%', height: '60%', zIndex: 0,
-          background: 'radial-gradient(ellipse at 50% 50%, rgba(155,140,255,.12) 0%, transparent 66%)',
+          background: 'radial-gradient(ellipse at 50% 50%, rgba(165,156,255,.08) 0%, transparent 66%)',
           filter: 'blur(70px)',
         }}
       />
@@ -82,7 +82,7 @@ export function HeroSection() {
             The cloud built to{' '}
             <span
               style={{
-                background: 'linear-gradient(100deg, var(--a-lime) 0%, var(--a-cyan) 50%, var(--a-violet) 100%)',
+                background: 'linear-gradient(100deg, var(--a-lime) 0%, var(--a-cyan) 70%)',
                 WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent',
               }}
             >

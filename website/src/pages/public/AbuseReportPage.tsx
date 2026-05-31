@@ -3,13 +3,10 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ShieldAlert, Send, CheckCircle2 } from 'lucide-react'
-import { TopNav } from '../../components/landing/TopNav'
-import { Footer } from '../../components/landing/Footer'
-import { Input } from '../../components/ui/Input'
-import { Select } from '../../components/ui/Select'
-import { Button } from '../../components/ui/Button'
+import { LandingNav, LandingFooter, PageHero } from '../../components/landing-v3'
 import api from '../../api/client'
 import { toast } from 'sonner'
+import { useSeo } from '../../hooks/useSeo'
 
 const schema = z.object({
   type: z.enum(['spam', 'ddos', 'phishing', 'bruteforce', 'other']),
@@ -35,7 +32,19 @@ const TYPE_LABELS: Record<FormData['type'], string> = {
   other: 'Other malicious activity',
 }
 
+const fieldStyle: React.CSSProperties = {
+  width: '100%', height: 44, padding: '0 14px', fontSize: 14,
+  borderRadius: 'var(--r-md)', background: 'var(--nl-1)',
+  border: '1px solid var(--b-strong)', color: 'var(--t-hi)', outline: 'none',
+}
+
 export default function AbuseReportPage() {
+  useSeo({
+    title: 'Report Abuse',
+    description: 'Report spam, DDoS, phishing, or other malicious activity originating from NetLayer Cloud. We review every report within 24 hours.',
+    path: '/abuse-report',
+  })
+
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -63,97 +72,101 @@ export default function AbuseReportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white antialiased">
-      <TopNav />
-      <main className="pt-24 pb-16">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6">
-          <header className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-red-500/10 text-red-400 mb-4">
-              <ShieldAlert size={22} />
+    <div className="nl-v3 min-h-screen">
+      <LandingNav />
+
+      <PageHero
+        eyebrow="Trust & safety"
+        title="Report"
+        accent="abuse."
+        subtitle="Help us shut down bad actors. We review every report within 24 hours."
+      />
+
+      <section style={{ background: 'var(--nl-1)', borderTop: '1px solid var(--b-subtle)' }}>
+        <div className="nl-container" style={{ padding: 'clamp(48px,7vw,80px) clamp(20px,4vw,72px)' }}>
+          <div style={{ maxWidth: 640, margin: '0 auto' }}>
+            <div className="flex justify-center" style={{ marginBottom: 24 }}>
+              <span className="inline-flex items-center justify-center" style={{ width: 52, height: 52, borderRadius: 'var(--r-lg)', background: 'var(--c-red-d)', color: 'var(--c-red)' }}>
+                <ShieldAlert size={24} />
+              </span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
-              Report abuse
-            </h1>
-            <p className="mt-3 text-gray-400">
-              Help us shut down bad actors. We review every report within 24 hours.
-            </p>
-          </header>
 
-          {submitted ? (
-            <div className="rounded-xl bg-green-500/10 border border-green-500/30 p-8 text-center">
-              <CheckCircle2 size={36} className="mx-auto text-green-400 mb-3" />
-              <h2 className="text-xl font-semibold text-white">Report received</h2>
-              <p className="mt-2 text-sm text-gray-300">
-                Thank you. Our trust &amp; safety team will investigate within 24 hours.
-                If you provided an email, we'll follow up with the action taken.
-              </p>
-              <button
-                onClick={() => setSubmitted(false)}
-                className="mt-5 inline-flex items-center gap-1.5 text-xs text-[#00d4ff] hover:text-white cursor-pointer"
+            {submitted ? (
+              <div className="text-center" style={{ borderRadius: 'var(--r-xl)', background: 'var(--c-green-d)', border: '1px solid var(--c-green)', padding: 'clamp(32px,4vw,44px)' }}>
+                <CheckCircle2 size={38} className="mx-auto" style={{ color: 'var(--c-green)', marginBottom: 12 }} />
+                <h2 className="nl-head" style={{ fontSize: 20, color: 'var(--t-hi)', marginBottom: 8 }}>Report received</h2>
+                <p style={{ fontSize: 14, color: 'var(--t-med)', lineHeight: 1.6 }}>
+                  Thank you. Our trust &amp; safety team will investigate within 24 hours.
+                  If you provided an email, we'll follow up with the action taken.
+                </p>
+                <button
+                  onClick={() => setSubmitted(false)}
+                  className="cursor-pointer"
+                  style={{ marginTop: 20, fontSize: 13, color: 'var(--brand)' }}
+                >
+                  Submit another report
+                </button>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="flex flex-col gap-5"
+                style={{ borderRadius: 'var(--r-xl)', background: 'var(--nl-2)', border: '1px solid var(--b-default)', padding: 'clamp(24px,3vw,36px)' }}
               >
-                Submit another report
-              </button>
+                <Field label="Type of abuse *" error={errors.type?.message}>
+                  <select {...register('type')} style={fieldStyle}>
+                    {Object.entries(TYPE_LABELS).map(([v, l]) => (
+                      <option key={v} value={v}>{l}</option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field label="Source IP (optional)" error={errors.serverIp?.message}>
+                  <input placeholder="e.g. 103.21.148.92" style={fieldStyle} {...register('serverIp')} />
+                </Field>
+
+                <Field label="Your email (optional)" error={errors.reporterEmail?.message}>
+                  <input type="email" placeholder="you@example.com — for follow-up only" style={fieldStyle} {...register('reporterEmail')} />
+                </Field>
+
+                <Field label="Details *" error={errors.description?.message}>
+                  <textarea
+                    style={{ ...fieldStyle, height: 128, padding: '12px 14px', resize: 'none' }}
+                    placeholder="What did you observe? Logs, headers, screenshot URLs, dates and times in UTC."
+                    {...register('description')}
+                  />
+                </Field>
+
+                <div style={{ borderRadius: 'var(--r-md)', background: 'var(--c-amber-d)', border: '1px solid color-mix(in srgb, var(--c-amber) 28%, transparent)', padding: 12, fontSize: 12.5, color: 'var(--c-amber)' }}>
+                  False reports clog our queue and slow down our response to real abuse. Please be specific
+                  and only report behaviour you have direct evidence of.
+                </div>
+
+                <button type="submit" disabled={submitting} className="nl-btn-primary justify-center" style={{ height: 48, ...(submitting ? { opacity: 0.6 } : {}) }}>
+                  <Send size={15} /> {submitting ? 'Submitting…' : 'Submit report'}
+                </button>
+              </form>
+            )}
+
+            <div className="text-center" style={{ marginTop: 28, fontSize: 12.5, color: 'var(--t-low)', lineHeight: 1.9 }}>
+              <p>For DMCA / copyright takedowns: <span style={{ color: 'var(--t-med)' }}>dmca@netlayer.com</span></p>
+              <p>For law-enforcement requests: <span style={{ color: 'var(--t-med)' }}>le-requests@netlayer.com</span></p>
             </div>
-          ) : (
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              className="bg-[#111] border border-white/[0.06] rounded-xl p-6 sm:p-8 space-y-5"
-            >
-              <Select
-                label="Type of abuse *"
-                error={errors.type?.message}
-                {...register('type')}
-              >
-                {Object.entries(TYPE_LABELS).map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
-                ))}
-              </Select>
-
-              <Input
-                label="Source IP (optional)"
-                placeholder="e.g. 103.21.148.92"
-                error={errors.serverIp?.message}
-                {...register('serverIp')}
-              />
-
-              <Input
-                label="Your email (optional)"
-                type="email"
-                placeholder="you@example.com — for follow-up only"
-                error={errors.reporterEmail?.message}
-                {...register('reporterEmail')}
-              />
-
-              <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Details *</label>
-                <textarea
-                  className="w-full bg-[#1e1f1e] border border-[#333] text-white placeholder-gray-600 rounded-md px-3 py-2 text-sm h-32 focus:border-[#0070f3] focus:outline-none transition-colors resize-none"
-                  placeholder="What did you observe? Logs, headers, screenshots URLs, dates and times in UTC."
-                  {...register('description')}
-                />
-                {errors.description?.message && (
-                  <p className="text-xs text-red-400 mt-1">{errors.description.message}</p>
-                )}
-              </div>
-
-              <div className="bg-amber-500/[0.05] border border-amber-500/20 rounded-md p-3 text-xs text-amber-300">
-                False reports clog our queue and slow down our response to real abuse. Please be specific
-                and only report behaviour you have direct evidence of.
-              </div>
-
-              <Button type="submit" loading={submitting} size="lg" className="w-full">
-                <Send size={14} /> Submit report
-              </Button>
-            </form>
-          )}
-
-          <div className="mt-8 text-xs text-gray-500 text-center space-y-1">
-            <p>For DMCA / copyright takedowns: <span className="text-gray-300">dmca@netlayer.com</span></p>
-            <p>For law-enforcement requests: <span className="text-gray-300">le-requests@netlayer.com</span> (PGP key in /docs/legal)</p>
           </div>
         </div>
-      </main>
-      <Footer />
+      </section>
+
+      <LandingFooter />
+    </div>
+  )
+}
+
+function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block nl-mono" style={{ fontSize: 11, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--t-low)', marginBottom: 8 }}>{label}</label>
+      {children}
+      {error && <p style={{ fontSize: 12, color: 'var(--c-red)', marginTop: 6 }}>{error}</p>}
     </div>
   )
 }

@@ -1,16 +1,15 @@
-import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { motion } from 'framer-motion'
-import { Activity, Globe, Network, Shield, Wifi, Zap } from 'lucide-react'
-import { LandingNav, LandingFooter } from '../../components/landing-v3'
+import { Activity, Network, Shield, Wifi, Zap } from 'lucide-react'
+import { LandingNav, LandingFooter, PageHero, CtaBand } from '../../components/landing-v3'
 import { catalogAPI } from '../../api/endpoints'
 import type { Region } from '../../types'
+import { useSeo } from '../../hooks/useSeo'
 
 const SPECS = [
-  { Icon: Wifi,     label: '25 Gbps',     desc: 'Per-host uplinks' },
-  { Icon: Activity, label: '< 1 ms',      desc: 'Intra-region latency' },
-  { Icon: Network,  label: 'BGP Anycast', desc: '15 PoPs, IPv4 + IPv6' },
-  { Icon: Shield,   label: 'L3/4/7',      desc: 'Hardware DDoS protection' },
+  { Icon: Wifi,     label: '25 Gbps',     desc: 'Per-host uplinks',      accent: 'var(--a-lime)' },
+  { Icon: Activity, label: '< 1 ms',      desc: 'Intra-region latency',  accent: 'var(--a-cyan)' },
+  { Icon: Network,  label: 'BGP Anycast', desc: '15 PoPs, IPv4 + IPv6',  accent: 'var(--a-violet)' },
+  { Icon: Shield,   label: 'L3/4/7',      desc: 'Hardware DDoS protection', accent: 'var(--a-blue)' },
 ]
 
 const FEATURES = [
@@ -34,6 +33,12 @@ const CONTINENT_GROUPS: Record<string, string[]> = {
 }
 
 export default function NetworkPage() {
+  useSeo({
+    title: 'Global Network',
+    description: '15 regions across 5 continents. Hardware-protected, anycast-routed, and built on a tier-1 backbone — so every workload is close to its users.',
+    path: '/network',
+  })
+
   const { data: regions = [] } = useQuery({
     queryKey: ['regions'],
     queryFn: () => catalogAPI.getRegions().then((r) => r.data.data as Region[]),
@@ -44,139 +49,120 @@ export default function NetworkPage() {
     <div className="nl-v3 min-h-screen">
       <LandingNav />
 
-      <section className="pt-28 pb-12 px-4 sm:px-6 max-w-5xl mx-auto text-center">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <span
-            className="inline-block px-3 h-7 leading-7 rounded-full text-xs"
-            style={{ border: '1px solid var(--brand-b)', background: 'var(--brand-d)', color: 'var(--brand)' }}
-          >
-            Global network
-          </span>
-          <h1
-            className="mt-6 font-semibold tracking-tight"
-            style={{ fontSize: 'clamp(36px, 5vw, 56px)', lineHeight: 1.05 }}
-          >
-            Global network. Local performance.
-          </h1>
-          <p className="mt-5 text-lg max-w-2xl mx-auto" style={{ color: 'var(--t-med)' }}>
-            15 regions across 5 continents. Hardware-protected, anycast-routed, and built on a
-            tier-1 backbone — so every workload is close to its users.
-          </p>
-        </motion.div>
-      </section>
+      <PageHero
+        eyebrow="Global network"
+        title="Global network."
+        accent="Local performance."
+        subtitle="15 regions across 5 continents. Hardware-protected, anycast-routed, and built on a tier-1 backbone — so every workload is close to its users."
+      />
 
       {/* Specs row */}
-      <section className="py-8 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3">
-          {SPECS.map((s) => (
-            <div key={s.label} className="nl-card p-5 text-center">
-              <s.Icon size={20} style={{ color: 'var(--brand)' }} className="mx-auto mb-2" />
-              <div className="text-xl font-semibold tracking-tight">{s.label}</div>
-              <div className="text-xs mt-1" style={{ color: 'var(--t-low)' }}>{s.desc}</div>
-            </div>
-          ))}
+      <section style={{ background: 'var(--nl-1)', borderTop: '1px solid var(--b-subtle)' }}>
+        <div className="nl-container" style={{ padding: 'clamp(40px,6vw,64px) clamp(20px,4vw,72px)' }}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {SPECS.map((s) => (
+              <div key={s.label} className="text-center" style={{ borderRadius: 'var(--r-xl)', border: '1px solid var(--b-default)', background: 'var(--nl-2)', padding: 'clamp(22px,2.6vw,28px)' }}>
+                <s.Icon size={22} style={{ color: s.accent }} className="mx-auto mb-3" />
+                <div className="nl-display" style={{ fontSize: 24, color: 'var(--t-hi)' }}>{s.label}</div>
+                <div style={{ fontSize: 12.5, marginTop: 4, color: 'var(--t-low)' }}>{s.desc}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Region cards */}
-      <section className="py-16 px-4 sm:px-6 max-w-6xl mx-auto">
-        <div className="text-center mb-10">
-          <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--brand)' }}>
-            Regions
-          </span>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-            {regions.length || '15'} datacenters worldwide
-          </h2>
-        </div>
+      <section style={{ background: 'var(--nl-0)', borderTop: '1px solid var(--b-subtle)' }}>
+        <div className="nl-container" style={{ padding: 'clamp(56px,8vw,96px) clamp(20px,4vw,72px)' }}>
+          <div className="text-center max-w-2xl mx-auto" style={{ marginBottom: 'clamp(32px,4vw,48px)' }}>
+            <div className="nl-eyebrow" style={{ marginBottom: 16, color: 'var(--brand)' }}>Regions</div>
+            <h2 className="nl-display" style={{ fontSize: 'clamp(28px,4vw,48px)', color: 'var(--t-hi)' }}>
+              {regions.length || '15'} datacenters worldwide
+            </h2>
+          </div>
 
-        {Object.entries(CONTINENT_GROUPS).map(([continent, slugs]) => {
-          const group = slugs
-            .map((slug) => regions.find((r) => r.slug === slug))
-            .filter((r): r is Region => !!r)
-          if (group.length === 0) return null
-          return (
-            <div key={continent} className="mb-8">
-              <div className="text-[11px] uppercase tracking-wider mb-3" style={{ color: 'var(--t-low)' }}>
-                {continent}
+          {Object.entries(CONTINENT_GROUPS).map(([continent, slugs]) => {
+            const group = slugs
+              .map((slug) => regions.find((r) => r.slug === slug))
+              .filter((r): r is Region => !!r)
+            if (group.length === 0) return null
+            return (
+              <div key={continent} style={{ marginBottom: 32 }}>
+                <div className="nl-mono" style={{ fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 14, color: 'var(--t-low)' }}>
+                  {continent}
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {group.map((r) => <RegionCard key={r.id} region={r} />)}
+                </div>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {group.map((r) => <RegionCard key={r.id} region={r} />)}
-              </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </section>
 
       {/* Backbone features + diagram */}
-      <section className="py-20 px-4 sm:px-6" style={{ borderTop: '1px solid var(--b-subtle)' }}>
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-10 items-start">
-          <div>
-            <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--brand)' }}>
-              Backbone
-            </span>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-              Built on tier-1 transit
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--t-med)' }}>
-              Our backbone is composed of redundant 100 GbE waves into multiple tier-1 carriers
-              at every PoP. Routes update via BGP within seconds when paths degrade.
-            </p>
-            <ul className="mt-6 space-y-3">
-              {FEATURES.map((f) => (
-                <li key={f} className="flex items-start gap-3 text-sm" style={{ color: 'var(--t-med)' }}>
-                  <Zap size={14} style={{ color: 'var(--brand)' }} className="shrink-0 mt-0.5" />
-                  <span>{f}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <ArchitectureDiagram />
+      <section style={{ background: 'var(--nl-1)', borderTop: '1px solid var(--b-subtle)' }}>
+        <div className="nl-container" style={{ padding: 'clamp(56px,8vw,96px) clamp(20px,4vw,72px)' }}>
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+            <div>
+              <div className="nl-eyebrow" style={{ marginBottom: 16, color: 'var(--brand)' }}>Backbone</div>
+              <h2 className="nl-display" style={{ fontSize: 'clamp(28px,4vw,44px)', color: 'var(--t-hi)', marginBottom: 16 }}>
+                Built on tier-1 transit
+              </h2>
+              <p style={{ fontSize: 15, color: 'var(--t-med)', lineHeight: 1.7, marginBottom: 24 }}>
+                Our backbone is composed of redundant 100 GbE waves into multiple tier-1 carriers
+                at every PoP. Routes update via BGP within seconds when paths degrade.
+              </p>
+              <ul className="flex flex-col gap-3">
+                {FEATURES.map((f) => (
+                  <li key={f} className="flex items-start gap-3" style={{ fontSize: 14, color: 'var(--t-med)' }}>
+                    <Zap size={15} style={{ color: 'var(--brand)' }} className="shrink-0 mt-0.5" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <ArchitectureDiagram />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20 px-4 sm:px-6 text-center">
-        <h2 className="text-2xl font-semibold tracking-tight">Deploy in any region in 30 seconds</h2>
-        <p className="mt-3 text-sm" style={{ color: 'var(--t-med)' }}>
-          Pick a region close to your users — pay only for what you use.
-        </p>
-        <div className="mt-6 flex justify-center gap-3">
-          <Link to="/register" className="nl-btn-primary">Start free</Link>
-          <Link to="/pricing" className="nl-btn-ghost">View pricing →</Link>
-        </div>
-      </section>
-
+      <CtaBand title="Deploy in any region in 30 seconds" subtitle="Pick a region close to your users — pay only for what you use." primaryLabel="Start free" />
       <LandingFooter />
     </div>
   )
 }
 
 function RegionCard({ region }: { region: Region }) {
+  const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5173'
   return (
-    <Link
-      to={`/register?region=${region.slug}`}
-      className="block nl-card nl-card-hover p-4 cursor-pointer"
+    <a
+      href={`${DASHBOARD_URL}/register?region=${region.slug}`}
+      className="block cursor-pointer transition-all"
+      style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--b-default)', background: 'var(--nl-2)', padding: 16 }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--brand-b)' }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--b-default)' }}
     >
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-2xl">{region.flag}</span>
+      <div className="flex items-center gap-2 mb-3">
+        <span style={{ fontSize: 24 }}>{region.flag}</span>
         <div>
-          <div className="text-sm font-medium" style={{ color: 'var(--t-hi)' }}>{region.city}</div>
-          <div className="text-[11px]" style={{ color: 'var(--t-low)' }}>{region.country}</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--t-hi)' }}>{region.city}</div>
+          <div style={{ fontSize: 11, color: 'var(--t-low)' }}>{region.country}</div>
         </div>
       </div>
-      <div className="flex items-center justify-between text-[11px]">
+      <div className="flex items-center justify-between" style={{ fontSize: 11 }}>
         <span
-          className="inline-flex items-center gap-1 px-1.5 h-5 rounded"
+          className="inline-flex items-center gap-1 px-2 h-5 rounded"
           style={{ background: 'var(--c-green-d)', color: 'var(--c-green)' }}
         >
-          <span className="w-1 h-1 rounded-full" style={{ background: 'var(--c-green)' }} />
+          <span className="rounded-full" style={{ width: 4, height: 4, background: 'var(--c-green)' }} />
           {region.latencyMs ?? 20} ms
         </span>
         <span style={{ color: 'var(--brand)' }}>Deploy →</span>
       </div>
-    </Link>
+    </a>
   )
 }
 
@@ -207,7 +193,7 @@ function ArchitectureDiagram() {
   )
 
   return (
-    <div className="nl-card p-6" style={{ background: 'var(--nl-1)' }}>
+    <div style={{ borderRadius: 'var(--r-xl)', border: '1px solid var(--b-default)', background: 'var(--nl-2)', padding: 24 }}>
       {layer('Edge / Anycast', ['BGP', 'IPv6', 'DDoS'])}
       <Connector />
       {layer('Spine (100 GbE)', ['Cogent', 'Telia', 'Lumen', 'Tata'])}

@@ -25,7 +25,7 @@ const PROOF = [
   {
     stat: '99.99%',
     unit: 'measured uptime',
-    tone: 'var(--a-amber)',
+    tone: 'var(--a-lime)',
     story: 'An e-commerce platform ran a full festive-season peak across three Indian regions on NetLayer bare metal with zero unplanned downtime.',
     by: 'D2C commerce brand',
   },

@@ -1,5 +1,6 @@
 import { LandingNav, LandingFooter } from '../../components/landing-v3'
 import { LegalDocument } from './_LegalDocument'
+import { useSeo } from '../../hooks/useSeo'
 
 const SECTIONS = [
   {
@@ -76,6 +77,7 @@ const SECTIONS = [
 ]
 
 export default function PrivacyPage() {
+  useSeo({ title: 'Privacy Policy', description: 'How NetLayer Cloud collects, uses, and protects your data — GDPR and India DPDP aligned.', path: '/legal/privacy' })
   return (
     <div className="nl-v3 min-h-screen">
       <LandingNav />

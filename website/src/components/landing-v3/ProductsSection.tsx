@@ -37,27 +37,27 @@ const PRODUCTS: Product[] = [
     points: ['On-demand provisioning', 'Hourly billing', 'NVLink options'],
   },
   {
-    icon: HardDrive, title: 'Storage', href: '/pricing#storage', accent: 'amber',
+    icon: HardDrive, title: 'Storage', href: '/pricing#storage', accent: 'blue',
     desc: 'S3-compatible object storage and high-IOPS NVMe block volumes.',
     points: ['Automated backups', 'Cross-region replication', 'Snapshots'],
   },
   {
-    icon: Network, title: 'Networking', href: '/network', accent: 'blue',
+    icon: Network, title: 'Networking', href: '/network', accent: 'cyan',
     desc: 'Floating IPs, private VLANs, and load balancers over a fast backbone.',
     points: ['Hardware DDoS shield', '25 Gbps backbone', 'Anycast DNS'],
   },
   {
-    icon: Database, title: 'Managed Databases', href: '/pricing#db', accent: 'pink',
+    icon: Database, title: 'Managed Databases', href: '/pricing#db', accent: 'lime',
     desc: 'PostgreSQL, MySQL, and Redis with automated failover and backups.',
     points: ['One-click HA', 'Daily backups', 'Connection pooling'],
   },
   {
-    icon: Globe2, title: 'Kubernetes', href: '/kubernetes', accent: 'cyan',
+    icon: Globe2, title: 'Kubernetes', href: '/kubernetes', accent: 'violet',
     desc: 'Managed control plane with autoscaling node pools (preview).',
     points: ['Free control plane', 'Autoscaling', '1-click ingress'],
   },
   {
-    icon: Layers, title: 'Developer API', href: '/docs#api', accent: 'violet',
+    icon: Layers, title: 'Developer API', href: '/docs#api', accent: 'blue',
     desc: 'Drive every resource from a clean REST API and Terraform provider.',
     points: ['Full REST API', 'Terraform provider', 'Webhooks'],
   },

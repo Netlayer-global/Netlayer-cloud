@@ -62,6 +62,7 @@ export function LandingFooter() {
             ['Status', '/status'], ['Marketplace', '/marketplace'], ['Abuse Report', '/abuse-report'],
           ]} />
           <FooterCol title="Connect" links={[
+            ['Contact sales', '/contact'],
             ['Support', 'mailto:support@netlayer.com'], ['Sales', 'mailto:sales@netlayer.com'],
             ['Community', 'https://discord.gg/netlayer'], ['GitHub', 'https://github.com/Netlayer-global/Netlayer-cloud'],
           ]} />

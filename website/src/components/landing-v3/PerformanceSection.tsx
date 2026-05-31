@@ -22,7 +22,7 @@ type Row = {
 const TONE = {
   cyan:   { c: 'var(--a-cyan)',   d: 'var(--a-cyan-d)',   b: 'var(--a-cyan-b)' },
   violet: { c: 'var(--a-violet)', d: 'var(--a-violet-d)', b: 'var(--a-violet-b)' },
-  amber:  { c: 'var(--a-amber)',  d: 'var(--a-amber-d)',  b: 'var(--a-amber-b)' },
+  amber:  { c: 'var(--a-blue)',   d: 'var(--a-blue-d)',   b: 'var(--a-blue-b)' },
 } as const
 
 const ROWS: Row[] = [

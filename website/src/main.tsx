@@ -23,6 +23,7 @@ import TermsPage from './pages/public/TermsPage'
 import BlogPage from './pages/public/BlogPage'
 import BlogPostPage from './pages/public/BlogPostPage'
 import MarketplacePage from './pages/public/MarketplacePage'
+import ContactPage from './pages/public/ContactPage'
 
 /**
  * Public marketing site entry. Auth-gated routes (login, register,
@@ -67,6 +68,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route path="/marketplace" element={<MarketplacePage />} />
+          <Route path="/contact" element={<ContactPage />} />
           <Route path="/legal/privacy" element={<PrivacyPage />} />
           <Route path="/legal/terms" element={<TermsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

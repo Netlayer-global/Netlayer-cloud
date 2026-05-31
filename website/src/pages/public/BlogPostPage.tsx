@@ -1,9 +1,11 @@
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Calendar, Clock, Tag } from 'lucide-react'
-import { TopNav } from '../../components/landing/TopNav'
-import { Footer } from '../../components/landing/Footer'
+import { LandingNav, LandingFooter } from '../../components/landing-v3'
 import { blogAPI } from '../../api/endpoints'
+import { useSeo } from '../../hooks/useSeo'
+
+const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5173'
 
 const formatDate = (s: string) =>
   new Date(s).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -31,7 +33,7 @@ function renderMarkdown(md: string) {
       const m = codeRe.exec(s)
       if (!m) { parts.push(s); break }
       if (m.index > 0) parts.push(s.slice(0, m.index))
-      parts.push(<code key={`c${pi++}`} className="px-1.5 py-0.5 rounded bg-white/[0.06] text-[#c8f135] text-[13px] font-mono">{m[1]}</code>)
+      parts.push(<code key={`c${pi++}`} className="px-1.5 py-0.5 rounded font-mono" style={{ background: 'var(--nl-3)', color: 'var(--brand)', fontSize: 13 }}>{m[1]}</code>)
       s = s.slice(m.index + m[0].length)
     }
     return parts.flatMap((p, idx) => {
@@ -46,9 +48,9 @@ function renderMarkdown(md: string) {
         const isInternal = m[2].startsWith('/')
         subs.push(
           isInternal ? (
-            <Link key={`l${idx}-${subs.length}`} to={m[2]} className="text-[#c8f135] underline underline-offset-4 hover:text-[#b3d82e] transition-colors">{m[1]}</Link>
+            <Link key={`l${idx}-${subs.length}`} to={m[2]} className="underline underline-offset-4 transition-colors" style={{ color: 'var(--brand)' }}>{m[1]}</Link>
           ) : (
-            <a key={`l${idx}-${subs.length}`} href={m[2]} target="_blank" rel="noreferrer" className="text-[#c8f135] underline underline-offset-4 hover:text-[#b3d82e] transition-colors">{m[1]}</a>
+            <a key={`l${idx}-${subs.length}`} href={m[2]} target="_blank" rel="noreferrer" className="underline underline-offset-4 transition-colors" style={{ color: 'var(--brand)' }}>{m[1]}</a>
           )
         )
         r = r.slice(m.index + m[0].length)
@@ -57,7 +59,7 @@ function renderMarkdown(md: string) {
         if (typeof sub !== 'string') return [sub]
         const boldParts = sub.split(/\*\*([^*]+)\*\*/)
         return boldParts.map((bp, k) =>
-          k % 2 === 1 ? <strong key={`b${idx}-${j}-${k}`} className="text-white font-semibold">{bp}</strong> : bp
+          k % 2 === 1 ? <strong key={`b${idx}-${j}-${k}`} className="font-semibold" style={{ color: 'var(--t-hi)' }}>{bp}</strong> : bp
         )
       })
     })
@@ -75,20 +77,20 @@ function renderMarkdown(md: string) {
       const header = tableRows[0].split('|').slice(1, -1).map((c) => c.trim())
       const body = tableRows.slice(2).map((r) => r.split('|').slice(1, -1).map((c) => c.trim()))
       out.push(
-        <div key={key++} className="my-6 overflow-x-auto rounded-lg border border-white/[0.08]">
+        <div key={key++} className="my-6 overflow-x-auto" style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--b-default)' }}>
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-white/[0.04] text-left">
+              <tr className="text-left" style={{ background: 'var(--nl-3)' }}>
                 {header.map((h, hi) => (
-                  <th key={hi} className="px-4 py-2 text-xs uppercase tracking-wide text-[#9a9c9a] font-medium">{h}</th>
+                  <th key={hi} className="px-4 py-2 text-xs uppercase tracking-wide font-medium" style={{ color: 'var(--t-low)' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {body.map((row, ri) => (
-                <tr key={ri} className="border-t border-white/[0.04]">
+                <tr key={ri} style={{ borderTop: '1px solid var(--b-subtle)' }}>
                   {row.map((c, ci) => (
-                    <td key={ci} className="px-4 py-2.5 text-[#eeeeed]">{inline(c)}</td>
+                    <td key={ci} className="px-4 py-2.5" style={{ color: 'var(--t-hi)' }}>{inline(c)}</td>
                   ))}
                 </tr>
               ))}
@@ -100,17 +102,17 @@ function renderMarkdown(md: string) {
     }
     // headings
     if (line.startsWith('### ')) {
-      out.push(<h3 key={key++} className="mt-8 mb-3 text-lg font-semibold text-white">{inline(line.slice(4))}</h3>)
+      out.push(<h3 key={key++} className="nl-head mt-8 mb-3" style={{ fontSize: 18, color: 'var(--t-hi)' }}>{inline(line.slice(4))}</h3>)
       i += 1
       continue
     }
     if (line.startsWith('## ')) {
-      out.push(<h2 key={key++} className="mt-12 mb-4 text-2xl font-semibold text-white tracking-tight">{inline(line.slice(3))}</h2>)
+      out.push(<h2 key={key++} className="nl-head mt-12 mb-4" style={{ fontSize: 24, color: 'var(--t-hi)' }}>{inline(line.slice(3))}</h2>)
       i += 1
       continue
     }
     if (line.startsWith('# ')) {
-      out.push(<h1 key={key++} className="mt-12 mb-5 text-3xl font-semibold text-white">{inline(line.slice(2))}</h1>)
+      out.push(<h1 key={key++} className="nl-display mt-12 mb-5" style={{ fontSize: 30, color: 'var(--t-hi)' }}>{inline(line.slice(2))}</h1>)
       i += 1
       continue
     }
@@ -122,7 +124,7 @@ function renderMarkdown(md: string) {
         i += 1
       }
       out.push(
-        <ul key={key++} className="my-4 space-y-2 list-disc list-outside pl-5 text-[#cfd0cf]">
+        <ul key={key++} className="my-4 space-y-2 list-disc list-outside pl-5" style={{ color: 'var(--t-med)' }}>
           {items.map((it, idx) => <li key={idx}>{inline(it)}</li>)}
         </ul>
       )
@@ -136,7 +138,7 @@ function renderMarkdown(md: string) {
         i += 1
       }
       out.push(
-        <ol key={key++} className="my-4 space-y-2 list-decimal list-outside pl-5 text-[#cfd0cf]">
+        <ol key={key++} className="my-4 space-y-2 list-decimal list-outside pl-5" style={{ color: 'var(--t-med)' }}>
           {items.map((it, idx) => <li key={idx}>{inline(it)}</li>)}
         </ol>
       )
@@ -148,7 +150,7 @@ function renderMarkdown(md: string) {
       continue
     }
     // paragraph
-    out.push(<p key={key++} className="my-4 leading-[1.75] text-[#cfd0cf]">{inline(line)}</p>)
+    out.push(<p key={key++} className="my-4" style={{ lineHeight: 1.75, color: 'var(--t-med)' }}>{inline(line)}</p>)
     i += 1
   }
   return out
@@ -162,92 +164,94 @@ export default function BlogPostPage() {
     enabled: !!slug,
   })
 
-  return (
-    <div className="min-h-screen bg-[#080909] text-white antialiased">
-      <TopNav />
+  useSeo({
+    title: data?.title || 'Blog',
+    description: data?.excerpt,
+    path: slug ? `/blog/${slug}` : '/blog',
+  })
 
-      <div className="pt-28 pb-20 px-4 sm:px-6 max-w-3xl mx-auto">
+  return (
+    <div className="nl-v3 min-h-screen">
+      <LandingNav />
+
+      <div className="nl-container" style={{ padding: 'clamp(120px,16vh,170px) clamp(20px,4vw,72px) clamp(64px,9vw,100px)', maxWidth: 820 }}>
         <Link
           to="/blog"
-          className="inline-flex items-center gap-2 text-sm text-[#9a9c9a] hover:text-[#c8f135] transition-colors mb-8"
+          className="inline-flex items-center gap-2 transition-colors"
+          style={{ fontSize: 14, color: 'var(--t-med)', marginBottom: 32 }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--brand)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--t-med)')}
         >
           <ArrowLeft size={14} /> All posts
         </Link>
 
         {isLoading && (
-          <div className="space-y-3 animate-pulse">
-            <div className="h-4 w-32 bg-white/[0.04] rounded" />
-            <div className="h-10 w-full bg-white/[0.04] rounded" />
-            <div className="h-4 w-2/3 bg-white/[0.04] rounded" />
+          <div className="flex flex-col gap-3 animate-pulse">
+            <div style={{ height: 16, width: 128, background: 'var(--nl-3)', borderRadius: 4 }} />
+            <div style={{ height: 40, width: '100%', background: 'var(--nl-3)', borderRadius: 4 }} />
+            <div style={{ height: 16, width: '66%', background: 'var(--nl-3)', borderRadius: 4 }} />
           </div>
         )}
 
         {isError && (
-          <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-8 text-center">
-            <h1 className="text-2xl font-semibold text-white mb-2">Post not found</h1>
-            <p className="text-sm text-[#9a9c9a] mb-4">This post may have been moved or unpublished.</p>
-            <Link to="/blog" className="text-[#c8f135] underline underline-offset-4 text-sm hover:text-[#b3d82e]">
-              Back to blog
-            </Link>
+          <div className="text-center" style={{ borderRadius: 'var(--r-xl)', border: '1px solid var(--b-default)', background: 'var(--nl-2)', padding: 40 }}>
+            <h1 className="nl-head" style={{ fontSize: 24, color: 'var(--t-hi)', marginBottom: 8 }}>Post not found</h1>
+            <p style={{ fontSize: 14, color: 'var(--t-med)', marginBottom: 16 }}>This post may have been moved or unpublished.</p>
+            <Link to="/blog" className="underline underline-offset-4" style={{ color: 'var(--brand)', fontSize: 14 }}>Back to blog</Link>
           </div>
         )}
 
         {data && (
           <>
-            <div className="flex items-center gap-3 text-xs text-[#9a9c9a] mb-4">
-              <span className="text-[11px] uppercase tracking-wider text-[#c8f135]">{data.category}</span>
+            <div className="flex items-center gap-3 flex-wrap" style={{ fontSize: 12, color: 'var(--t-low)', marginBottom: 16 }}>
+              <span className="nl-mono" style={{ letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand)' }}>{data.category}</span>
               <span className="flex items-center gap-1"><Calendar size={11} /> {formatDate(data.publishedAt)}</span>
               <span className="flex items-center gap-1"><Clock size={11} /> {data.readMinutes} min read</span>
             </div>
 
-            <h1 className="text-4xl sm:text-[44px] leading-[1.15] font-semibold tracking-tight text-white mb-5">
+            <h1 className="nl-display" style={{ fontSize: 'clamp(32px,4.5vw,46px)', lineHeight: 1.15, color: 'var(--t-hi)', marginBottom: 18 }}>
               {data.title}
             </h1>
 
-            <p className="text-lg text-[#9a9c9a] leading-relaxed mb-8">{data.excerpt}</p>
+            <p style={{ fontSize: 18, color: 'var(--t-med)', lineHeight: 1.6, marginBottom: 28 }}>{data.excerpt}</p>
 
-            <div className="flex items-center gap-3 pb-8 mb-8 border-b border-white/[0.06]">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#c8f135] to-[#a8e620] flex items-center justify-center text-[#080909] font-semibold text-sm">
+            <div className="flex items-center gap-3" style={{ paddingBottom: 28, marginBottom: 28, borderBottom: '1px solid var(--b-subtle)' }}>
+              <div className="flex items-center justify-center nl-head" style={{ width: 40, height: 40, borderRadius: 'var(--r-full)', background: 'linear-gradient(135deg, var(--a-lime), var(--a-cyan))', color: 'var(--brand-fg)', fontSize: 14 }}>
                 {data.authorName.split(' ').map((s) => s[0]).join('').slice(0, 2)}
               </div>
               <div>
-                <div className="text-sm font-medium text-white">{data.authorName}</div>
-                <div className="text-xs text-[#9a9c9a]">{data.authorRole}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--t-hi)' }}>{data.authorName}</div>
+                <div style={{ fontSize: 12.5, color: 'var(--t-low)' }}>{data.authorRole}</div>
               </div>
             </div>
 
-            <article className="prose-invert max-w-none text-[15px]">
+            <article className="max-w-none" style={{ fontSize: 15 }}>
               {renderMarkdown(data.content)}
             </article>
 
             {data.tags.length > 0 && (
-              <div className="mt-12 pt-6 border-t border-white/[0.06] flex flex-wrap gap-2 items-center">
-                <Tag size={14} className="text-[#9a9c9a]" />
+              <div className="flex flex-wrap gap-2 items-center" style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid var(--b-subtle)' }}>
+                <Tag size={14} style={{ color: 'var(--t-low)' }} />
                 {data.tags.map((t) => (
-                  <span key={t} className="text-xs px-2.5 py-1 rounded-full border border-white/[0.08] bg-white/[0.03] text-[#9a9c9a]">
+                  <span key={t} className="nl-mono" style={{ fontSize: 11, padding: '4px 10px', borderRadius: 'var(--r-full)', border: '1px solid var(--b-default)', background: 'var(--nl-2)', color: 'var(--t-low)' }}>
                     {t}
                   </span>
                 ))}
               </div>
             )}
 
-            <div className="mt-12 rounded-2xl border border-[#c8f135]/20 bg-gradient-to-br from-[#c8f135]/10 to-transparent p-8 text-center">
-              <h3 className="text-lg font-semibold text-white mb-2">Try NetLayer free</h3>
-              <p className="text-sm text-[#9a9c9a] mb-5 max-w-md mx-auto">
-                Deploy a VPS in 30 seconds. Get $100 in free credit when you sign up.
+            <div className="text-center relative overflow-hidden" style={{ marginTop: 48, borderRadius: 'var(--r-2xl)', border: '1px solid var(--brand-b)', background: 'var(--nl-2)', padding: 'clamp(32px,4vw,44px)' }}>
+              <h3 className="nl-head" style={{ fontSize: 19, color: 'var(--t-hi)', marginBottom: 8 }}>Try NetLayer free</h3>
+              <p style={{ fontSize: 14, color: 'var(--t-med)', maxWidth: 440, margin: '0 auto 20px' }}>
+                Deploy a VPS in 30 seconds. Get ₹3,500 in free credit when you sign up.
               </p>
-              <Link
-                to="/register"
-                className="inline-flex items-center gap-2 h-10 px-5 rounded-md text-sm font-medium text-[#080909] bg-[#c8f135] hover:bg-[#b3d82e] transition-colors cursor-pointer"
-              >
-                Start free
-              </Link>
+              <a href={`${DASHBOARD_URL}/register`} className="nl-btn-primary inline-flex">Start free</a>
             </div>
           </>
         )}
       </div>
 
-      <Footer />
+      <LandingFooter />
     </div>
   )
 }

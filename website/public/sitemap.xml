@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://netlayer.cloud/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://netlayer.cloud/pricing</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://netlayer.cloud/features</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://netlayer.cloud/network</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://netlayer.cloud/kubernetes</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://netlayer.cloud/marketplace</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://netlayer.cloud/docs</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://netlayer.cloud/status</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://netlayer.cloud/blog</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://netlayer.cloud/about</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://netlayer.cloud/careers</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://netlayer.cloud/contact</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://netlayer.cloud/abuse-report</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://netlayer.cloud/legal/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://netlayer.cloud/legal/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+</urlset>

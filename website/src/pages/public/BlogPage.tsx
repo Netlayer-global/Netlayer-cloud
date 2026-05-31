@@ -1,128 +1,131 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Calendar, Clock, ArrowRight, Cpu, Shield, Sparkles, Rocket, Zap, BookOpen } from 'lucide-react'
-import { TopNav } from '../../components/landing/TopNav'
-import { Footer } from '../../components/landing/Footer'
+import { Calendar, Clock, ArrowRight, Cpu, Shield, Sparkles, Rocket, BookOpen } from 'lucide-react'
+import { LandingNav, LandingFooter, PageHero } from '../../components/landing-v3'
 import { blogAPI, type BlogPostSummary } from '../../api/endpoints'
+import { useSeo } from '../../hooks/useSeo'
 
 const formatDate = (s: string) =>
   new Date(s).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
 
-const CATEGORY_ICONS: Record<string, { icon: any; color: string }> = {
-  product:        { icon: Sparkles, color: 'text-purple-400 bg-purple-500/10 border-purple-500/30' },
-  engineering:    { icon: Cpu,      color: 'text-orange-400 bg-orange-500/10 border-orange-500/30' },
-  infrastructure: { icon: Shield,   color: 'text-green-400 bg-green-500/10 border-green-500/30' },
-  guides:         { icon: BookOpen, color: 'text-blue-400 bg-blue-500/10 border-blue-500/30' },
-  announcements:  { icon: Rocket,   color: 'text-[#c8f135] bg-[#c8f135]/10 border-[#c8f135]/30' },
+const CATEGORY_META: Record<string, { icon: any; color: string }> = {
+  product:        { icon: Sparkles, color: 'var(--a-violet)' },
+  engineering:    { icon: Cpu,      color: 'var(--a-amber)' },
+  infrastructure: { icon: Shield,   color: 'var(--a-cyan)' },
+  guides:         { icon: BookOpen, color: 'var(--a-blue)' },
+  announcements:  { icon: Rocket,   color: 'var(--a-lime)' },
 }
 
 export default function BlogPage() {
+  useSeo({
+    title: 'Blog',
+    description: 'Engineering deep-dives, product launches, and the occasional postmortem — written by the team who runs the NetLayer platform.',
+    path: '/blog',
+  })
+
   const { data: posts = [], isLoading } = useQuery<BlogPostSummary[]>({
     queryKey: ['blog', 'list'],
     queryFn: () => blogAPI.list({ limit: 50 }).then((r) => r.data.data),
   })
 
   return (
-    <div className="min-h-screen bg-[#080909] text-white antialiased">
-      <TopNav />
+    <div className="nl-v3 min-h-screen">
+      <LandingNav />
 
-      <section className="pt-32 pb-12 px-4 sm:px-6 max-w-5xl mx-auto">
-        <span className="inline-flex items-center gap-2 px-3 h-7 rounded-full border border-white/[0.08] bg-white/[0.03] text-xs text-[#cfd0cf]">
-          <Zap size={12} className="text-[#c8f135]" /> Blog
-        </span>
-        <h1 className="mt-6 text-[44px] sm:text-[56px] leading-[1.05] font-semibold tracking-tight">
-          Notes from the cloud
-        </h1>
-        <p className="mt-6 text-lg text-[#9a9c9a] max-w-2xl leading-relaxed">
-          Engineering deep-dives, product launches, and the occasional postmortem. Written by the team who runs the platform.
-        </p>
-      </section>
+      <PageHero
+        eyebrow="Blog"
+        title="Notes from"
+        accent="the cloud."
+        subtitle="Engineering deep-dives, product launches, and the occasional postmortem. Written by the team who runs the platform."
+      />
 
-      <section className="pb-20 px-4 sm:px-6 max-w-5xl mx-auto">
-        {isLoading && (
-          <div className="space-y-4">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6 animate-pulse">
-                <div className="h-4 w-24 bg-white/[0.06] rounded mb-3" />
-                <div className="h-6 w-2/3 bg-white/[0.06] rounded mb-3" />
-                <div className="h-4 w-full bg-white/[0.04] rounded" />
+      <section style={{ background: 'var(--nl-1)', borderTop: '1px solid var(--b-subtle)' }}>
+        <div className="nl-container" style={{ padding: 'clamp(48px,7vw,80px) clamp(20px,4vw,72px)' }}>
+          <div style={{ maxWidth: 880, margin: '0 auto' }}>
+            {isLoading && (
+              <div className="flex flex-col gap-4">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="animate-pulse" style={{ borderRadius: 'var(--r-xl)', border: '1px solid var(--b-default)', background: 'var(--nl-2)', padding: 24 }}>
+                    <div style={{ height: 16, width: 96, background: 'var(--nl-4)', borderRadius: 4, marginBottom: 12 }} />
+                    <div style={{ height: 24, width: '66%', background: 'var(--nl-4)', borderRadius: 4, marginBottom: 12 }} />
+                    <div style={{ height: 16, width: '100%', background: 'var(--nl-3)', borderRadius: 4 }} />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
+            )}
 
-        {!isLoading && posts.length === 0 && (
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-10 text-center text-sm text-[#9a9c9a]">
-            No posts yet. Check back soon.
-          </div>
-        )}
+            {!isLoading && posts.length === 0 && (
+              <div className="text-center" style={{ borderRadius: 'var(--r-xl)', border: '1px solid var(--b-default)', background: 'var(--nl-2)', padding: 40, fontSize: 14, color: 'var(--t-med)' }}>
+                No posts yet. Check back soon.
+              </div>
+            )}
 
-        <div className="space-y-4">
-          {posts.map((p, idx) => {
-            const cfg = CATEGORY_ICONS[p.category] || CATEGORY_ICONS.engineering
-            const Icon = cfg.icon
-            return (
-              <Link
-                key={p.slug}
-                to={`/blog/${p.slug}`}
-                className="block rounded-xl border border-white/[0.06] bg-white/[0.02] p-6 hover:border-[#c8f135]/30 hover:bg-white/[0.04] transition-colors cursor-pointer group"
+            <div className="flex flex-col gap-4">
+              {posts.map((p) => {
+                const meta = CATEGORY_META[p.category] || CATEGORY_META.engineering
+                const Icon = meta.icon
+                return (
+                  <Link
+                    key={p.slug}
+                    to={`/blog/${p.slug}`}
+                    className="group block cursor-pointer transition-all"
+                    style={{ borderRadius: 'var(--r-xl)', border: '1px solid var(--b-default)', background: 'var(--nl-2)', padding: 'clamp(22px,2.6vw,28px)' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--brand-b)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--b-default)' }}
+                  >
+                    <div className="flex items-start gap-5">
+                      <div
+                        className="shrink-0 flex items-center justify-center"
+                        style={{ width: 48, height: 48, borderRadius: 'var(--r-lg)', background: 'color-mix(in srgb, ' + meta.color + ' 12%, transparent)', border: '1px solid color-mix(in srgb, ' + meta.color + ' 28%, transparent)' }}
+                      >
+                        <Icon size={20} style={{ color: meta.color }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 flex-wrap" style={{ fontSize: 12, color: 'var(--t-low)', marginBottom: 8 }}>
+                          <span className="nl-mono" style={{ letterSpacing: '.08em', textTransform: 'uppercase', color: meta.color }}>{p.category}</span>
+                          <span className="flex items-center gap-1"><Calendar size={11} /> {formatDate(p.publishedAt)}</span>
+                          <span className="flex items-center gap-1"><Clock size={11} /> {p.readMinutes} min read</span>
+                        </div>
+                        <h2 className="nl-head transition-colors" style={{ fontSize: 20, color: 'var(--t-hi)', marginBottom: 8 }}>
+                          {p.title}
+                        </h2>
+                        <p style={{ fontSize: 14, color: 'var(--t-med)', lineHeight: 1.65 }}>{p.excerpt}</p>
+                        <div className="inline-flex items-center gap-1 transition-transform group-hover:translate-x-0.5" style={{ marginTop: 12, fontSize: 12.5, color: 'var(--brand)' }}>
+                          Read article <ArrowRight size={12} />
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+
+            {/* subscribe */}
+            <div className="text-center relative overflow-hidden" style={{ marginTop: 48, borderRadius: 'var(--r-2xl)', border: '1px solid var(--brand-b)', background: 'var(--nl-2)', padding: 'clamp(32px,4vw,44px)' }}>
+              <h3 className="nl-head" style={{ fontSize: 19, color: 'var(--t-hi)', marginBottom: 8 }}>Get new posts in your inbox</h3>
+              <p style={{ fontSize: 14, color: 'var(--t-med)', maxWidth: 440, margin: '0 auto 20px' }}>
+                One email when we publish. No marketing fluff — just engineering and product writing.
+              </p>
+              <form
+                className="flex gap-2"
+                style={{ maxWidth: 440, margin: '0 auto' }}
+                onSubmit={(e) => { e.preventDefault(); alert('Subscribed (demo).') }}
               >
-                <div className="flex items-start gap-5">
-                  <div className={`shrink-0 w-12 h-12 rounded-lg border flex items-center justify-center ${cfg.color}`}>
-                    <Icon size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 text-xs text-[#636563] mb-2 flex-wrap">
-                      <span className="text-[11px] uppercase tracking-wider text-[#c8f135]">{p.category}</span>
-                      <span className="flex items-center gap-1"><Calendar size={11} /> {formatDate(p.publishedAt)}</span>
-                      <span className="flex items-center gap-1"><Clock size={11} /> {p.readMinutes} min read</span>
-                    </div>
-                    <h2 className="text-xl font-semibold text-white group-hover:text-[#c8f135] transition-colors mb-2">
-                      {p.title}
-                    </h2>
-                    <p className="text-sm text-[#9a9c9a] leading-relaxed">{p.excerpt}</p>
-                    <div className="mt-3 inline-flex items-center gap-1 text-xs text-[#c8f135] group-hover:translate-x-0.5 transition-transform">
-                      Read article <ArrowRight size={11} />
-                    </div>
-                  </div>
-                </div>
-                {idx === 0 && (
-                  <div className="mt-4 pt-4 border-t border-white/[0.06] text-[11px] text-[#9a9c9a]">
-                    Latest post
-                  </div>
-                )}
-              </Link>
-            )
-          })}
-        </div>
-
-        {/* Email subscribe — purely client-side demo for now */}
-        <div className="mt-12 rounded-2xl border border-[#c8f135]/20 bg-gradient-to-br from-[#c8f135]/10 to-transparent p-8 text-center">
-          <h3 className="text-lg font-semibold text-white mb-2">Get new posts in your inbox</h3>
-          <p className="text-sm text-[#9a9c9a] mb-5 max-w-md mx-auto">
-            One email when we publish. No marketing fluff — just engineering and product writing.
-          </p>
-          <form
-            className="flex gap-2 max-w-md mx-auto"
-            onSubmit={(e) => { e.preventDefault(); alert('Subscribed (demo).') }}
-          >
-            <input
-              type="email"
-              required
-              placeholder="you@example.com"
-              className="flex-1 h-10 px-4 rounded-md bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder-[#636563] focus:border-[#c8f135] focus:outline-none transition-colors"
-            />
-            <button
-              type="submit"
-              className="h-10 px-5 rounded-md text-sm font-medium text-[#080909] bg-[#c8f135] hover:bg-[#b3d82e] cursor-pointer transition-colors whitespace-nowrap"
-            >
-              Subscribe
-            </button>
-          </form>
+                <input
+                  type="email"
+                  required
+                  placeholder="you@example.com"
+                  className="flex-1 px-3.5 outline-none"
+                  style={{ height: 46, borderRadius: 'var(--r-md)', background: 'var(--nl-1)', border: '1px solid var(--b-strong)', color: 'var(--t-hi)', fontSize: 14 }}
+                />
+                <button type="submit" className="nl-btn-primary">Subscribe</button>
+              </form>
+            </div>
+          </div>
         </div>
       </section>
 
-      <Footer />
+      <LandingFooter />
     </div>
   )
 }

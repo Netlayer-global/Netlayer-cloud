@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { motion } from 'framer-motion'
 import { AlertCircle, CheckCircle2, Clock, Wrench } from 'lucide-react'
 import { LandingNav, LandingFooter } from '../../components/landing-v3'
 import { statusAPI, catalogAPI, type StatusSummary } from '../../api/endpoints'
 import { getSocket } from '../../lib/socket'
 import type { Region } from '../../types'
 import { cn } from '../../lib/utils'
+import { useSeo } from '../../hooks/useSeo'
 
 /**
  * Public status page. Auto-refreshes every 30s and listens for Socket.io
@@ -51,102 +51,102 @@ export default function StatusPage() {
   const overall: keyof typeof STATUS_VARIANT = (summary?.overall as any) || 'operational'
   const variant = STATUS_VARIANT[overall]
 
+  useSeo({
+    title: 'System Status',
+    description: 'Live operational status of the NetLayer Cloud platform — services, regions, and active incidents. Updates every 30 seconds.',
+    path: '/status',
+  })
+
   return (
     <div className="nl-v3 min-h-screen">
       <LandingNav />
 
-      <section className="pt-28 pb-8 px-4 sm:px-6 max-w-5xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">System status</h1>
-          <p className="mt-2 text-sm" style={{ color: 'var(--t-med)' }}>
+      <section style={{ background: 'var(--surface-canvas)', borderBottom: '1px solid var(--b-subtle)' }}>
+        <div className="nl-container" style={{ padding: 'clamp(120px,16vh,170px) clamp(20px,4vw,72px) clamp(32px,4vw,48px)' }}>
+          <h1 className="nl-display" style={{ fontSize: 'clamp(32px,4.5vw,52px)', color: 'var(--t-hi)', marginBottom: 10 }}>System status</h1>
+          <p style={{ fontSize: 15, color: 'var(--t-med)' }}>
             Live operational status of the NetLayer Cloud platform. Updates every 30 seconds.
           </p>
-        </motion.div>
 
-        <div
-          className="mt-6 rounded-xl p-5 flex items-center gap-4"
-          style={{
-            background: variant.bg,
-            border: `1px solid ${variant.color}`,
-          }}
-        >
-          <variant.Icon size={24} style={{ color: variant.color }} />
-          <div className="flex-1">
-            <div className="text-base font-semibold" style={{ color: variant.color }}>
-              {variant.label}
-            </div>
-            <div className="text-xs mt-0.5" style={{ color: 'var(--t-med)' }}>
-              Last refreshed {new Date().toLocaleTimeString()}
+          <div
+            className="flex items-center gap-4"
+            style={{ marginTop: 24, borderRadius: 'var(--r-xl)', padding: 'clamp(18px,2vw,22px)', background: variant.bg, border: `1px solid ${variant.color}` }}
+          >
+            <variant.Icon size={26} style={{ color: variant.color }} />
+            <div className="flex-1">
+              <div className="nl-head" style={{ fontSize: 17, color: variant.color }}>{variant.label}</div>
+              <div style={{ fontSize: 12, marginTop: 2, color: 'var(--t-med)' }}>
+                Last refreshed {new Date().toLocaleTimeString()}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Services */}
-      <section className="py-8 px-4 sm:px-6 max-w-5xl mx-auto">
-        <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--t-med)' }}>
-          SERVICES
-        </h2>
-        <div className="nl-card overflow-hidden">
-          {(summary?.services || []).map((svc, i) => (
-            <ServiceRow key={svc.name} service={svc} isFirst={i === 0} />
-          ))}
+      <section style={{ background: 'var(--nl-0)' }}>
+        <div className="nl-container" style={{ padding: 'clamp(40px,5vw,56px) clamp(20px,4vw,72px) 0' }}>
+          <h2 className="nl-eyebrow" style={{ marginBottom: 16, color: 'var(--brand)' }}>Services</h2>
+          <div style={{ borderRadius: 'var(--r-xl)', border: '1px solid var(--b-default)', background: 'var(--nl-2)', overflow: 'hidden' }}>
+            {(summary?.services || []).map((svc, i) => (
+              <ServiceRow key={svc.name} service={svc} isFirst={i === 0} />
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Regions */}
-      <section className="py-8 px-4 sm:px-6 max-w-5xl mx-auto">
-        <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--t-med)' }}>
-          REGIONS
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          {regions.map((r) => {
-            const regionStatus = summary?.regions.find((s) => s.slug === r.slug)?.status || 'operational'
-            const v = STATUS_VARIANT[regionStatus as keyof typeof STATUS_VARIANT] || STATUS_VARIANT.operational
-            return (
-              <div key={r.id} className="nl-card p-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span>{r.flag}</span>
-                  <span className="text-sm" style={{ color: 'var(--t-hi)' }}>{r.city}</span>
+      <section style={{ background: 'var(--nl-0)' }}>
+        <div className="nl-container" style={{ padding: 'clamp(40px,5vw,56px) clamp(20px,4vw,72px) 0' }}>
+          <h2 className="nl-eyebrow" style={{ marginBottom: 16, color: 'var(--brand)' }}>Regions</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {regions.map((r) => {
+              const regionStatus = summary?.regions.find((s) => s.slug === r.slug)?.status || 'operational'
+              const v = STATUS_VARIANT[regionStatus as keyof typeof STATUS_VARIANT] || STATUS_VARIANT.operational
+              return (
+                <div key={r.id} className="flex items-center justify-between" style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--b-default)', background: 'var(--nl-2)', padding: '14px 16px' }}>
+                  <div className="flex items-center gap-2">
+                    <span>{r.flag}</span>
+                    <span style={{ fontSize: 14, color: 'var(--t-hi)' }}>{r.city}</span>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5" style={{ fontSize: 11.5, color: v.color }}>
+                    <span className="rounded-full" style={{ width: 6, height: 6, background: v.color }} />
+                    {regionStatus.replace('_', ' ')}
+                  </span>
                 </div>
-                <span
-                  className="inline-flex items-center gap-1.5 text-[11px]"
-                  style={{ color: v.color }}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: v.color }} />
-                  {regionStatus.replace('_', ' ')}
-                </span>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
       </section>
 
       {/* Incidents */}
-      <section className="py-8 px-4 sm:px-6 max-w-5xl mx-auto">
-        <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--t-med)' }}>
-          ACTIVE INCIDENTS
-        </h2>
-        {(!summary?.incidents || summary.incidents.length === 0) ? (
-          <div
-            className="nl-card p-6 flex items-center gap-3"
-            style={{ background: 'var(--c-green-d)', border: '1px solid var(--c-green)' }}
-          >
-            <CheckCircle2 size={20} style={{ color: 'var(--c-green)' }} />
-            <span className="text-sm" style={{ color: 'var(--t-hi)' }}>
-              No active incidents. All systems are operational.
-            </span>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {summary.incidents.map((inc: any) => <IncidentCard key={inc.id} incident={inc} />)}
-          </div>
-        )}
+      <section style={{ background: 'var(--nl-0)' }}>
+        <div className="nl-container" style={{ padding: 'clamp(40px,5vw,56px) clamp(20px,4vw,72px) 0' }}>
+          <h2 className="nl-eyebrow" style={{ marginBottom: 16, color: 'var(--brand)' }}>Active incidents</h2>
+          {(!summary?.incidents || summary.incidents.length === 0) ? (
+            <div
+              className="flex items-center gap-3"
+              style={{ borderRadius: 'var(--r-xl)', padding: 'clamp(20px,2vw,24px)', background: 'var(--c-green-d)', border: '1px solid var(--c-green)' }}
+            >
+              <CheckCircle2 size={20} style={{ color: 'var(--c-green)' }} />
+              <span style={{ fontSize: 14, color: 'var(--t-hi)' }}>
+                No active incidents. All systems are operational.
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {summary.incidents.map((inc: any) => <IncidentCard key={inc.id} incident={inc} />)}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Subscribe */}
-      <section className="py-12 px-4 sm:px-6 max-w-3xl mx-auto">
-        <SubscribeCard />
+      <section style={{ background: 'var(--nl-0)' }}>
+        <div className="nl-container" style={{ padding: 'clamp(48px,6vw,80px) clamp(20px,4vw,72px)' }}>
+          <SubscribeCard />
+        </div>
       </section>
 
       <LandingFooter />

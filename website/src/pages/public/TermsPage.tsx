@@ -1,5 +1,6 @@
 import { LandingNav, LandingFooter } from '../../components/landing-v3'
 import { LegalDocument } from './_LegalDocument'
+import { useSeo } from '../../hooks/useSeo'
 
 const SECTIONS = [
   {
@@ -89,6 +90,7 @@ const SECTIONS = [
 ]
 
 export default function TermsPage() {
+  useSeo({ title: 'Terms of Service', description: 'The terms that govern your use of NetLayer Cloud services.', path: '/legal/terms' })
   return (
     <div className="nl-v3 min-h-screen">
       <LandingNav />
