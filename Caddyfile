@@ -70,6 +70,11 @@
   }
 
   # Customer + admin dashboard SPA — auth pages and authenticated app
+  # Dashboard's hashed JS/CSS live under /app-assets/ (vite assetsDir) so they
+  # don't collide with the website's /assets/. Route them to the frontend.
+  handle /app-assets/* {
+    reverse_proxy frontend:80
+  }
   handle /login {
     reverse_proxy frontend:80
   }
