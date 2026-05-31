@@ -124,10 +124,10 @@
   --b-strong:  #c5cdc1;
   --b-focus:   rgba(115, 168, 18, .55);
 
-  --t-hi:  #0a0f07;
-  --t-med: #353c31;
-  --t-low: #5a6356;
-  --t-off: #828b7e;
+  --t-hi:  #070d04;
+  --t-med: #2c3327;
+  --t-low: #4a5343;
+  --t-off: #6e7768;
 
   --brand:   #84cc16;       /* deeper lime keeps AA on white */
   --brand-h: #6fae12;
@@ -158,6 +158,14 @@
 
   --surface-canvas: #ffffff;
   --surface-glass:  rgba(255, 255, 255, .8);
+}
+
+/* Light-mode crispness — antialiased thins text on white and reads blurry.
+   Force crisp rendering in light mode for sharp, premium text. */
+[data-theme='light'],
+[data-theme='light'] * {
+  -webkit-font-smoothing: auto !important;
+  -moz-osx-font-smoothing: auto !important;
 }
 
 /* Smooth crossfade when theme switches */

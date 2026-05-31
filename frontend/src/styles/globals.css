@@ -52,20 +52,20 @@
  */
 [data-theme='light'] {
   --bg:      #ffffff;
-  --bg2:     #fafbfa;
+  --bg2:     #f7f9f5;
   --bg3:     #ffffff;
-  --bg4:     #f4f6f3;
-  --border:  #dee3da;
-  --border2: #c5cdc1;
-  --text:    #0c1109;
-  --text2:   #495247;
-  --text3:   #6b766a;
-  --lime:    #84cc16;
-  --lime2:   #6fae12;
+  --bg4:     #f1f4ee;
+  --border:  #d2d9cc;
+  --border2: #b3bda9;
+  --text:    #070d04;
+  --text2:   #2c3327;
+  --text3:   #4a5343;
+  --lime:    #5f9e0a;
+  --lime2:   #517f0c;
   --purple:  #6d4cf2;
-  --green:   #16a34a;
-  --red:     #dc2626;
-  --amber:   #d97706;
+  --green:   #15803d;
+  --red:     #c81e1e;
+  --amber:   #b45309;
 }
 
 * {

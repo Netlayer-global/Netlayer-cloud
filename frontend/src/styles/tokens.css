@@ -76,34 +76,35 @@
 
 [data-theme='light'] {
   --nl-0: #ffffff;
-  --nl-1: #fafbfa;
-  --nl-2: #f4f6f3;
-  --nl-3: #eef1ec;
-  --nl-4: #e6eae3;
-  --nl-5: #dde2da;
-  --nl-6: #d2d8cf;
-  --nl-7: #c5cdc1;
-  --nl-8: #b6c0b1;
+  --nl-1: #f7f9f5;
+  --nl-2: #ffffff;
+  --nl-3: #f1f4ee;
+  --nl-4: #e8ece4;
+  --nl-5: #dde2d8;
+  --nl-6: #cfd6c9;
+  --nl-7: #bcc4b5;
+  --nl-8: #a7b19f;
 
-  --b-subtle:  #ecefe9;
-  --b-default: #dee3da;
-  --b-strong:  #c5cdc1;
-  --b-focus:   rgba(115, 168, 18, .55);
+  --b-subtle:  #e6eae0;
+  --b-default: #d2d9cc;
+  --b-strong:  #b3bda9;
+  --b-focus:   rgba(95, 130, 10, .6);
 
-  --t-hi:  #0a0f07;
-  --t-med: #353c31;
-  --t-low: #5a6356;
-  --t-off: #828b7e;
+  /* Strong, near-black text for crisp, high-contrast light mode */
+  --t-hi:  #070d04;
+  --t-med: #2c3327;
+  --t-low: #4a5343;
+  --t-off: #6e7768;
 
-  --brand:   #84cc16;
-  --brand-h: #6fae12;
-  --brand-d: rgba(132, 204, 22, .10);
-  --brand-b: rgba(132, 204, 22, .35);
+  --brand:   #5f9e0a;
+  --brand-h: #517f0c;
+  --brand-d: rgba(95, 158, 10, .12);
+  --brand-b: rgba(95, 158, 10, .42);
   --brand-fg: #ffffff;
 
-  --shadow-sm:    0 1px 2px rgba(15, 23, 11, .06);
-  --shadow-md:    0 6px 20px rgba(15, 23, 11, .08);
-  --shadow-lg:    0 18px 40px -12px rgba(15, 23, 11, .15);
+  --shadow-sm:    0 1px 2px rgba(15, 23, 11, .08);
+  --shadow-md:    0 6px 20px rgba(15, 23, 11, .10);
+  --shadow-lg:    0 18px 40px -12px rgba(15, 23, 11, .18);
 }
 
 /* Global resets — landing v3 only. The dashboard uses its own existing
@@ -235,22 +236,37 @@
 [data-theme='light'] .border-\[\#333433\] { border-color: #c5cdc1 !important; }
 [data-theme='light'] .border-\[\#252625\] { border-color: #dee3da !important; }
 
-[data-theme='light'] .text-\[\#e8e8e6\] { color: #0c1109 !important; }
-[data-theme='light'] .text-\[\#a0a09e\] { color: #495247 !important; }
-[data-theme='light'] .text-\[\#6a6a68\] { color: #6b766a !important; }
+[data-theme='light'] .text-\[\#e8e8e6\] { color: #070d04 !important; }
+[data-theme='light'] .text-\[\#a0a09e\] { color: #2c3327 !important; }
+[data-theme='light'] .text-\[\#6a6a68\] { color: #4a5343 !important; }
+[data-theme='light'] .text-\[\#9a9c9a\] { color: #2c3327 !important; }
+[data-theme='light'] .text-\[\#636563\] { color: #4a5343 !important; }
+[data-theme='light'] .text-white { color: #070d04 !important; }
 
 /* Inputs and form fields adapt cleanly */
 [data-theme='light'] input.bg-\[\#1e1f1e\],
 [data-theme='light'] textarea.bg-\[\#1e1f1e\],
 [data-theme='light'] select.bg-\[\#1e1f1e\] {
   background-color: #ffffff !important;
-  color: #0c1109 !important;
+  color: #070d04 !important;
 }
+[data-theme='light'] input::placeholder,
+[data-theme='light'] textarea::placeholder { color: #6e7768 !important; }
 
-/* Lime accent stays — keep contrast on white */
+/* Lime accent stays — keep AA contrast on white */
 [data-theme='light'] .text-\[\#e0fe56\],
-[data-theme='light'] .text-\[\#c8f135\] { color: #6fae12 !important; }
-[data-theme='light'] .bg-\[\#e0fe56\] { background-color: #84cc16 !important; }
+[data-theme='light'] .text-\[\#c8f135\] { color: #4d7f08 !important; }
+[data-theme='light'] .bg-\[\#e0fe56\] { background-color: #5f9e0a !important; }
+[data-theme='light'] .bg-\[\#c8f135\] { background-color: #5f9e0a !important; }
+
+/* ── Light-mode crispness ──
+ * antialiased smoothing THINS text on white and reads as "blurry".
+ * Force crisp subpixel/auto rendering in light mode for sharp, premium text. */
+[data-theme='light'],
+[data-theme='light'] * {
+  -webkit-font-smoothing: auto !important;
+  -moz-osx-font-smoothing: auto !important;
+}
 
 /* Smooth crossfade on theme flip */
 html { transition: background-color var(--ease-med), color var(--ease-med); }

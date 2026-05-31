@@ -12,7 +12,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={inputId} className="block text-xs text-[#a0a09e] mb-1.5">
+          <label htmlFor={inputId} className="block text-xs mb-1.5" style={{ color: 'var(--t-med)', fontWeight: 500 }}>
             {label}
           </label>
         )}
@@ -20,14 +20,20 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            'w-full bg-[#1e1f1e] border border-[#333433] text-[#e8e8e6] placeholder-[#6a6a68] rounded-md h-9 px-3 text-sm',
-            'focus:border-[#e0fe56] focus:outline-none transition-colors',
+            'w-full rounded-md h-9 px-3 text-sm transition-colors focus:outline-none',
             error && 'border-red-500/60',
             className
           )}
+          style={{
+            background: 'var(--nl-1)',
+            border: `1px solid ${error ? 'var(--c-red)' : 'var(--b-strong)'}`,
+            color: 'var(--t-hi)',
+          }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--brand)'; props.onFocus?.(e) }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = error ? 'var(--c-red)' : 'var(--b-strong)'; props.onBlur?.(e) }}
           {...props}
         />
-        {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
+        {error && <p className="text-xs mt-1" style={{ color: 'var(--c-red)' }}>{error}</p>}
       </div>
     )
   }

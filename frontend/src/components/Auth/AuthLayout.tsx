@@ -84,6 +84,17 @@ export function AuthLayout({
 
         {/* headline + benefits */}
         <div className="relative">
+          <div
+            className="inline-flex items-center gap-2 nl-mono"
+            style={{
+              fontSize: 10.5, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--brand)',
+              padding: '5px 12px', border: '1px solid var(--brand-b)', borderRadius: 999,
+              background: 'var(--brand-d)', marginBottom: 24,
+            }}
+          >
+            <span className="rounded-full" style={{ width: 6, height: 6, background: 'var(--brand)' }} />
+            15 regions · 99.99% uptime
+          </div>
           <h2 className="nl-heading" style={{ fontSize: 'clamp(28px,2.6vw,40px)', fontWeight: 700, lineHeight: 1.1, color: 'var(--t-hi)', marginBottom: 28, maxWidth: 420 }}>
             The cloud built to{' '}
             <span
@@ -108,6 +119,16 @@ export function AuthLayout({
               </li>
             ))}
           </ul>
+
+          {/* mini stat row */}
+          <div className="flex items-center gap-8" style={{ marginTop: 40 }}>
+            {[['50K+', 'Developers'], ['15', 'Regions'], ['~30s', 'To deploy']].map(([n, l]) => (
+              <div key={l}>
+                <div className="nl-heading" style={{ fontSize: 26, fontWeight: 700, color: 'var(--t-hi)' }}>{n}</div>
+                <div className="nl-mono" style={{ fontSize: 10.5, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t-low)', marginTop: 2 }}>{l}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* footer line */}
@@ -133,14 +154,24 @@ export function AuthLayout({
             <span className="nl-heading" style={{ fontWeight: 700, fontSize: 19, color: 'var(--t-hi)' }}>NetLayer</span>
           </Link>
 
-          <div style={{ marginBottom: 28 }}>
-            <h1 className="nl-heading" style={{ fontSize: 26, fontWeight: 700, color: 'var(--t-hi)', marginBottom: 8 }}>{title}</h1>
-            <p style={{ fontSize: 14.5, color: 'var(--t-med)' }}>{subtitle}</p>
+          <div
+            style={{
+              background: 'var(--nl-2)',
+              border: '1px solid var(--b-default)',
+              borderRadius: 'var(--r-xl)',
+              padding: 'clamp(24px,3vw,36px)',
+              boxShadow: 'var(--shadow-lg)',
+            }}
+          >
+            <div style={{ marginBottom: 24 }}>
+              <h1 className="nl-heading" style={{ fontSize: 26, fontWeight: 700, color: 'var(--t-hi)', marginBottom: 8 }}>{title}</h1>
+              <p style={{ fontSize: 14.5, color: 'var(--t-med)' }}>{subtitle}</p>
+            </div>
+
+            {children}
+
+            {footer && <div style={{ marginTop: 24 }}>{footer}</div>}
           </div>
-
-          {children}
-
-          {footer && <div style={{ marginTop: 24 }}>{footer}</div>}
         </div>
       </main>
     </div>
