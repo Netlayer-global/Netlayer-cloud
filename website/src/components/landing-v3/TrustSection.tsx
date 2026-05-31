@@ -29,7 +29,7 @@ export function TrustSection() {
         borderBottom: '1px solid var(--b-subtle)',
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-[1fr_1.1fr] gap-12 lg:gap-20 items-center">
+      <div className="nl-container grid lg:grid-cols-[1fr_1.1fr] gap-12 lg:gap-20 items-center">
         {/* Left badge cluster */}
         <div className="flex flex-wrap gap-3">
           {BADGES.map((b) => (

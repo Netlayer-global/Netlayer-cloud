@@ -11,18 +11,21 @@ const PROOF = [
   {
     stat: '40%',
     unit: 'lower spend',
+    tone: 'var(--a-cyan)',
     story: 'A fast-growing fintech moved 200+ production VMs to NetLayer and cut its monthly infrastructure bill by 40% — with no change to performance.',
     by: 'Series-B fintech',
   },
   {
     stat: '3×',
     unit: 'faster deploys',
+    tone: 'var(--a-violet)',
     story: 'A SaaS team replaced its hand-rolled provisioning with our API and golden images, taking environment spin-up from minutes to under thirty seconds.',
     by: 'Developer tooling startup',
   },
   {
     stat: '99.99%',
     unit: 'measured uptime',
+    tone: 'var(--a-amber)',
     story: 'An e-commerce platform ran a full festive-season peak across three Indian regions on NetLayer bare metal with zero unplanned downtime.',
     by: 'D2C commerce brand',
   },
@@ -31,7 +34,7 @@ const PROOF = [
 export function AnnouncementBar() {
   return (
     <section style={{ background: 'var(--nl-0)', borderTop: '1px solid var(--b-subtle)' }}>
-      <div className="max-w-7xl mx-auto" style={{ padding: 'clamp(56px,8vw,96px) clamp(20px,5vw,40px)' }}>
+      <div className="nl-container" style={{ padding: 'clamp(56px,8vw,96px) clamp(20px,4vw,72px)' }}>
         <h2 className="nl-display" style={{ fontSize: 'clamp(26px,3.4vw,42px)', color: 'var(--t-hi)', maxWidth: 620, marginBottom: 'clamp(36px,5vw,56px)' }}>
           From first server to peak-season scale, teams build on NetLayer.
         </h2>
@@ -44,7 +47,7 @@ export function AnnouncementBar() {
               style={{ borderRadius: 'var(--r-xl)', border: '1px solid var(--b-default)', background: 'var(--nl-2)', padding: 'clamp(28px,3vw,36px)' }}
             >
               <div className="flex items-baseline gap-2" style={{ marginBottom: 18 }}>
-                <span className="nl-display" style={{ fontSize: 'clamp(44px,5vw,60px)', color: 'var(--brand)' }}>{p.stat}</span>
+                <span className="nl-display" style={{ fontSize: 'clamp(44px,5vw,60px)', color: p.tone }}>{p.stat}</span>
                 <span className="nl-mono" style={{ fontSize: 12, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--t-low)' }}>{p.unit}</span>
               </div>
               <p style={{ fontSize: 14.5, color: 'var(--t-med)', lineHeight: 1.7, marginBottom: 22, flex: 1 }}>{p.story}</p>
@@ -53,7 +56,7 @@ export function AnnouncementBar() {
                 <Link
                   to="/about"
                   className="inline-flex items-center gap-1.5 nl-mono transition-colors"
-                  style={{ fontSize: 11, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--brand)' }}
+                  style={{ fontSize: 11, letterSpacing: '.06em', textTransform: 'uppercase', color: p.tone }}
                 >
                   Read more <ArrowRight size={13} />
                 </Link>

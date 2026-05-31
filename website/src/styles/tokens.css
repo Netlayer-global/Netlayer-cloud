@@ -23,10 +23,10 @@
   --b-focus:   rgba(200, 241, 53, .5);
 
   /* ── Text ── */
-  --t-hi:  #eeeeed;
-  --t-med: #9a9c9a;
-  --t-low: #636563;
-  --t-off: #3a3c3a;
+  --t-hi:  #f6f7f4;
+  --t-med: #c2c4bf;
+  --t-low: #8e918a;
+  --t-off: #5a5d57;
 
   /* ── Brand — NetLayer lime ── */
   --brand:   #c8f135;
@@ -35,6 +35,15 @@
   --brand-b: rgba(200, 241, 53, .2);
   /* Foreground that always sits on the lime fill, regardless of theme */
   --brand-fg: #0d0e0d;
+
+  /* ── Multi-colour accent set (category theming across the landing —
+       each product / feature card can adopt one accent). ── */
+  --a-lime:   #c8f135;  --a-lime-d:   rgba(200, 241, 53, .12);  --a-lime-b:   rgba(200, 241, 53, .30);
+  --a-cyan:   #3ad6ff;  --a-cyan-d:   rgba(58, 214, 255, .12);  --a-cyan-b:   rgba(58, 214, 255, .30);
+  --a-violet: #9b8cff;  --a-violet-d: rgba(155, 140, 255, .14); --a-violet-b: rgba(155, 140, 255, .32);
+  --a-pink:   #ff7ac3;  --a-pink-d:   rgba(255, 122, 195, .12); --a-pink-b:   rgba(255, 122, 195, .30);
+  --a-amber:  #ffb340;  --a-amber-d:  rgba(255, 179, 64, .12);  --a-amber-b:  rgba(255, 179, 64, .30);
+  --a-blue:   #5b9bff;  --a-blue-d:   rgba(91, 155, 255, .12);  --a-blue-b:   rgba(91, 155, 255, .30);
 
   /* ── Semantic ── */
   --c-blue:    #3d8bff;
@@ -113,16 +122,24 @@
   --b-strong:  #c5cdc1;
   --b-focus:   rgba(115, 168, 18, .55);
 
-  --t-hi:  #0c1109;
-  --t-med: #495247;
-  --t-low: #6b766a;
-  --t-off: #95a094;
+  --t-hi:  #0a0f07;
+  --t-med: #353c31;
+  --t-low: #5a6356;
+  --t-off: #828b7e;
 
   --brand:   #84cc16;       /* deeper lime keeps AA on white */
   --brand-h: #6fae12;
   --brand-d: rgba(132, 204, 22, .10);
   --brand-b: rgba(132, 204, 22, .35);
   --brand-fg: #ffffff;
+
+  /* Multi-colour accents — deepened for AA contrast on light surfaces */
+  --a-lime:   #5f9e0a;  --a-lime-d:   rgba(95, 158, 10, .12);   --a-lime-b:   rgba(95, 158, 10, .34);
+  --a-cyan:   #0a9bc4;  --a-cyan-d:   rgba(10, 155, 196, .12);  --a-cyan-b:   rgba(10, 155, 196, .34);
+  --a-violet: #6d4cf2;  --a-violet-d: rgba(109, 76, 242, .12);  --a-violet-b: rgba(109, 76, 242, .34);
+  --a-pink:   #d6398f;  --a-pink-d:   rgba(214, 57, 143, .12);  --a-pink-b:   rgba(214, 57, 143, .34);
+  --a-amber:  #c77800;  --a-amber-d:  rgba(199, 120, 0, .12);   --a-amber-b:  rgba(199, 120, 0, .34);
+  --a-blue:   #2563eb;  --a-blue-d:   rgba(37, 99, 235, .12);   --a-blue-b:   rgba(37, 99, 235, .34);
 
   --c-blue:    #2563eb;     --c-blue-d:  rgba(37, 99, 235, .10);
   --c-purple:  #6d4cf2;     --c-purple-d:rgba(109, 76, 242, .10);
@@ -158,8 +175,17 @@ html, body { background: var(--nl-0); color: var(--t-hi); }
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
   transition: background-color var(--ease-med), color var(--ease-med);
+}
+
+/* Full-bleed section container — content spans the whole page width with
+   comfortable side gutters, instead of being boxed to 1280px in the centre. */
+.nl-container {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: clamp(20px, 4vw, 72px);
 }
 
 .nl-v3 ::selection { background: var(--brand-d); color: var(--brand); }

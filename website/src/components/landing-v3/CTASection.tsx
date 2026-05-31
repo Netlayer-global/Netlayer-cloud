@@ -11,7 +11,7 @@ const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:51
 export function CTASection() {
   return (
     <section style={{ background: 'var(--nl-0)', borderTop: '1px solid var(--b-subtle)' }}>
-      <div className="max-w-7xl mx-auto" style={{ padding: 'clamp(56px,8vw,96px) clamp(20px,5vw,40px)' }}>
+      <div className="nl-container" style={{ padding: 'clamp(56px,8vw,96px) clamp(20px,4vw,72px)' }}>
         <div
           className="relative overflow-hidden text-center"
           style={{ borderRadius: 'var(--r-2xl)', border: '1px solid var(--brand-b)', background: 'var(--nl-2)', padding: 'clamp(48px,7vw,88px) clamp(24px,5vw,48px)' }}

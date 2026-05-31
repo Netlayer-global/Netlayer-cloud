@@ -24,7 +24,7 @@ const toneColor = (t: string) =>
 export function MarketplaceSection() {
   return (
     <section style={{ background: 'var(--nl-0)', borderTop: '1px solid var(--b-subtle)' }}>
-      <div className="max-w-7xl mx-auto" style={{ padding: 'clamp(64px,9vw,110px) clamp(20px,5vw,40px)' }}>
+      <div className="nl-container" style={{ padding: 'clamp(64px,9vw,110px) clamp(20px,4vw,72px)' }}>
         <div className="text-center max-w-2xl mx-auto" style={{ marginBottom: 'clamp(36px,5vw,52px)' }}>
           <div className="nl-eyebrow" style={{ marginBottom: 18, color: 'var(--brand)' }}>Live console</div>
           <h2 className="nl-display" style={{ fontSize: 'clamp(30px,4.4vw,56px)', color: 'var(--t-hi)', marginBottom: 18 }}>

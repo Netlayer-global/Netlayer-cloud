@@ -12,17 +12,25 @@ type Row = {
   eyebrow: string
   title: string
   accent: string
+  tone: 'cyan' | 'violet' | 'amber'
   body: string
   points: string[]
   href: string
   visual: 'metrics' | 'billing' | 'speed'
 }
 
+const TONE = {
+  cyan:   { c: 'var(--a-cyan)',   d: 'var(--a-cyan-d)',   b: 'var(--a-cyan-b)' },
+  violet: { c: 'var(--a-violet)', d: 'var(--a-violet-d)', b: 'var(--a-violet-b)' },
+  amber:  { c: 'var(--a-amber)',  d: 'var(--a-amber-d)',  b: 'var(--a-amber-b)' },
+} as const
+
 const ROWS: Row[] = [
   {
     eyebrow: 'Observability',
     title: 'Real-time visibility into',
     accent: 'every server.',
+    tone: 'cyan',
     body: 'CPU, RAM, disk, and bandwidth for each server — live, not in a monthly PDF that lands three weeks late. Incidents are flagged the moment they happen, with full diagnostic context.',
     points: ['Per-second metric resolution', 'Auto-incident detection', 'Alerting via webhooks & email'],
     href: '/features',
@@ -32,6 +40,7 @@ const ROWS: Row[] = [
     eyebrow: 'Billing',
     title: 'Transparent pricing,',
     accent: 'GST-native invoices.',
+    tone: 'violet',
     body: 'Flat, predictable rates with per-second metering. Download GST-compliant invoices with the correct CGST/SGST/IGST split, manage subscriptions, and top up your wallet — all self-service.',
     points: ['Sequential GST invoice numbering', 'GSTR-1 export built in', 'No surprise egress bills'],
     href: '/pricing',
@@ -41,6 +50,7 @@ const ROWS: Row[] = [
     eyebrow: 'Speed',
     title: 'Deploy in seconds,',
     accent: 'scale in one click.',
+    tone: 'amber',
     body: 'A linked-clone pipeline with pre-cached golden images means servers boot before your coffee cools. Resize live, snapshot anytime, and automate the whole flow through one clean API.',
     points: ['~30-second average boot', 'Live vertical resize', 'REST API + Terraform provider'],
     href: '/docs',
@@ -141,21 +151,23 @@ function Visual({ kind }: { kind: Row['visual'] }) {
 export function PerformanceSection() {
   return (
     <section style={{ background: 'var(--nl-0)', borderTop: '1px solid var(--b-subtle)' }}>
-      <div className="max-w-7xl mx-auto flex flex-col" style={{ padding: 'clamp(64px,9vw,110px) clamp(20px,5vw,40px)', gap: 'clamp(56px,8vw,104px)' }}>
-        {ROWS.map((row, i) => (
+      <div className="nl-container flex flex-col" style={{ padding: 'clamp(64px,9vw,110px) clamp(20px,4vw,72px)', gap: 'clamp(56px,8vw,104px)' }}>
+        {ROWS.map((row, i) => {
+          const t = TONE[row.tone]
+          return (
           <div key={row.title} className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
             {/* copy */}
             <div className={i % 2 === 1 ? 'lg:order-2' : ''}>
-              <div className="nl-eyebrow" style={{ marginBottom: 18, color: 'var(--brand)' }}>{row.eyebrow}</div>
+              <div className="nl-eyebrow" style={{ marginBottom: 18, color: t.c }}>{row.eyebrow}</div>
               <h2 className="nl-display" style={{ fontSize: 'clamp(28px,3.6vw,46px)', color: 'var(--t-hi)', marginBottom: 18 }}>
-                {row.title} <span style={{ color: 'var(--brand)' }}>{row.accent}</span>
+                {row.title} <span style={{ color: t.c }}>{row.accent}</span>
               </h2>
               <p style={{ fontSize: 15.5, color: 'var(--t-med)', lineHeight: 1.7, maxWidth: 500, marginBottom: 22 }}>{row.body}</p>
               <ul className="flex flex-col gap-2.5" style={{ marginBottom: 26 }}>
                 {row.points.map((pt) => (
                   <li key={pt} className="flex items-center gap-3" style={{ fontSize: 14, color: 'var(--t-hi)' }}>
-                    <span className="inline-flex items-center justify-center shrink-0" style={{ width: 20, height: 20, borderRadius: 'var(--r-full)', background: 'var(--brand-d)', border: '1px solid var(--brand-b)' }}>
-                      <Check size={12} style={{ color: 'var(--brand)' }} />
+                    <span className="inline-flex items-center justify-center shrink-0" style={{ width: 20, height: 20, borderRadius: 'var(--r-full)', background: t.d, border: `1px solid ${t.b}` }}>
+                      <Check size={12} style={{ color: t.c }} />
                     </span>
                     {pt}
                   </li>
@@ -164,7 +176,7 @@ export function PerformanceSection() {
               <Link
                 to={row.href}
                 className="inline-flex items-center gap-2 nl-mono transition-colors"
-                style={{ fontSize: 12, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--brand)' }}
+                style={{ fontSize: 12, letterSpacing: '.06em', textTransform: 'uppercase', color: t.c }}
               >
                 Learn more <ArrowRight size={14} />
               </Link>
@@ -175,7 +187,7 @@ export function PerformanceSection() {
               <Visual kind={row.visual} />
             </div>
           </div>
-        ))}
+        )})}
       </div>
     </section>
   )

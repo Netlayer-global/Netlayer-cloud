@@ -27,21 +27,39 @@ const PANEL_REGIONS = [
 export function HeroSection() {
   return (
     <section className="relative w-full overflow-hidden" style={{ background: 'var(--surface-canvas)' }}>
-      {/* faint dot grid + radial glow */}
+      {/* faint dot grid + multi-colour radial glows */}
       <div aria-hidden className="absolute inset-0 nl-grid-bg" style={{ zIndex: 0 }} />
       <div
         aria-hidden
         className="absolute pointer-events-none"
         style={{
           top: '-20%', right: '-10%', width: '60%', height: '90%', zIndex: 0,
-          background: 'radial-gradient(ellipse at 60% 40%, rgba(200,241,53,.14) 0%, transparent 64%)',
+          background: 'radial-gradient(ellipse at 60% 40%, rgba(200,241,53,.16) 0%, transparent 64%)',
+          filter: 'blur(70px)',
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute pointer-events-none"
+        style={{
+          top: '0%', left: '-12%', width: '46%', height: '70%', zIndex: 0,
+          background: 'radial-gradient(ellipse at 40% 50%, rgba(58,214,255,.12) 0%, transparent 66%)',
+          filter: 'blur(70px)',
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute pointer-events-none"
+        style={{
+          bottom: '-18%', left: '32%', width: '42%', height: '60%', zIndex: 0,
+          background: 'radial-gradient(ellipse at 50% 50%, rgba(155,140,255,.12) 0%, transparent 66%)',
           filter: 'blur(70px)',
         }}
       />
 
       <div
-        className="relative grid lg:grid-cols-2 gap-12 lg:gap-16 items-center max-w-7xl mx-auto"
-        style={{ zIndex: 2, padding: 'clamp(110px,15vh,170px) clamp(20px,5vw,40px) clamp(64px,9vw,110px)' }}
+        className="relative grid lg:grid-cols-2 gap-12 lg:gap-16 items-center nl-container"
+        style={{ zIndex: 2, padding: 'clamp(110px,15vh,170px) clamp(20px,4vw,72px) clamp(64px,9vw,110px)' }}
       >
         {/* ── left: copy ── */}
         <div>
@@ -62,7 +80,14 @@ export function HeroSection() {
             style={{ fontSize: 'clamp(40px,5.6vw,76px)', color: 'var(--t-hi)', marginBottom: 22 }}
           >
             The cloud built to{' '}
-            <span style={{ color: 'var(--brand)' }}>deploy in seconds.</span>
+            <span
+              style={{
+                background: 'linear-gradient(100deg, var(--a-lime) 0%, var(--a-cyan) 50%, var(--a-violet) 100%)',
+                WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent',
+              }}
+            >
+              deploy in seconds.
+            </span>
           </h1>
 
           <p style={{ fontSize: 'clamp(16px,1.4vw,19px)', color: 'var(--t-med)', lineHeight: 1.65, maxWidth: 520, marginBottom: 34 }}>

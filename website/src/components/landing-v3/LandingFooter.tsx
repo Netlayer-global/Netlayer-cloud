@@ -20,10 +20,9 @@ const BRAND = '#c8f135'
 export function LandingFooter() {
   return (
     <footer
-      className="px-4 sm:px-6"
       style={{ background: 'var(--nl-1)', borderTop: '1px solid var(--b-subtle)' }}
     >
-      <div className="mx-auto max-w-7xl pb-10 pt-16">
+      <div className="nl-container pb-10 pt-16">
         {/* top band */}
         <div className="flex flex-col gap-10 border-b pb-12 lg:flex-row lg:items-end lg:justify-between" style={{ borderColor: 'var(--b-subtle)' }}>
           <div className="max-w-sm">
