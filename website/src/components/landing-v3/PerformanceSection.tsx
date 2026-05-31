@@ -34,7 +34,7 @@ export function PerformanceSection() {
             <div className="nl-eyebrow" style={{ marginBottom: 24 }}>The platform</div>
             <h2 className="nl-display" style={{ fontSize: 'clamp(34px,5vw,68px)', color: 'var(--t-hi)', marginBottom: 24 }}>
               The control plane{' '}
-              <span className="nl-stroke-brand" style={{ fontStyle: 'italic' }}>behind</span>{' '}
+              <span style={{ color: 'var(--brand)' }}>behind</span>{' '}
               your servers.
             </h2>
             <p style={{ fontSize: 15.5, color: 'var(--t-med)', lineHeight: 1.8, maxWidth: 540 }}>

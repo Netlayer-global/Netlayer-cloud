@@ -26,7 +26,7 @@ export function CTASection() {
         <div className="nl-display" style={{ fontSize: 'clamp(40px,6vw,88px)', color: 'var(--t-hi)' }}>
           Ready to deploy?
           <br />
-          <span className="nl-stroke-brand" style={{ fontStyle: 'italic' }}>
+          <span style={{ color: 'var(--brand)' }}>
             Spin up your first server free.
           </span>
         </div>

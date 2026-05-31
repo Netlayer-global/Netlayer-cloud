@@ -20,12 +20,12 @@ export function StatsBar() {
         {run.map((w, i) => (
           <span key={i} className="flex items-center shrink-0">
             <span
-              className="nl-display"
+              className="nl-display nl-stroke"
               style={{
-                fontSize: 44,
-                fontStyle: 'italic',
+                fontSize: 48,
+                fontWeight: 600,
                 padding: '0 30px',
-                color: 'color-mix(in srgb, var(--t-hi) 9%, transparent)',
+                opacity: 0.14,
               }}
             >
               {w}

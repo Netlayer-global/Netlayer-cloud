@@ -27,7 +27,7 @@ export function MarketplaceSection() {
       <div className="nl-eyebrow" style={{ marginBottom: 18 }}>Live console</div>
       <h2 className="nl-display" style={{ fontSize: 'clamp(32px,4.5vw,60px)', color: 'var(--t-hi)', marginBottom: 12, maxWidth: 720 }}>
         Every server. Every metric.{' '}
-        <span className="nl-stroke-brand" style={{ fontStyle: 'italic' }}>One console.</span>
+        <span style={{ color: 'var(--brand)' }}>One console.</span>
       </h2>
       <p style={{ fontSize: 14.5, color: 'var(--t-med)', maxWidth: 500, lineHeight: 1.7, marginBottom: 40 }}>
         Monitor, deploy, resize, and raise tickets in real time — no waiting on a

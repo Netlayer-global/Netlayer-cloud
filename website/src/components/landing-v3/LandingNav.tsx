@@ -48,10 +48,23 @@ export function LandingNav() {
         {/* wordmark */}
         <Link
           to="/"
-          className="cursor-pointer transition-opacity hover:opacity-80"
-          style={{ fontWeight: 700, fontSize: 14, letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--t-hi)' }}
+          className="cursor-pointer transition-opacity hover:opacity-80 inline-flex items-center"
+          style={{ gap: 10 }}
         >
-          NetLayer
+          <span
+            className="inline-flex items-center justify-center"
+            style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--brand)', color: 'var(--brand-fg)' }}
+          >
+            <svg viewBox="0 0 32 32" width="18" height="18" aria-hidden>
+              <path d="M9 9h4.5l5 8V9H23v14h-4.5l-5-8v8H9V9z" fill="currentColor" />
+            </svg>
+          </span>
+          <span
+            className="nl-display"
+            style={{ fontWeight: 600, fontSize: 20, letterSpacing: '-.02em', color: 'var(--t-hi)' }}
+          >
+            NetLayer
+          </span>
         </Link>
 
         {/* center links */}

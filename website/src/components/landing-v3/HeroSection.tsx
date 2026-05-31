@@ -121,11 +121,12 @@ export function HeroSection() {
 
         <h1
           className="nl-display"
-          style={{ fontSize: 'clamp(48px,8.5vw,132px)', color: 'var(--t-hi)', maxWidth: 1100 }}
+          style={{ fontSize: 'clamp(48px,8.5vw,128px)', color: 'var(--t-hi)', maxWidth: 1100, fontWeight: 600 }}
         >
           <span className="block">Servers that</span>
-          <span className="block nl-stroke-brand" style={{ fontStyle: 'italic' }}>deploy in</span>
-          <span className="block">seconds.</span>
+          <span className="block">
+            <span style={{ color: 'var(--brand)', textShadow: '0 0 40px rgba(200,241,53,.35)' }}>deploy</span> in seconds.
+          </span>
         </h1>
       </div>
 

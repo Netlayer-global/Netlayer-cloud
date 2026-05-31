@@ -27,13 +27,16 @@ export function LandingFooter() {
         {/* top band */}
         <div className="flex flex-col gap-10 border-b pb-12 lg:flex-row lg:items-end lg:justify-between" style={{ borderColor: 'var(--b-subtle)' }}>
           <div className="max-w-sm">
-            <Link to="/" className="flex items-center gap-2">
-              <svg viewBox="0 0 32 32" className="h-7 w-7" fill="none" aria-hidden>
-                <polygon points="16,3 27,9 27,22 16,28 5,22 5,9" stroke={BRAND} strokeWidth="1.5" fill="none" />
-                <polygon points="16,8 23,12 23,20 16,24 9,20 9,12" fill="var(--brand-d)" stroke={BRAND} strokeWidth="1" />
-                <circle cx="16" cy="16" r="2.5" fill={BRAND} />
-              </svg>
-              <span className="text-[15px] font-semibold" style={{ color: 'var(--t-hi)' }}>NetLayer Cloud</span>
+            <Link to="/" className="flex items-center gap-2.5">
+              <span
+                className="inline-flex items-center justify-center"
+                style={{ width: 28, height: 28, borderRadius: 7, background: BRAND, color: 'var(--brand-fg)' }}
+              >
+                <svg viewBox="0 0 32 32" width="17" height="17" aria-hidden>
+                  <path d="M9 9h4.5l5 8V9H23v14h-4.5l-5-8v8H9V9z" fill="currentColor" />
+                </svg>
+              </span>
+              <span className="nl-display" style={{ fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--t-hi)' }}>NetLayer Cloud</span>
             </Link>
             <p className="mt-4 text-[13px] leading-relaxed" style={{ color: 'var(--t-low)' }}>
               High-performance cloud infrastructure for developers and teams.

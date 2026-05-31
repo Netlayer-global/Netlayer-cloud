@@ -17,7 +17,7 @@ export function GlobalNetworkSection() {
       <div className="nl-eyebrow" style={{ marginBottom: 24 }}>Global network · 15 regions</div>
       <h2 className="nl-display" style={{ fontSize: 'clamp(32px,4.5vw,60px)', color: 'var(--t-hi)', marginBottom: 12 }}>
         Fifteen regions.{' '}
-        <span className="nl-stroke-brand" style={{ fontStyle: 'italic' }}>One platform.</span>
+        <span style={{ color: 'var(--brand)' }}>One platform.</span>
       </h2>
       <p style={{ fontSize: 14.5, color: 'var(--t-med)', lineHeight: 1.7, maxWidth: 520 }}>
         We run dedicated KVM nodes in every region so your servers get native-speed

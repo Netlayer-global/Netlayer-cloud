@@ -58,7 +58,7 @@ export function TrustSection() {
             style={{ fontSize: 'clamp(30px, 4.5vw, 52px)', color: 'var(--t-hi)', lineHeight: 1.05 }}
           >
             Audited cloud infrastructure for{' '}
-            <span className="nl-stroke-brand" style={{ fontStyle: 'italic' }}>regulated workloads.</span>
+            <span style={{ color: 'var(--brand)' }}>regulated workloads.</span>
           </h2>
           <p className="mt-6 text-[15px] leading-[1.65]" style={{ color: 'var(--t-med)' }}>
             Encrypted at rest with AES-256. CGST/SGST/IGST split on every Indian
