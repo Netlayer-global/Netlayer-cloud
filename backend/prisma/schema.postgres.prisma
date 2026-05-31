@@ -1,5 +1,5 @@
-// NetLayer Cloud - production Postgres schema.
-// String[] and Json fields are real Postgres arrays / jsonb here.
+// NetLayer Cloud - production Postgres schema (generated from schema.prisma).
+// String[] and Json fields are stored as JSON strings; serialized at the API boundary.
 
 generator client {
   provider = "prisma-client-js"
@@ -41,6 +41,11 @@ model User {
   // Round 18 additions
   onboardingDone     Boolean    @default(false)
   dataExportedAt     DateTime?
+  // Round 22: per-user billing mode
+  // - retail (default): pay full month upfront for each deploy/renewal via Razorpay/Stripe
+  // - wallet:           legacy wallet model â€” admins can set this for power users
+  // - enterprise:       no payment required; admin grants servers; monthly invoice issued
+  billingMode        String     @default("retail")
   // â”€â”€ billing/profile additions â”€â”€
   company            String?
   website            String?
@@ -88,6 +93,282 @@ model User {
   promoRedemptions   PromoRedemption[]
   // Round 20 additions
   creditNotes        CreditNote[]    @relation("UserCreditNotes")
+  // Round 22 additions
+  deployOrders       DeployOrder[]   @relation("UserDeployOrders")
+  // Round 24 additions â€” KYC, OTP, org/team, SSO, masquerade
+  kycStatus          String          @default("none")    // none | pending | approved | rejected
+  kycPanNumber       String?
+  kycPanFile         String?                             // file path or URL
+  kycAadhaarFile     String?
+  kycAddressFile     String?
+  kycRejectReason    String?
+  kycSubmittedAt     DateTime?
+  kycReviewedAt      DateTime?
+  kycReviewedBy      String?
+  spendingLimit      Float           @default(0)         // 0 = unlimited; per-month cap
+  twoFactorBackupCodes String?       // JSON array of hashed one-time codes
+  ssoProvider        String?                             // google | github | microsoft
+  ssoSubject         String?                             // provider-issued user id
+  phoneOtpCode       String?
+  phoneOtpExpiresAt  DateTime?
+  phoneOtpAttempts   Int             @default(0)
+  // Round 24 â€” org membership
+  ownedOrgs          Organization[]  @relation("OrgOwner")
+  orgMemberships     OrgMember[]
+  // Round 24 â€” masquerade audit
+  masqueradesAsTarget Masquerade[]   @relation("MasqueradeTarget")
+  masqueradesAsAdmin  Masquerade[]   @relation("MasqueradeAdmin")
+  userTags           UserTag[]
+  // Round 24 â€” server templates
+  serverTemplates    ServerTemplate[]
+  // Round 24 â€” backup schedules
+  backupSchedules    BackupSchedule[]
+  // Round 24 â€” feature flag overrides
+  featureFlagOverrides FeatureFlagOverride[]
+}
+
+// â”€â”€â”€ ORGANIZATIONS / TEAMS (Round 24) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// A user can own multiple organizations and be a member of others.
+// Servers, invoices, etc. can be tied to an org instead of a single user.
+model Organization {
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique
+  ownerId      String
+  owner        User          @relation("OrgOwner", fields: [ownerId], references: [id])
+  billingEmail String?
+  gstNumber    String?
+  panNumber    String?
+  address      String?       // JSON: { line1, line2, city, state, country, pin }
+  status       String        @default("active")  // active | suspended
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  members      OrgMember[]
+  invites      OrgInvite[]
+}
+
+model OrgMember {
+  id             String       @id @default(cuid())
+  orgId          String
+  org            Organization @relation(fields: [orgId], references: [id])
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  role           String       @default("member")  // owner | admin | member | billing | viewer
+  joinedAt       DateTime     @default(now())
+
+  @@unique([orgId, userId])
+  @@index([userId])
+}
+
+model OrgInvite {
+  id          String       @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  email       String
+  role        String       @default("member")
+  token       String       @unique
+  invitedBy   String
+  acceptedAt  DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime     @default(now())
+
+  @@index([orgId, email])
+}
+
+// â”€â”€â”€ MASQUERADE / LOGIN-AS-USER (Round 24) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Records every time an admin assumed another user's identity for support.
+model Masquerade {
+  id          String   @id @default(cuid())
+  adminId     String
+  admin       User     @relation("MasqueradeAdmin", fields: [adminId], references: [id])
+  targetId    String
+  target      User     @relation("MasqueradeTarget", fields: [targetId], references: [id])
+  reason      String
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  ipAddress   String?
+
+  @@index([adminId, startedAt])
+  @@index([targetId, startedAt])
+}
+
+// â”€â”€â”€ USER TAGS / NOTES TIMELINE (Round 24) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+model UserTag {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  tag       String                                  // e.g. "vip", "fraud-watch", "early-adopter"
+  authorId  String?                                  // null for system-generated
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([tag])
+}
+
+// â”€â”€â”€ SERVER TAGS + TEMPLATES (Round 24) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+model ServerTag {
+  id        String   @id @default(cuid())
+  serverId  String
+  server    Server   @relation(fields: [serverId], references: [id])
+  tag       String
+  createdAt DateTime @default(now())
+
+  @@unique([serverId, tag])
+  @@index([tag])
+}
+
+// User-created template from an existing server (snapshot + metadata).
+// Used to deploy new servers from a known-good golden image.
+model ServerTemplate {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  name        String
+  description String?
+  sourceServerId String?                              // server it was built from
+  sizeGB      Float    @default(0)
+  proxmoxRef  String?                                  // proxmox snapshot reference
+  status      String   @default("ready")              // building | ready | error
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+// â”€â”€â”€ AUTOMATED BACKUP SCHEDULES (Round 24) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+model BackupSchedule {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  serverId     String                                  // which server to back up
+  frequency    String                                  // daily | weekly | monthly
+  retentionDays Int     @default(7)
+  hour         Int      @default(2)                    // 0-23 UTC
+  dayOfWeek    Int?                                     // 0-6 for weekly
+  dayOfMonth   Int?                                     // 1-28 for monthly
+  isActive     Boolean  @default(true)
+  lastRunAt    DateTime?
+  nextRunAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([nextRunAt, isActive])
+}
+
+// â”€â”€â”€ FEATURE FLAGS (Round 24) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Per-feature kill-switch + per-user overrides for canary rollouts.
+model FeatureFlag {
+  id            String   @id @default(cuid())
+  key           String   @unique                       // e.g. "deploy-wizard-v2"
+  description   String?
+  defaultEnabled Boolean @default(false)
+  rolloutPercent Int     @default(0)                   // 0-100; gradual rollout
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  overrides     FeatureFlagOverride[]
+}
+
+model FeatureFlagOverride {
+  id        String      @id @default(cuid())
+  flagId    String
+  flag      FeatureFlag @relation(fields: [flagId], references: [id])
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  enabled   Boolean
+  createdAt DateTime    @default(now())
+
+  @@unique([flagId, userId])
+}
+
+// â”€â”€â”€ REVENUE / MRR / CHURN ANALYTICS SNAPSHOTS (Round 24) â”€
+// Daily snapshots aggregated by the analytics cron job.
+model RevenueSnapshot {
+  id              String   @id @default(cuid())
+  date            DateTime @unique                     // midnight UTC of the day
+  totalRevenue    Float    @default(0)                 // gross revenue collected that day
+  totalRefunds    Float    @default(0)
+  netRevenue      Float    @default(0)
+  newCustomers    Int      @default(0)
+  churnedCustomers Int     @default(0)
+  activeCustomers Int      @default(0)
+  mrr             Float    @default(0)                 // monthly recurring revenue (snapshot)
+  arr             Float    @default(0)                 // annualised
+  serversActive   Int      @default(0)
+  serversNew      Int      @default(0)
+  serversTerminated Int    @default(0)
+  createdAt       DateTime @default(now())
+
+  @@index([date])
+}
+
+// â”€â”€â”€ COMPLIANCE INCIDENTS (Round 24, India CERT-In) â”€â”€â”€â”€â”€â”€â”€
+// Mandatory 6-hour reporting for security incidents.
+model ComplianceIncident {
+  id           String   @id @default(cuid())
+  type         String                                  // breach | ddos | malware | unauthorized | data-loss
+  severity     String   @default("medium")             // low | medium | high | critical
+  description  String
+  detectedAt   DateTime
+  reportedAt   DateTime?                                // when CERT-In was notified
+  reportedBy   String?
+  certInRef    String?                                  // CERT-In reference number
+  status       String   @default("open")               // open | reported | resolved | closed
+  affectedUsers String  @default("[]")                  // JSON array of user ids
+  remediation  String?                                  // free-text actions taken
+  closedAt     DateTime?
+  createdBy    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status, detectedAt])
+}
+
+// â”€â”€â”€ ANNOUNCEMENT / IN-APP MESSAGE (Round 24) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Operator-pushed banner that appears on customer dashboard top-bar.
+model InAppMessage {
+  id           String   @id @default(cuid())
+  title        String
+  body         String
+  type         String   @default("info")               // info | warning | error | success
+  cta          String?                                  // optional button label
+  ctaUrl       String?
+  startsAt     DateTime
+  endsAt       DateTime?
+  targetRoles  String   @default("[]")                  // JSON array; empty = everyone
+  isActive     Boolean  @default(true)
+  createdBy    String
+  createdAt    DateTime @default(now())
+
+  @@index([isActive, startsAt])
+}
+
+// â”€â”€â”€ NPS SURVEYS (Round 24) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+model NpsSurvey {
+  id          String   @id @default(cuid())
+  userId      String
+  score       Int                                       // 0-10
+  comment     String?
+  category    String?                                   // detractor | passive | promoter (auto-derived)
+  surveyedAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([score])
+}
+
+// â”€â”€â”€ PUSH NOTIFICATION TOKENS (Round 24, mobile/PWA) â”€â”€â”€â”€â”€â”€
+model PushSubscription {
+  id          String   @id @default(cuid())
+  userId      String
+  endpoint    String   @unique
+  keys        String                                    // JSON: { p256dh, auth }
+  platform    String   @default("web")                  // web | ios | android
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([userId, isActive])
 }
 
 model UserSession {
@@ -211,7 +492,7 @@ model Plan {
   id            String   @id @default(cuid())
   name          String
   slug          String   @unique
-  category      String   @default("compute")  // compute | bare-metal | storage
+  category      String   @default("compute")  // compute | bare-metal | storage | gpu
   cpu           Int
   ramGB         Int
   diskGB        Int
@@ -219,10 +500,29 @@ model Plan {
   priceMonthly  Float
   priceHourly   Float
   priceInr      Float
+  // Round 23: yearly with prepaid discount + per-cycle availability flags
+  priceYearly   Float    @default(0)                // 0 means yearly billing not offered
+  hourlyEnabled Boolean  @default(true)             // Hide if you only want monthly billing
+  monthlyEnabled Boolean @default(true)
+  yearlyEnabled Boolean  @default(false)
+  // Bare-metal specifics (ignored for category='compute')
+  cpuModel      String?                              // e.g. "AMD EPYC 7402P"
+  cpuCores      Int?                                 // physical cores (vs vCPU `cpu`)
+  cpuThreads    Int?
+  diskType      String   @default("nvme")            // nvme | ssd | hdd
+  diskCount     Int      @default(1)                 // 2 disks â†’ RAID-1 default
+  raidSupported String   @default("[]")              // JSON: ["raid0","raid1","raid10"]
+  ipv4Included  Int      @default(1)
+  ipv6Included  Int      @default(1)
+  // Stock management (latitude.sh-style availability)
+  stockTotal    Int      @default(0)                 // 0 = unlimited (cloud VM)
+  stockReserved Int      @default(0)                 // currently allocated
+  // Visibility
   isActive      Boolean  @default(true)
   isPopular     Boolean  @default(false)
   sortOrder     Int      @default(0)
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
 
   servers       Server[]
 }
@@ -256,6 +556,14 @@ model Server {
   tags           String       @default("[]")
   notes          String?
   metadata       String?      // JSON: { deployTimeSeconds, fastDeploy, baseTemplateVmid, ... }
+  // Round 22: per-deploy billing
+  paidUntil      DateTime?                     // server paid through this date â€” auto-suspend after
+  pendingPaymentRef String?                    // razorpay order id during checkout, cleared on capture
+  // Round 23: billing cycle picked at deploy time
+  billingCycle   String       @default("monthly")  // hourly | monthly | yearly
+  // Round 23: bare-metal RAID + custom ISO
+  raidConfig     String?                       // raid0 | raid1 | raid10 | passthrough
+  customIsoId    String?                       // if set, deploy boots from this customer-uploaded ISO
   dnsRecordId    String?
   zabbixHostId   String?
   nextBillDate   DateTime?
@@ -273,6 +581,8 @@ model Server {
   floatingIps    FloatingIp[]   @relation("ServerFloatingIps")
   alertRules     AlertRule[]    @relation("ServerAlertRules")
   primaryIp      IpAddress[]    @relation("ServerPrimaryIp")
+  // Round 24 additions
+  serverTags     ServerTag[]
 }
 
 model ServerMetric {
@@ -990,4 +1300,49 @@ model CreditNote {
 
   @@index([userId, createdAt])
   @@index([invoiceId])
+}
+
+
+// â”€â”€â”€ DEPLOY ORDERS (Round 22) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Records a customer's deploy intent before payment. The full Razorpay /
+// Stripe order is tied to one of these rows â€” once payment captures, we
+// upgrade the linked Server row from AWAITING_PAYMENT to PENDING and the
+// fastDeploy pipeline kicks in.
+//
+// This lets us:
+//   - resume a stale checkout (browser closed, customer comes back next day)
+//   - cancel automatically after 24h (cleanup job)
+//   - audit "how many checkouts started but never paid"
+model DeployOrder {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation("UserDeployOrders", fields: [userId], references: [id])
+  // Server pre-created in AWAITING_PAYMENT state. Provisioning starts only
+  // once payment captures.
+  serverId          String   @unique
+  // Snapshot of the chosen config at order time (so price changes mid-checkout
+  // don't break the deal).
+  planId            String
+  regionId          String
+  osTemplateId      String
+  hostname          String
+  // Pricing â€” first month upfront, in customer's currency.
+  amount            Float                              // subtotal
+  tax               Float    @default(0)
+  taxBreakdown      String?                            // JSON
+  total             Float                              // amount + tax
+  currency          String   @default("INR")
+  // Payment provider state
+  provider          String   @default("razorpay")     // razorpay | stripe
+  providerOrderId   String?                           // rzp_order_xxx / pi_xxx
+  providerPaymentId String?                           // populated on capture
+  status            String   @default("pending")      // pending | paid | failed | expired | cancelled
+  expiresAt         DateTime                          // 24h from creation
+  paidAt            DateTime?
+  invoiceId         String?                           // populated after payment â†’ links to Invoice
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([status, expiresAt])
 }
