@@ -73,7 +73,7 @@ services:
       PORT: 5000
       DATABASE_URL: postgresql://${POSTGRES_USER:-netlayer}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-netlayer}?schema=public
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set (use: openssl rand -hex 32)}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set - generate with openssl rand -hex 32}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET must be set}
       FRONTEND_URL: ${FRONTEND_URL:-https://netlayer.com}
       # Payments — flip these on once Razorpay/Stripe credentials are live
