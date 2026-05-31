@@ -1,5 +1,5 @@
-﻿// NetLayer Cloud â€” local-dev SQLite schema.
-// String[] and Json fields are stored as JSON strings; serialized at the API boundary.
+// NetLayer Cloud - production Postgres schema.
+// String[] and Json fields are real Postgres arrays / jsonb here.
 
 generator client {
   provider = "prisma-client-js"
