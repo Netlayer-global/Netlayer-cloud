@@ -1,167 +1,175 @@
 import { Link } from 'react-router-dom'
-import { ArrowUpRight, Server } from 'lucide-react'
+import { ArrowRight, Check } from 'lucide-react'
 
 /**
- * Premium editorial hero (VAULTEX-inspired, lime-themed, VPS content).
+ * Hero — DigitalOcean-style clean two-column layout (lime-themed, VPS).
  *
- * Layers:
- *   - faint dot/line grid background + two radial lime/cyan glows
- *   - floating glass KPI pills: status (top-left) + metric stack (top-right)
- *   - a huge Playfair serif title where the middle line is an outlined
- *     `.nl-stroke` variant (VAULTEX signature)
- *   - hero-bottom: description + actions (left) and a hero-numbers row (right)
+ * Left:  eyebrow, big Plus Jakarta headline with a lime accent word, a
+ *        readable Inter subtext, two CTAs (solid + ghost), and a short
+ *        trust microcopy row with check marks.
+ * Right: a clean product visual — a rounded "console" panel floating over
+ *        a soft lime radial glow + faint dot grid, with a live region pill.
  *
- * Differs from VAULTEX: lime/cyan palette instead of gold, VPS copy (servers,
- * regions, deploy time), a server glyph in the status pill, and original
- * numerals. Theme-aware via CSS tokens.
+ * Airy, lots of whitespace, rounded cards — DO aesthetic, but lime-on-dark
+ * and theme-aware. No crypto/AI-hype; straight VPS infrastructure copy.
  */
 const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5173'
 
-const HERO_NUMBERS = [
-  { num: '50K+', label: 'Servers deployed' },
-  { num: '15',   label: 'Global regions' },
-  { num: '<30s', label: 'Time to boot' },
-] as const
+const TRUST = ['Free $200 credit', 'No card to start', 'Live in under a minute']
 
-const KPI_STACK = [
-  { val: '99.99%', label: 'Uptime SLA', tone: 'green' },
-  { val: '24.8ms', label: 'Avg latency', tone: 'brand' },
-  { val: '248',    label: 'Live nodes', tone: '' },
-] as const
+const PANEL_REGIONS = [
+  { city: 'Mumbai', ping: '12 ms' },
+  { city: 'Frankfurt', ping: '28 ms' },
+  { city: 'New York', ping: '34 ms' },
+  { city: 'Singapore', ping: '21 ms' },
+]
 
 export function HeroSection() {
   return (
-    <section
-      className="relative w-full overflow-hidden"
-      style={{ minHeight: '100vh', background: 'var(--surface-canvas)', paddingTop: 96 }}
-    >
-      {/* grid background */}
+    <section className="relative w-full overflow-hidden" style={{ background: 'var(--surface-canvas)' }}>
+      {/* faint dot grid + radial glow */}
       <div aria-hidden className="absolute inset-0 nl-grid-bg" style={{ zIndex: 0 }} />
-
-      {/* radial glows */}
       <div
         aria-hidden
         className="absolute pointer-events-none"
         style={{
-          top: '-10%', left: '-6%', width: '46%', height: '60%', zIndex: 0,
-          background: 'radial-gradient(ellipse at 40% 40%, rgba(200,241,53,.16) 0%, transparent 66%)',
-          filter: 'blur(60px)',
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute pointer-events-none"
-        style={{
-          bottom: '-12%', right: '-6%', width: '42%', height: '58%', zIndex: 0,
-          background: 'radial-gradient(ellipse at 60% 60%, rgba(34,211,238,.13) 0%, transparent 66%)',
-          filter: 'blur(60px)',
+          top: '-20%', right: '-10%', width: '60%', height: '90%', zIndex: 0,
+          background: 'radial-gradient(ellipse at 60% 40%, rgba(200,241,53,.14) 0%, transparent 64%)',
+          filter: 'blur(70px)',
         }}
       />
 
-      {/* ── floating KPI pills ── */}
-      {/* top-left status pill */}
       <div
-        className="absolute hidden md:flex items-center gap-3 nl-pill nl-float"
-        style={{ top: 140, left: 'clamp(20px,5vw,72px)', padding: '14px 18px', zIndex: 4 }}
+        className="relative grid lg:grid-cols-2 gap-12 lg:gap-16 items-center max-w-7xl mx-auto"
+        style={{ zIndex: 2, padding: 'clamp(110px,15vh,170px) clamp(20px,5vw,40px) clamp(64px,9vw,110px)' }}
       >
-        <span className="relative inline-flex">
-          <span className="nl-status-dot block rounded-full" style={{ width: 9, height: 9, background: 'var(--c-green)' }} />
-        </span>
+        {/* ── left: copy ── */}
         <div>
-          <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--t-hi)' }}>All systems operational</div>
-          <div className="nl-mono" style={{ fontSize: 10, color: 'var(--t-low)', marginTop: 2 }}>15 / 15 regions online</div>
-        </div>
-      </div>
+          <div
+            className="inline-flex items-center gap-2 nl-mono"
+            style={{
+              fontSize: 11, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--brand)',
+              padding: '6px 14px', border: '1px solid var(--brand-b)', borderRadius: 'var(--r-full)',
+              background: 'var(--brand-d)', marginBottom: 28,
+            }}
+          >
+            <span className="nl-status-dot rounded-full" style={{ width: 6, height: 6, background: 'var(--brand)' }} />
+            15 regions · 99.99% uptime
+          </div>
 
-      {/* top-right KPI stack */}
-      <div
-        className="absolute hidden lg:block nl-pill nl-float-slow"
-        style={{ top: 150, right: 'clamp(20px,5vw,72px)', padding: '18px 22px', zIndex: 4, minWidth: 188 }}
-      >
-        <div className="flex items-center gap-2" style={{ marginBottom: 14 }}>
-          <Server size={13} style={{ color: 'var(--brand)' }} />
-          <span className="nl-mono" style={{ fontSize: 10, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--t-low)' }}>
-            Fleet live
-          </span>
-        </div>
-        <div className="flex flex-col gap-3">
-          {KPI_STACK.map((k) => (
-            <div key={k.label} className="flex items-baseline justify-between gap-6">
-              <span
-                className="nl-mono"
-                style={{
-                  fontSize: 17, fontWeight: 500,
-                  color: k.tone === 'green' ? 'var(--c-green)' : k.tone === 'brand' ? 'var(--brand)' : 'var(--t-hi)',
-                }}
-              >
-                {k.val}
-              </span>
-              <span style={{ fontSize: 11, color: 'var(--t-low)' }}>{k.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+          <h1
+            className="nl-display"
+            style={{ fontSize: 'clamp(40px,5.6vw,76px)', color: 'var(--t-hi)', marginBottom: 22 }}
+          >
+            The cloud built to{' '}
+            <span style={{ color: 'var(--brand)' }}>deploy in seconds.</span>
+          </h1>
 
-      {/* ── center title ── */}
-      <div
-        className="relative flex flex-col items-center text-center"
-        style={{ zIndex: 3, padding: '0 clamp(20px,5vw,52px)', paddingTop: 'clamp(80px,12vh,150px)' }}
-      >
-        <div
-          className="inline-flex items-center gap-2 nl-mono"
-          style={{
-            fontSize: 11, letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--t-med)',
-            padding: '7px 16px', border: '1px solid var(--b-default)', borderRadius: 'var(--r-full)',
-            background: 'var(--brand-d)', marginBottom: 'clamp(28px,4vw,40px)',
-          }}
-        >
-          <span className="rounded-full" style={{ width: 6, height: 6, background: 'var(--brand)' }} />
-          Cloud infrastructure, reimagined
-        </div>
-
-        <h1
-          className="nl-display"
-          style={{ fontSize: 'clamp(48px,8.5vw,128px)', color: 'var(--t-hi)', maxWidth: 1100, fontWeight: 600 }}
-        >
-          <span className="block">Servers that</span>
-          <span className="block">
-            <span style={{ color: 'var(--brand)', textShadow: '0 0 40px rgba(200,241,53,.35)' }}>deploy</span> in seconds.
-          </span>
-        </h1>
-      </div>
-
-      {/* ── hero bottom row ── */}
-      <div
-        className="relative grid lg:grid-cols-2 gap-10 lg:items-end"
-        style={{ zIndex: 3, padding: 'clamp(48px,7vw,90px) clamp(20px,5vw,52px) clamp(48px,7vh,72px)' }}
-      >
-        {/* left — description + actions */}
-        <div style={{ maxWidth: 460 }}>
-          <p style={{ fontSize: 16, color: 'var(--t-med)', lineHeight: 1.7 }}>
+          <p style={{ fontSize: 'clamp(16px,1.4vw,19px)', color: 'var(--t-med)', lineHeight: 1.65, maxWidth: 520, marginBottom: 34 }}>
             Cloud VPS, bare metal, and GPU servers on a global KVM platform.
-            Per-second billing, a developer-first API, and flat pricing across
-            fifteen regions.
+            Per-second billing, a developer-first API, and flat pricing — without
+            the enterprise-cloud complexity.
           </p>
-          <div className="mt-7 flex flex-wrap items-center gap-3">
-            <a href={`${DASHBOARD_URL}/register`} className="nl-btn-primary">
-              Deploy a server <ArrowUpRight size={16} />
+
+          <div className="flex flex-wrap items-center gap-3" style={{ marginBottom: 28 }}>
+            <a href={`${DASHBOARD_URL}/register`} className="nl-btn-primary" style={{ height: 50, padding: '0 28px', fontSize: 15 }}>
+              Get started <ArrowRight size={17} />
             </a>
-            <Link to="/pricing" className="nl-btn-ghost">View pricing</Link>
+            <Link to="/pricing" className="nl-btn-ghost" style={{ height: 50, padding: '0 24px', fontSize: 15 }}>
+              Explore products
+            </Link>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            {TRUST.map((t) => (
+              <span key={t} className="inline-flex items-center gap-2" style={{ fontSize: 13.5, color: 'var(--t-low)' }}>
+                <Check size={15} style={{ color: 'var(--brand)' }} /> {t}
+              </span>
+            ))}
           </div>
         </div>
 
-        {/* right — hero numbers */}
-        <div className="grid grid-cols-3 gap-px" style={{ background: 'var(--b-subtle)', border: '1px solid var(--b-subtle)' }}>
-          {HERO_NUMBERS.map((n) => (
-            <div key={n.label} style={{ background: 'var(--surface-canvas)', padding: 'clamp(20px,3vw,30px) clamp(14px,2vw,22px)' }}>
-              <div className="nl-display" style={{ fontSize: 'clamp(32px,4.5vw,56px)', color: 'var(--t-hi)', marginBottom: 8 }}>
-                {n.num}
+        {/* ── right: product visual ── */}
+        <div className="relative">
+          <div
+            aria-hidden
+            className="absolute pointer-events-none"
+            style={{
+              inset: '-12%',
+              background: 'radial-gradient(ellipse at 50% 45%, rgba(132,204,22,.16) 0%, transparent 66%)',
+              filter: 'blur(40px)',
+            }}
+          />
+
+          {/* console panel */}
+          <div
+            className="relative nl-float-slow"
+            style={{ borderRadius: 'var(--r-2xl)', border: '1px solid var(--b-default)', background: 'var(--nl-2)', boxShadow: 'var(--shadow-lg)', overflow: 'hidden' }}
+          >
+            {/* header */}
+            <div className="flex items-center justify-between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--b-subtle)', background: 'var(--nl-1)' }}>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full" style={{ width: 10, height: 10, background: 'var(--c-red)' }} />
+                <span className="rounded-full" style={{ width: 10, height: 10, background: 'var(--c-amber)' }} />
+                <span className="rounded-full" style={{ width: 10, height: 10, background: 'var(--c-green)' }} />
               </div>
-              <div className="nl-mono" style={{ fontSize: 10.5, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--t-low)' }}>
-                {n.label}
+              <span className="nl-mono" style={{ fontSize: 11, color: 'var(--t-low)' }}>deploy.netlayer.cloud</span>
+            </div>
+
+            {/* body */}
+            <div style={{ padding: 22 }}>
+              <div className="flex items-center justify-between" style={{ marginBottom: 18 }}>
+                <div>
+                  <div className="nl-head" style={{ fontSize: 16, color: 'var(--t-hi)' }}>Deploy a server</div>
+                  <div style={{ fontSize: 12.5, color: 'var(--t-low)', marginTop: 2 }}>Ubuntu 24.04 · 4 vCPU · 8 GB</div>
+                </div>
+                <span
+                  className="nl-mono inline-flex items-center gap-1.5"
+                  style={{ fontSize: 10.5, padding: '5px 11px', borderRadius: 'var(--r-full)', background: 'var(--c-green-d)', border: '1px solid color-mix(in srgb, var(--c-green) 30%, transparent)', color: 'var(--c-green)' }}
+                >
+                  <span className="nl-status-dot rounded-full" style={{ width: 6, height: 6, background: 'var(--c-green)' }} /> Provisioning
+                </span>
+              </div>
+
+              {/* region picker */}
+              <div className="grid grid-cols-2 gap-2.5">
+                {PANEL_REGIONS.map((r, i) => (
+                  <div
+                    key={r.city}
+                    className="flex items-center justify-between"
+                    style={{
+                      padding: '12px 14px', borderRadius: 'var(--r-md)',
+                      border: `1px solid ${i === 0 ? 'var(--brand-b)' : 'var(--b-default)'}`,
+                      background: i === 0 ? 'var(--brand-d)' : 'var(--nl-1)',
+                    }}
+                  >
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t-hi)' }}>{r.city}</span>
+                    <span className="nl-mono" style={{ fontSize: 11, color: i === 0 ? 'var(--brand)' : 'var(--t-low)' }}>{r.ping}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* progress */}
+              <div style={{ marginTop: 18 }}>
+                <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+                  <span className="nl-mono" style={{ fontSize: 10.5, color: 'var(--t-low)' }}>BOOT</span>
+                  <span className="nl-mono" style={{ fontSize: 10.5, color: 'var(--brand)' }}>72%</span>
+                </div>
+                <div style={{ height: 6, borderRadius: 'var(--r-full)', background: 'var(--nl-4)', overflow: 'hidden' }}>
+                  <div style={{ width: '72%', height: '100%', background: 'var(--brand)', borderRadius: 'var(--r-full)' }} />
+                </div>
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* floating mini stat card */}
+          <div
+            className="absolute hidden sm:flex items-center gap-3 nl-pill nl-float"
+            style={{ bottom: -22, left: -18, padding: '14px 18px' }}
+          >
+            <div className="nl-display" style={{ fontSize: 26, color: 'var(--brand)' }}>~30s</div>
+            <div style={{ fontSize: 11.5, color: 'var(--t-med)', lineHeight: 1.3 }}>average<br />boot time</div>
+          </div>
         </div>
       </div>
     </section>

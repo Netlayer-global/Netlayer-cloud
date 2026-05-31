@@ -1,47 +1,46 @@
 import { Link } from 'react-router-dom'
+import { ArrowRight } from 'lucide-react'
 
 /**
- * Pre-footer CTA banner (Fireblox split layout). Big condensed heading on
- * the left with a dimmed second line, primary lime button on the right.
+ * Pre-footer CTA (DigitalOcean style): a centered, rounded panel with a
+ * soft lime radial glow, a confident heading, supporting line, and two
+ * actions. Lime palette, theme-aware.
  */
 const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5173'
 
 export function CTASection() {
   return (
-    <div
-      className="relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-8"
-      style={{ padding: 'clamp(60px,8vw,90px) clamp(20px,5vw,52px)', borderTop: '1px solid var(--b-subtle)', background: 'var(--nl-0)' }}
-    >
-      {/* glow */}
-      <div
-        aria-hidden
-        className="absolute pointer-events-none"
-        style={{
-          top: '-30%', right: '-8%', width: '55%', height: '160%',
-          background: 'radial-gradient(ellipse at 60% 50%, rgba(132,204,22,.14) 0%, transparent 65%)',
-          filter: 'blur(20px)',
-        }}
-      />
-      <div className="relative">
-        <div className="nl-display" style={{ fontSize: 'clamp(40px,6vw,88px)', color: 'var(--t-hi)' }}>
-          Ready to deploy?
-          <br />
-          <span style={{ color: 'var(--brand)' }}>
-            Spin up your first server free.
-          </span>
+    <section style={{ background: 'var(--nl-0)', borderTop: '1px solid var(--b-subtle)' }}>
+      <div className="max-w-7xl mx-auto" style={{ padding: 'clamp(56px,8vw,96px) clamp(20px,5vw,40px)' }}>
+        <div
+          className="relative overflow-hidden text-center"
+          style={{ borderRadius: 'var(--r-2xl)', border: '1px solid var(--brand-b)', background: 'var(--nl-2)', padding: 'clamp(48px,7vw,88px) clamp(24px,5vw,48px)' }}
+        >
+          {/* glow */}
+          <div
+            aria-hidden
+            className="absolute pointer-events-none"
+            style={{ top: '-40%', left: '50%', transform: 'translateX(-50%)', width: '70%', height: '160%', background: 'radial-gradient(ellipse at 50% 40%, rgba(200,241,53,.18) 0%, transparent 62%)', filter: 'blur(50px)' }}
+          />
+          <div className="relative">
+            <h2 className="nl-display" style={{ fontSize: 'clamp(30px,4.6vw,60px)', color: 'var(--t-hi)', marginBottom: 18, maxWidth: 720, marginInline: 'auto' }}>
+              Start building today.
+            </h2>
+            <p style={{ fontSize: 16.5, color: 'var(--t-med)', lineHeight: 1.6, maxWidth: 540, margin: '0 auto clamp(28px,4vw,38px)' }}>
+              Spin up your first server with ₹3,500 in free credit. No card required,
+              and you're live in under a minute.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <a href={`${DASHBOARD_URL}/register`} className="nl-btn-primary" style={{ height: 52, padding: '0 32px', fontSize: 15 }}>
+                Create free account <ArrowRight size={17} />
+              </a>
+              <Link to="/pricing" className="nl-btn-ghost" style={{ height: 52, padding: '0 26px', fontSize: 15 }}>
+                Compare plans
+              </Link>
+            </div>
+          </div>
         </div>
-        <p className="nl-mono" style={{ fontSize: 12.5, color: 'var(--t-med)', marginTop: 18, letterSpacing: '.02em' }}>
-          ₹3,500 in credit · No card required · Live in under a minute.
-        </p>
       </div>
-      <div className="relative flex flex-col items-start md:items-end gap-3 shrink-0">
-        <a href={`${DASHBOARD_URL}/register`} className="nl-btn-primary" style={{ height: 52, padding: '0 38px', fontSize: 13 }}>
-          Create free account
-        </a>
-        <Link to="/pricing" className="nl-mono" style={{ fontSize: 11, color: 'var(--t-low)', letterSpacing: '.06em', textTransform: 'uppercase' }}>
-          or compare plans →
-        </Link>
-      </div>
-    </div>
+    </section>
   )
 }

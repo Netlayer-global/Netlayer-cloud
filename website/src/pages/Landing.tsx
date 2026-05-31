@@ -1,21 +1,19 @@
 /**
- * Landing — premium editorial home page (VAULTEX-inspired, NetLayer lime theme).
+ * Landing — home page (DigitalOcean-style, NetLayer lime theme).
  *
- * Flow:
- *   TopBanner        — promo strip
- *   LandingNav       — flat sticky nav (with inline theme toggle)
- *   HeroSection      — grid bg + floating KPI pills + serif stroke title
- *   TickerStrip      — live region latency/uptime ticker
- *   PartnersSection  — integration wordmark bar
- *   AnnouncementBar  — 3-cell stats band (hover lime underline)
- *   StatsBar         — keyword serif marquee
- *   ProductsSection  — numbered cards (01/06) with hover ↗ arrows
- *   PerformanceSection — split intro + feature list + advantage grid
- *   MarketplaceSection — refined console mockup
- *   GlobalNetworkSection — region node grid
- *   TrustSection     — compliance badges
- *   CTASection       — pre-footer push (radial glow)
- *   LandingFooter    — sitemap + newsletter
+ * Flow (clean, airy, rounded-card DO aesthetic):
+ *   TopBanner          — promo strip
+ *   LandingNav         — sticky nav (inline theme toggle)
+ *   HeroSection        — two-col hero (copy + console visual)
+ *   PartnersSection    — "trusted by" wordmark strip
+ *   AnnouncementBar    — three proof / customer-story stat cards
+ *   ProductsSection    — "one platform" product card grid
+ *   PerformanceSection — alternating feature rows with visuals
+ *   MarketplaceSection — full console mockup
+ *   GlobalNetworkSection — region card grid
+ *   TrustSection       — compliance badges
+ *   CTASection         — centered CTA panel
+ *   LandingFooter      — sitemap + newsletter
  *
  * Other public pages reuse LandingNav / LandingFooter / PricingSection.
  */
@@ -23,10 +21,8 @@ import {
   TopBanner,
   LandingNav,
   HeroSection,
-  TickerStrip,
   PartnersSection,
   AnnouncementBar,
-  StatsBar,
   ProductsSection,
   PerformanceSection,
   MarketplaceSection,
@@ -42,10 +38,8 @@ export default function Landing() {
       <TopBanner />
       <LandingNav />
       <HeroSection />
-      <TickerStrip />
       <PartnersSection />
       <AnnouncementBar />
-      <StatsBar />
       <ProductsSection />
       <PerformanceSection />
       <MarketplaceSection />

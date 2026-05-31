@@ -23,16 +23,18 @@ const toneColor = (t: string) =>
 
 export function MarketplaceSection() {
   return (
-    <div style={{ padding: 'clamp(64px,9vw,100px) clamp(20px,5vw,52px)', borderTop: '1px solid var(--b-subtle)', background: 'var(--nl-0)' }}>
-      <div className="nl-eyebrow" style={{ marginBottom: 18 }}>Live console</div>
-      <h2 className="nl-display" style={{ fontSize: 'clamp(32px,4.5vw,60px)', color: 'var(--t-hi)', marginBottom: 12, maxWidth: 720 }}>
-        Every server. Every metric.{' '}
-        <span style={{ color: 'var(--brand)' }}>One console.</span>
-      </h2>
-      <p style={{ fontSize: 14.5, color: 'var(--t-med)', maxWidth: 500, lineHeight: 1.7, marginBottom: 40 }}>
-        Monitor, deploy, resize, and raise tickets in real time — no waiting on a
-        support queue for a status update.
-      </p>
+    <section style={{ background: 'var(--nl-0)', borderTop: '1px solid var(--b-subtle)' }}>
+      <div className="max-w-7xl mx-auto" style={{ padding: 'clamp(64px,9vw,110px) clamp(20px,5vw,40px)' }}>
+        <div className="text-center max-w-2xl mx-auto" style={{ marginBottom: 'clamp(36px,5vw,52px)' }}>
+          <div className="nl-eyebrow" style={{ marginBottom: 18, color: 'var(--brand)' }}>Live console</div>
+          <h2 className="nl-display" style={{ fontSize: 'clamp(30px,4.4vw,56px)', color: 'var(--t-hi)', marginBottom: 18 }}>
+            Every server. Every metric. One console.
+          </h2>
+          <p style={{ fontSize: 16, color: 'var(--t-med)', lineHeight: 1.65 }}>
+            Monitor, deploy, resize, and raise tickets in real time — no waiting on a
+            support queue for a status update.
+          </p>
+        </div>
 
       {/* mock window */}
       <div style={{ border: '1px solid var(--b-strong)', background: 'var(--nl-1)', overflow: 'hidden', borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-lg)' }}>
@@ -144,6 +146,7 @@ export function MarketplaceSection() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </section>
   )
 }
