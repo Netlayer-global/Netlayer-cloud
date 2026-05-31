@@ -9,6 +9,7 @@ import { authAPI } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { AuthLayout } from '../components/Auth/AuthLayout'
 
 const schema = z
   .object({
@@ -74,93 +75,87 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d0e0d] flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        <Link to="/" className="flex items-center justify-center gap-2 mb-8 cursor-pointer">
-          <div className="w-8 h-8 bg-[#e0fe56] rounded-md flex items-center justify-center text-[#0d0e0d] font-bold">
-            N
-          </div>
-          <span className="font-semibold text-base">NetLayer</span>
-        </Link>
+    <AuthLayout
+      title="Create your account"
+      subtitle="Start deploying in under a minute"
+      footer={
+        <p className="text-center" style={{ fontSize: 14, color: 'var(--t-med)' }}>
+          Already have an account?{' '}
+          <Link to="/login" style={{ color: 'var(--brand)', fontWeight: 600 }} className="hover:underline">
+            Sign in
+          </Link>
+        </p>
+      }
+    >
+      {referralCode && (
+        <div
+          className="mb-5 px-3 py-2.5 rounded-md text-xs"
+          style={{ background: 'var(--brand-d)', border: '1px solid var(--brand-b)', color: 'var(--brand)' }}
+        >
+          🎁 Joining with code <span className="font-mono font-semibold">{referralCode}</span> — both of you earn ₹250 once you spend ₹100.
+        </div>
+      )}
 
-        <div className="bg-[#161716] border border-[#2a2b2a] rounded-xl p-8">
-          <h1 className="text-xl font-medium text-[#e8e8e6] mb-1">Create your account</h1>
-          <p className="text-sm text-[#a0a09e] mb-6">Start deploying in under a minute</p>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            label="First name"
+            placeholder="Jane"
+            error={errors.firstName?.message}
+            {...register('firstName')}
+          />
+          <Input
+            label="Last name"
+            placeholder="Doe"
+            error={errors.lastName?.message}
+            {...register('lastName')}
+          />
+        </div>
 
-          {referralCode && (
-            <div className="mb-5 px-3 py-2 rounded-md bg-[#e0fe56]/5 border border-[#e0fe56]/30 text-xs text-[#e0fe56]">
-              🎁 Joining with code <span className="font-mono font-semibold">{referralCode}</span> — both of you earn ₹250 once you spend ₹100.
-            </div>
-          )}
+        <Input
+          label="Email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          error={errors.email?.message}
+          {...register('email')}
+        />
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                label="First name"
-                placeholder="Jane"
-                error={errors.firstName?.message}
-                {...register('firstName')}
-              />
-              <Input
-                label="Last name"
-                placeholder="Doe"
-                error={errors.lastName?.message}
-                {...register('lastName')}
-              />
-            </div>
-
+        <div>
+          <label className="block text-xs mb-1.5" style={{ color: 'var(--t-med)' }}>Password</label>
+          <div className="relative">
             <Input
-              label="Email"
-              type="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              error={errors.email?.message}
-              {...register('email')}
-            />
-
-            <div>
-              <label className="block text-xs text-[#a0a09e] mb-1.5">Password</label>
-              <div className="relative">
-                <Input
-                  type={show ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  placeholder="At least 8 characters"
-                  error={errors.password?.message}
-                  {...register('password')}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShow((v) => !v)}
-                  className="absolute right-2.5 top-[9px] text-[#6a6a68] hover:text-[#e8e8e6] cursor-pointer"
-                  aria-label={show ? 'Hide password' : 'Show password'}
-                >
-                  {show ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-
-            <Input
-              label="Confirm password"
               type={show ? 'text' : 'password'}
               autoComplete="new-password"
-              placeholder="Re-enter password"
-              error={errors.confirmPassword?.message}
-              {...register('confirmPassword')}
+              placeholder="At least 8 characters"
+              error={errors.password?.message}
+              {...register('password')}
             />
-
-            <Button type="submit" loading={submitting} className="w-full" size="lg">
-              Create account
-            </Button>
-          </form>
-
-          <p className="text-sm text-[#a0a09e] text-center mt-6">
-            Already have an account?{' '}
-            <Link to="/login" className="text-[#e0fe56] hover:underline">
-              Sign in
-            </Link>
-          </p>
+            <button
+              type="button"
+              onClick={() => setShow((v) => !v)}
+              className="absolute right-2.5 top-[9px] cursor-pointer"
+              style={{ color: 'var(--t-low)' }}
+              aria-label={show ? 'Hide password' : 'Show password'}
+            >
+              {show ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </div>
-      </div>
-    </div>
+
+        <Input
+          label="Confirm password"
+          type={show ? 'text' : 'password'}
+          autoComplete="new-password"
+          placeholder="Re-enter password"
+          error={errors.confirmPassword?.message}
+          {...register('confirmPassword')}
+        />
+
+        <Button type="submit" loading={submitting} className="w-full" size="lg">
+          Create account
+        </Button>
+      </form>
+    </AuthLayout>
   )
 }

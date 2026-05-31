@@ -134,7 +134,7 @@ export function Sidebar() {
           <div className="w-6 h-6 bg-[#e0fe56] text-[#0d0e0d] rounded-md flex items-center justify-center text-xs font-bold shrink-0">
             N
           </div>
-          <span className="flex-1 text-left text-[13px] font-medium text-[#e8e8e6] truncate">
+          <span className="flex-1 text-left text-[13px] font-medium text-[#e8e8e6] truncate nl-heading">
             NetLayer
           </span>
           <ChevronDown size={14} className="text-[#6a6a68]" />

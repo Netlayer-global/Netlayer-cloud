@@ -133,6 +133,32 @@ a {
   animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+/* ─── Premium heading font (matches marketing site) ─────────
+ * The dashboard body stays on Inter for dense UI legibility, but page
+ * titles + section headings use Plus Jakarta Sans for a premium feel.
+ * Apply via the `.nl-heading` class, or it's auto-applied to <h1>/<h2>
+ * inside dashboard pages below. */
+.nl-heading,
+.font-display {
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Crisper text rendering across the app */
+body {
+  text-rendering: optimizeLegibility;
+}
+
+/* Elevate page titles to the premium display font automatically.
+ * Dashboard page headers use `text-2xl`/`text-3xl font-medium|font-semibold`;
+ * applying Plus Jakarta to those large weights gives the whole app the same
+ * premium feel as the marketing site without touching every page. Body text
+ * and small UI labels stay on Inter for dense legibility. */
+.text-2xl, .text-3xl, .text-4xl {
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.02em;
+}
+
 
 /* ─── Landing page utilities ────────────────────────────── */
 .nl-page {

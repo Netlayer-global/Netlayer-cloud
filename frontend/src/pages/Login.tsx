@@ -9,6 +9,7 @@ import { authAPI } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { AuthLayout } from '../components/Auth/AuthLayout'
 
 const schema = z.object({
   email: z.string().email('Invalid email'),
@@ -46,72 +47,63 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d0e0d] flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        <Link to="/" className="flex items-center justify-center gap-2 mb-8 cursor-pointer">
-          <div className="w-8 h-8 bg-[#e0fe56] rounded-md flex items-center justify-center text-[#0d0e0d] font-bold">
-            N
-          </div>
-          <span className="font-semibold text-base">NetLayer</span>
-        </Link>
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Sign in to your NetLayer account"
+      footer={
+        <p className="text-center" style={{ fontSize: 14, color: 'var(--t-med)' }}>
+          Don't have an account?{' '}
+          <Link to="/register" style={{ color: 'var(--brand)', fontWeight: 600 }} className="hover:underline">
+            Create one
+          </Link>
+        </p>
+      }
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <Input
+          label="Email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          error={errors.email?.message}
+          {...register('email')}
+        />
 
-        <div className="bg-[#161716] border border-[#2a2b2a] rounded-xl p-8">
-          <h1 className="text-xl font-medium text-[#e8e8e6] mb-1">Welcome back</h1>
-          <p className="text-sm text-[#a0a09e] mb-6">Sign in to your NetLayer account</p>
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input
-              label="Email"
-              type="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              error={errors.email?.message}
-              {...register('email')}
-            />
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs text-[#a0a09e]">Password</label>
-                <Link to="/forgot-password" className="text-xs text-[#e0fe56] hover:underline">
-                  Forgot password?
-                </Link>
-              </div>
-              <div className="relative">
-                <Input
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  placeholder="Enter your password"
-                  error={errors.password?.message}
-                  {...register('password')}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-2.5 top-[9px] text-[#6a6a68] hover:text-[#e8e8e6] cursor-pointer"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-
-            <Button type="submit" loading={submitting} className="w-full" size="lg">
-              Sign in
-            </Button>
-          </form>
-
-          <p className="text-sm text-[#a0a09e] text-center mt-6">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-[#e0fe56] hover:underline">
-              Create one
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs" style={{ color: 'var(--t-med)' }}>Password</label>
+            <Link to="/forgot-password" className="text-xs hover:underline" style={{ color: 'var(--brand)' }}>
+              Forgot password?
             </Link>
-          </p>
+          </div>
+          <div className="relative">
+            <Input
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              placeholder="Enter your password"
+              error={errors.password?.message}
+              {...register('password')}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-2.5 top-[9px] cursor-pointer"
+              style={{ color: 'var(--t-low)' }}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </div>
 
-        <p className="text-xs text-[#6a6a68] text-center mt-6">
-          By signing in, you agree to our terms and privacy policy.
-        </p>
-      </div>
-    </div>
+        <Button type="submit" loading={submitting} className="w-full" size="lg">
+          Sign in
+        </Button>
+      </form>
+
+      <p className="text-center" style={{ fontSize: 12, color: 'var(--t-low)', marginTop: 20 }}>
+        By signing in, you agree to our terms and privacy policy.
+      </p>
+    </AuthLayout>
   )
 }
