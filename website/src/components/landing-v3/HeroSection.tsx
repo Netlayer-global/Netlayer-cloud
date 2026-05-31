@@ -15,7 +15,7 @@ import { platformAPI } from '../../api/endpoints'
  * Stats come from `GET /platform/stats` with a graceful hardcoded fallback
  * so the page is great even before the API responds (or in mock mode).
  */
-const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5173'
+const DASHBOARD_URL = (import.meta.env.VITE_DASHBOARD_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:5173')) as string
 
 const TRUST = ['₹3,500 free credit', 'No card to start', 'Live in under a minute']
 

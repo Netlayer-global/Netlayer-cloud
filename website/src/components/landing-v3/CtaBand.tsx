@@ -5,7 +5,7 @@ import { ArrowRight } from 'lucide-react'
  * CtaBand — reusable centered CTA panel for sub-pages (rounded card, soft
  * lime glow). Distinct from the home page CTASection so copy can vary.
  */
-const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5173'
+const DASHBOARD_URL = (import.meta.env.VITE_DASHBOARD_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:5173')) as string
 
 export function CtaBand({
   title = 'Start building today.',

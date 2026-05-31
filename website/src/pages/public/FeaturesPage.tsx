@@ -7,7 +7,7 @@ import {
 import { LandingNav, LandingFooter, PageHero, CtaBand } from '../../components/landing-v3'
 import { useSeo } from '../../hooks/useSeo'
 
-const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5173'
+const DASHBOARD_URL = (import.meta.env.VITE_DASHBOARD_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:5173')) as string
 
 interface Feature {
   Icon: any

@@ -46,11 +46,11 @@
     }
   }
 
-  # Swagger
-  handle /docs {
+  # Swagger API docs (relocated from /docs so the public docs page wins)
+  handle /api-docs {
     reverse_proxy backend:5000
   }
-  handle /docs/* {
+  handle /api-docs/* {
     reverse_proxy backend:5000
   }
 

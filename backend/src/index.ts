@@ -21,7 +21,7 @@ async function main() {
 
   httpServer.listen(config.PORT, () => {
     logger.info(`🚀 NetLayer API running on port ${config.PORT} (${config.NODE_ENV})`)
-    logger.info(`   docs:    http://localhost:${config.PORT}/docs`)
+    logger.info(`   docs:    http://localhost:${config.PORT}/api-docs`)
     logger.info(`   metrics: http://localhost:${config.PORT}/metrics`)
     logger.info(`   readyz:  http://localhost:${config.PORT}/readyz`)
   })

@@ -5,7 +5,7 @@ import { LandingNav, LandingFooter } from '../../components/landing-v3'
 import { blogAPI } from '../../api/endpoints'
 import { useSeo } from '../../hooks/useSeo'
 
-const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5173'
+const DASHBOARD_URL = (import.meta.env.VITE_DASHBOARD_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:5173')) as string
 
 const formatDate = (s: string) =>
   new Date(s).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })

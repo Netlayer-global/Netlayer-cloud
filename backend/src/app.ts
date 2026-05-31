@@ -143,7 +143,9 @@ if (config.metricsEnabled) {
   app.get('/metrics', metricsHandler)
 }
 app.get('/api/openapi.json', (_req, res) => res.json(openapiSpec))
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec, { customSiteTitle: 'NetLayer API' }))
+// Swagger UI lives at /api-docs (NOT /docs — that path belongs to the public
+// marketing site's documentation page, which Caddy routes to the website).
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpec, { customSiteTitle: 'NetLayer API' }))
 
 // ─── Public catalog ─────────────────────────────────────────────────
 app.use('/api', planRoutes)

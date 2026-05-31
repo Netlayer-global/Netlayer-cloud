@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Check, Cpu, HardDrive, MemoryStick, Wifi } from 'lucide-react'
 
 /**
@@ -9,6 +8,7 @@ import { Check, Cpu, HardDrive, MemoryStick, Wifi } from 'lucide-react'
  *
  * Re-exported from `pages/Landing.tsx` for backwards compatibility.
  */
+const DASHBOARD_URL = (import.meta.env.VITE_DASHBOARD_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:5173')) as string
 
 interface PlanShape {
   slug: string
@@ -145,8 +145,8 @@ export function PricingSection({ standalone = false }: { standalone?: boolean })
                   <li className="flex items-start gap-2"><Check size={11} style={{ color: 'var(--brand)' }} className="mt-0.5" /> Full root access</li>
                 </ul>
 
-                <Link
-                  to={`/register?plan=${p.slug}`}
+                <a
+                  href={`${DASHBOARD_URL}/register?plan=${p.slug}`}
                   className="mt-5 w-full inline-flex items-center justify-center h-10 rounded-md text-[13px] font-medium transition-colors cursor-pointer"
                   style={{
                     background: p.popular ? 'var(--brand)' : 'var(--nl-2)',
@@ -155,7 +155,7 @@ export function PricingSection({ standalone = false }: { standalone?: boolean })
                   }}
                 >
                   Deploy this plan
-                </Link>
+                </a>
               </div>
             ))}
           </div>

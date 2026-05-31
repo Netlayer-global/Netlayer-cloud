@@ -5,7 +5,7 @@ import { LandingNav, LandingFooter, PricingSection, PageHero } from '../../compo
 import { cn } from '../../lib/utils'
 import { useSeo } from '../../hooks/useSeo'
 
-const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5173'
+const DASHBOARD_URL = (import.meta.env.VITE_DASHBOARD_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:5173')) as string
 
 /**
  * Public pricing page. Reuses the same `<PricingSection />` rendered on the

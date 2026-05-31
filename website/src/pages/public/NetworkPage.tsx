@@ -136,7 +136,7 @@ export default function NetworkPage() {
 }
 
 function RegionCard({ region }: { region: Region }) {
-  const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5173'
+  const DASHBOARD_URL = (import.meta.env.VITE_DASHBOARD_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:5173')) as string
   return (
     <a
       href={`${DASHBOARD_URL}/register?region=${region.slug}`}

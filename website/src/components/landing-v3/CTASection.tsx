@@ -6,7 +6,7 @@ import { ArrowRight } from 'lucide-react'
  * soft lime radial glow, a confident heading, supporting line, and two
  * actions. Lime palette, theme-aware.
  */
-const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5173'
+const DASHBOARD_URL = (import.meta.env.VITE_DASHBOARD_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:5173')) as string
 
 export function CTASection() {
   return (
