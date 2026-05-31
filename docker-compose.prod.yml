@@ -106,10 +106,12 @@ services:
       - "5000"
     volumes:
       - ./data/iso:/app/data/iso
-    # Database migrations run on startup so a fresh deploy auto-applies them.
-    # Seed runs separately (only on first boot) — see scripts/deploy.sh.
+    # Schema is synced to Postgres with `db push` (the repo's migration files
+    # are SQLite-only and can't be replayed on Postgres). db push is idempotent
+    # and safe on re-deploy when the schema is unchanged. Seed runs separately
+    # on first boot — see scripts/deploy*.sh.
     command: >
-      sh -c "npx prisma migrate deploy && node dist/index.js"
+      sh -c "npx prisma db push --skip-generate && node dist/index.js"
 
   frontend:
     build:

@@ -24,6 +24,10 @@ WORKDIR /app
 RUN apk add --no-cache openssl libc6-compat
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Production runs Postgres — switch the active schema to the Postgres variant
+# before generating the client + compiling. (The repo default schema.prisma is
+# SQLite for local dev; the Postgres variant lives in schema.postgres.prisma.)
+RUN cp prisma/schema.postgres.prisma prisma/schema.prisma
 # Prisma client must be generated at build-time so the compiled output
 # references the right binary target for alpine.
 RUN npx prisma generate
