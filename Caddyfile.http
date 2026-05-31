@@ -1,0 +1,112 @@
+# NetLayer Cloud — HTTP-only Caddy config (port 80, no TLS).
+#
+# Use this for an initial / IP-based deployment where you don't yet have a
+# domain pointing at the server. Caddy serves plain HTTP on :80 with the
+# same path-splitting routing as the production HTTPS Caddyfile.
+#
+# Switch to the TLS Caddyfile (auto HTTPS) once a domain's A-record points
+# here — see docker-compose.prod.yml (CADDYFILE env var).
+
+{
+  # No automatic HTTPS — we're serving plain HTTP on port 80 by IP.
+  auto_https off
+  servers {
+    metrics
+  }
+}
+
+:80 {
+  encode gzip zstd
+
+  header {
+    X-Frame-Options SAMEORIGIN
+    X-Content-Type-Options nosniff
+    Referrer-Policy strict-origin-when-cross-origin
+    -Server
+  }
+
+  # Backend API — including webhooks (raw body)
+  handle /api/* {
+    reverse_proxy backend:5000 {
+      header_up Host {host}
+      header_up X-Real-IP {remote}
+      header_up X-Forwarded-For {remote}
+      header_up X-Forwarded-Proto {scheme}
+      transport http {
+        read_timeout 30m
+        write_timeout 30m
+      }
+    }
+    request_body {
+      max_size 8GB
+    }
+  }
+
+  # Swagger API docs (relocated from /docs so the public docs page wins)
+  handle /api-docs {
+    reverse_proxy backend:5000
+  }
+  handle /api-docs/* {
+    reverse_proxy backend:5000
+  }
+
+  # OpenAPI spec
+  handle /api/openapi.json {
+    reverse_proxy backend:5000
+  }
+
+  # Realtime (Socket.io)
+  handle /socket.io/* {
+    reverse_proxy backend:5000
+  }
+
+  # Healthz for uptime monitors
+  handle /healthz {
+    reverse_proxy backend:5000
+  }
+
+  # Customer + admin dashboard SPA
+  handle /login {
+    reverse_proxy frontend:80
+  }
+  handle /register {
+    reverse_proxy frontend:80
+  }
+  handle /forgot-password {
+    reverse_proxy frontend:80
+  }
+  handle /reset-password {
+    reverse_proxy frontend:80
+  }
+  handle /console {
+    reverse_proxy frontend:80
+  }
+  handle /console/* {
+    reverse_proxy frontend:80
+  }
+  handle /dashboard {
+    reverse_proxy frontend:80
+  }
+  handle /dashboard/* {
+    reverse_proxy frontend:80
+  }
+  handle /admin {
+    reverse_proxy frontend:80
+  }
+  handle /admin/* {
+    reverse_proxy frontend:80
+  }
+
+  # Public marketing site — landing, pricing, docs, blog, status, legal
+  handle {
+    reverse_proxy website:80
+  }
+
+  log {
+    output file /data/caddy/logs/access.log {
+      roll_size 100mb
+      roll_keep 10
+    }
+    format json
+  }
+}
